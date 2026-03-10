@@ -327,6 +327,30 @@
     .btn-profile-submit:hover { background: var(--sylve-dark); }
     .btn-profile-submit:disabled { opacity: 0.5; cursor: not-allowed; }
 
+    /* ── ÉTAT : CHARGEMENT ── */
+    #state-loading {
+      padding: 3rem 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .spinner {
+      width: 32px; height: 32px;
+      border: 2px solid var(--border);
+      border-top-color: var(--sylve);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-text {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
     /* ── FOOTER ── */
     footer {
       padding: 1.5rem 2rem;
@@ -346,8 +370,14 @@
   <main>
     <div class="card">
 
+      <!-- ÉTAT 0 : Chargement -->
+      <div id="state-loading">
+        <div class="spinner"></div>
+        <div class="loading-text">Vérification de la session…</div>
+      </div>
+
       <!-- ÉTAT 1 : Saisie email -->
-      <div id="state-email">
+      <div id="state-email" style="display:none">
         <div class="card-eyebrow">Accès outils</div>
         <h1 class="card-title">Connexion à SYLVE</h1>
         <p class="card-sub">Entrez votre email — nous vous envoyons un lien de connexion. Aucun mot de passe.</p>
@@ -450,12 +480,14 @@
   // ═══════════════════════════════════════════════════════════
 
   function showEmailState() {
+    document.getElementById('state-loading').style.display = 'none';
     document.getElementById('state-email').style.display = 'block';
     document.getElementById('state-sent').style.display = 'none';
     document.getElementById('state-profile').style.display = 'none';
   }
 
   function showSentState(email) {
+    document.getElementById('state-loading').style.display = 'none';
     document.getElementById('state-email').style.display = 'none';
     document.getElementById('state-sent').style.display = 'block';
     document.getElementById('state-profile').style.display = 'none';
@@ -463,6 +495,7 @@
   }
 
   function showProfileState() {
+    document.getElementById('state-loading').style.display = 'none';
     document.getElementById('state-email').style.display = 'none';
     document.getElementById('state-sent').style.display = 'none';
     document.getElementById('state-profile').style.display = 'block';
@@ -563,21 +596,20 @@
     const { data: { session } } = await sb.auth.getSession();
 
     if (session) {
-      // Utilisateur connecté — vérifier si profil complété
       const { data: profile } = await sb.from('profiles')
         .select('prenom, metier')
         .eq('id', session.user.id)
         .single();
 
       if (!profile?.prenom) {
-        // Premier accès — compléter le profil
         showProfileState();
       } else {
-        // Profil complet — rediriger directement
         window.location.href = '/dashboard';
       }
+    } else {
+      // Pas de session — afficher le formulaire immédiatement
+      showEmailState();
     }
-    // Sinon : afficher le formulaire email (état par défaut)
   }
 
   // Écouter les changements de session (retour depuis magic link)
