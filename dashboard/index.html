@@ -310,7 +310,7 @@
       </div>
     </div>
 
-    <div class="loading" id="loading">
+    <div class="loading" id="loading" style="display:none;">
       <div class="spinner"></div>
       <div class="loading-text">Connexion en cours…</div>
     </div>
@@ -327,23 +327,40 @@
 
   let dashboardLoaded = false;
 
-  // onAuthStateChange se déclenche immédiatement depuis le localStorage
-  // sans attendre un appel réseau — c'est la bonne façon de restaurer la session
-  sb.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'SIGNED_IN' && session && !dashboardLoaded) {
+  async function init() {
+    // 1. Vérifier immédiatement si une session existe déjà
+    const { data: { session } } = await sb.auth.getSession();
+
+    if (session) {
+      // Session trouvée → afficher le dashboard sans spinner
       dashboardLoaded = true;
       await loadDashboard(session);
-    }
-    if (event === 'SIGNED_OUT') {
-      window.location.href = '/login';
-    }
-  });
+    } else {
+      // Pas de session → afficher le spinner et écouter onAuthStateChange
+      document.getElementById('loading').style.display = '';
 
-  async function init() {
-    // Timeout 4s : si aucune session restaurée, rediriger vers login
-    setTimeout(() => {
-      if (!dashboardLoaded) window.location.href = '/login';
-    }, 4000);
+      sb.auth.onAuthStateChange(async (event, s) => {
+        if (event === 'SIGNED_IN' && s && !dashboardLoaded) {
+          dashboardLoaded = true;
+          await loadDashboard(s);
+        }
+        if (event === 'SIGNED_OUT') {
+          window.location.href = '/login';
+        }
+      });
+
+      // Timeout 6s : si toujours rien, rediriger vers login
+      setTimeout(() => {
+        if (!dashboardLoaded) window.location.href = '/login';
+      }, 6000);
+    }
+
+    // Écouter les déconnexions dans tous les cas
+    sb.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') {
+        window.location.href = '/login';
+      }
+    });
   }
 
   async function loadDashboard(session) {
