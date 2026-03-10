@@ -7,73 +7,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    /* Gate overlay */
-    #auth-gate {
-      position: fixed;
-      inset: 0;
-      background: rgba(247,246,244,0.97);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 999;
-      backdrop-filter: blur(4px);
-    }
-    #auth-gate.hidden { display: none; }
-    .gate-card {
-      background: white;
-      border: 1px solid #E2DED9;
-      border-radius: 12px;
-      padding: 2.5rem 2rem;
-      width: 100%;
-      max-width: 380px;
-      text-align: center;
-    }
-    .gate-logo {
-      font-family: 'DM Sans', sans-serif;
-      font-weight: 300;
-      font-size: 1.05rem;
-      letter-spacing: 0.18em;
-      color: #5E8B8F;
-      margin-bottom: 1.5rem;
-      display: block;
-    }
-    .gate-title {
-      font-family: 'Instrument Serif', serif;
-      font-size: 1.3rem;
-      font-weight: 400;
-      color: #2A2826;
-      margin-bottom: 0.4rem;
-    }
-    .gate-sub {
-      font-size: 0.78rem;
-      color: #7A7672;
-      margin-bottom: 1.8rem;
-      line-height: 1.5;
-    }
-    .gate-btn {
-      display: block;
-      width: 100%;
-      font-family: 'DM Sans', sans-serif;
-      font-size: 0.85rem;
-      border: none;
-      background: #5E8B8F;
-      color: white;
-      border-radius: 8px;
-      padding: 11px;
-      cursor: pointer;
-      text-decoration: none;
-      transition: background 0.15s;
-    }
-    .gate-btn:hover { background: #3d6366; }
-    .gate-note {
-      font-size: 0.68rem;
-      color: #A09C98;
-      margin-top: 1rem;
-      line-height: 1.5;
-    }
-  </style>
   <style>
     :root {
       --sylve: #5E8B8F;
@@ -88,556 +21,148 @@
       --text-light: #A09C98;
       --danger: #C25C3A;
       --radius: 6px;
-
-      /* couches couleurs */
-      --c-protection: #C4B8A8;
-      --c-drainage: #8FAFC7;
-      --c-filtration: #B8C9A3;
-      --c-substrat: #A67C5B;
-      --c-paillage: #C4A882;
-      --c-vegetation: #6B9E6B;
     }
-
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', sans-serif; font-weight: 300; background: var(--bg); color: var(--text); min-height: 100vh; }
 
-    body {
-      font-family: 'DM Sans', sans-serif;
-      font-weight: 300;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-    }
-
-    /* ── HEADER ── */
     header {
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      padding: 0 2rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      height: 52px;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 52px;
     }
+    .header-brand { display: flex; align-items: baseline; gap: 0.6rem; text-decoration: none; color: var(--text); }
+    .header-brand .logo { font-family: 'DM Sans', sans-serif; font-weight: 300; font-size: 1.1rem; letter-spacing: 0.18em; color: var(--sylve); }
+    .header-brand .sub { font-size: 0.72rem; letter-spacing: 0.14em; color: var(--projet); text-transform: uppercase; }
+    .header-tag { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); background: var(--sylve-light); padding: 3px 10px; border-radius: 20px; }
 
-    .header-brand {
-      display: flex;
-      align-items: baseline;
-      gap: 0.6rem;
-      text-decoration: none;
-      color: var(--text);
-    }
+    .page-title { padding: 2rem 2rem 1.5rem; max-width: 1400px; margin: 0 auto; }
+    .page-title h1 { font-family: 'Instrument Serif', serif; font-size: 1.7rem; font-weight: 400; color: var(--text); line-height: 1.2; }
+    .page-title p { font-size: 0.82rem; color: var(--text-muted); margin-top: 0.4rem; }
 
-    .header-brand .logo {
-      font-family: 'DM Sans', sans-serif;
-      font-weight: 300;
-      font-size: 1.1rem;
-      letter-spacing: 0.18em;
-      color: var(--sylve);
-    }
-
-    .header-brand .sub {
-      font-size: 0.72rem;
-      letter-spacing: 0.14em;
-      color: var(--projet);
-      text-transform: uppercase;
-    }
-
-    .header-tag {
-      font-size: 0.7rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      background: var(--sylve-light);
-      padding: 3px 10px;
-      border-radius: 20px;
-    }
-
-    /* ── TITRE ── */
-    .page-title {
-      padding: 2rem 2rem 1.5rem;
-      max-width: 1400px;
-      margin: 0 auto;
-    }
-
-    .page-title h1 {
-      font-family: 'Instrument Serif', serif;
-      font-size: 1.7rem;
-      font-weight: 400;
-      color: var(--text);
-      line-height: 1.2;
-    }
-
-    .page-title p {
-      font-size: 0.82rem;
-      color: var(--text-muted);
-      margin-top: 0.4rem;
-      letter-spacing: 0.01em;
-    }
-
-    /* ── LAYOUT ── */
     .app {
-      display: grid;
-      grid-template-columns: 420px 1fr;
-      gap: 0;
-      max-width: 1400px;
-      margin: 0 auto;
-      height: calc(100vh - 52px - 95px);
-      min-height: 600px;
+      display: grid; grid-template-columns: 420px 1fr; gap: 0;
+      max-width: 1400px; margin: 0 auto;
+      height: calc(100vh - 52px - 95px); min-height: 600px;
     }
 
-    /* ── PANNEAU GAUCHE ── */
+    /* PANNEAU GAUCHE */
     .panel-left {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      margin: 0 0 2rem 2rem;
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      display: flex; flex-direction: column; overflow: hidden; margin: 0 0 2rem 2rem;
     }
-
     .panel-header {
-      padding: 1rem 1.2rem;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+      padding: 1rem 1.2rem; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
     }
-
-    .panel-header h2 {
-      font-size: 0.72rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      font-weight: 500;
-    }
-
+    .panel-header h2 { font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); font-weight: 500; }
     .btn-add {
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      font-family: 'DM Sans', sans-serif;
-      font-size: 0.75rem;
-      font-weight: 400;
-      color: var(--sylve);
-      background: var(--sylve-light);
-      border: none;
-      border-radius: var(--radius);
-      padding: 5px 12px;
-      cursor: pointer;
-      letter-spacing: 0.02em;
-      transition: background 0.15s;
+      display: flex; align-items: center; gap: 0.4rem;
+      font-family: 'DM Sans', sans-serif; font-size: 0.75rem; font-weight: 400;
+      color: var(--sylve); background: var(--sylve-light); border: none; border-radius: var(--radius);
+      padding: 5px 12px; cursor: pointer; transition: background 0.15s;
     }
-
     .btn-add:hover { background: #d0e3e5; }
 
-    /* ── COUCHES ── */
+    /* COUCHES - scrollable */
     .layers-container {
-      flex: 1;
-      overflow-y: auto;
-      padding: 0.8rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
+      flex: 1; overflow-y: auto; padding: 0.8rem;
+      display: flex; flex-direction: column; gap: 0.5rem; min-height: 0;
     }
-
     .layers-container::-webkit-scrollbar { width: 4px; }
     .layers-container::-webkit-scrollbar-track { background: transparent; }
     .layers-container::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
+    /* DRAG REORDER dans la liste */
     .layer-card {
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      overflow: hidden;
+      border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden;
       transition: border-color 0.15s, box-shadow 0.15s;
-    }
-
-    .layer-card:hover { border-color: var(--sylve); box-shadow: 0 0 0 2px var(--sylve-light); }
-    .layer-card.active { border-color: var(--sylve); }
-
-    .layer-header {
-      display: flex;
-      align-items: center;
-      padding: 0.55rem 0.8rem;
-      gap: 0.6rem;
-      cursor: pointer;
       user-select: none;
     }
+    .layer-card:hover { border-color: var(--sylve); box-shadow: 0 0 0 2px var(--sylve-light); }
+    .layer-card.active { border-color: var(--sylve); }
+    .layer-card.dragging-card { opacity: 0.4; border-style: dashed; }
+    .layer-card.drag-over-card { border-color: var(--sylve); border-style: dashed; background: var(--sylve-light); }
 
-    .layer-color-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 2px;
-      flex-shrink: 0;
+    .layer-header { display: flex; align-items: center; padding: 0.55rem 0.8rem; gap: 0.5rem; cursor: pointer; }
+    .drag-grip {
+      cursor: grab; color: var(--text-light); font-size: 0.8rem; padding: 2px 4px;
+      display: flex; flex-direction: column; gap: 2px; flex-shrink: 0;
     }
-
-    .layer-name {
-      font-size: 0.78rem;
-      font-weight: 500;
-      flex: 1;
-      color: var(--text);
-    }
-
-    .layer-weight {
-      font-family: 'DM Mono', monospace;
-      font-size: 0.78rem;
-      color: var(--sylve-dark);
-      font-weight: 500;
-      min-width: 70px;
-      text-align: right;
-    }
-
+    .drag-grip:active { cursor: grabbing; }
+    .drag-grip span { display: block; width: 14px; height: 1.5px; background: var(--text-light); border-radius: 1px; }
+    .layer-color-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+    .layer-name { font-size: 0.78rem; font-weight: 500; flex: 1; color: var(--text); }
+    .layer-weight { font-family: 'DM Mono', monospace; font-size: 0.78rem; color: var(--sylve-dark); font-weight: 500; min-width: 70px; text-align: right; }
     .layer-delete {
-      width: 20px;
-      height: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: none;
-      background: none;
-      cursor: pointer;
-      color: var(--text-light);
-      border-radius: 3px;
-      transition: color 0.15s, background 0.15s;
-      padding: 0;
-      font-size: 0.9rem;
+      width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;
+      border: none; background: none; cursor: pointer; color: var(--text-light); border-radius: 3px;
+      transition: color 0.15s, background 0.15s; padding: 0; font-size: 0.9rem;
     }
-
     .layer-delete:hover { color: var(--danger); background: #FDF0EC; }
 
     .layer-body {
-      padding: 0.6rem 0.8rem 0.8rem;
-      border-top: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      gap: 0.55rem;
-      background: #FAFAF9;
+      padding: 0.6rem 0.8rem 0.8rem; border-top: 1px solid var(--border);
+      display: flex; flex-direction: column; gap: 0.55rem; background: #FAFAF9;
     }
-
-    .field-row {
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-    }
-
-    .field-label {
-      font-size: 0.68rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      font-weight: 500;
-    }
-
+    .field-row { display: flex; flex-direction: column; gap: 0.25rem; }
+    .field-label { font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); font-weight: 500; }
     select, input[type="number"] {
-      font-family: 'DM Sans', sans-serif;
-      font-size: 0.8rem;
-      font-weight: 300;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 5px 8px;
-      background: white;
-      color: var(--text);
-      width: 100%;
-      outline: none;
-      transition: border-color 0.15s;
+      font-family: 'DM Sans', sans-serif; font-size: 0.8rem; font-weight: 300;
+      border: 1px solid var(--border); border-radius: var(--radius); padding: 5px 8px;
+      background: white; color: var(--text); width: 100%; outline: none; transition: border-color 0.15s;
     }
-
-    select:focus, input[type="number"]:focus {
-      border-color: var(--sylve);
-    }
-
-    .thickness-row {
-      display: grid;
-      grid-template-columns: 1fr 70px;
-      gap: 0.5rem;
-      align-items: center;
-    }
-
-    input[type="range"] {
-      -webkit-appearance: none;
-      width: 100%;
-      height: 4px;
-      border-radius: 2px;
-      background: var(--border);
-      outline: none;
-      cursor: pointer;
-    }
-
-    input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: var(--sylve);
-      cursor: pointer;
-      transition: transform 0.1s;
-    }
-
+    select:focus, input[type="number"]:focus { border-color: var(--sylve); }
+    .thickness-row { display: grid; grid-template-columns: 1fr 70px; gap: 0.5rem; align-items: center; }
+    input[type="range"] { -webkit-appearance: none; width: 100%; height: 4px; border-radius: 2px; background: var(--border); outline: none; cursor: pointer; }
+    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--sylve); cursor: pointer; transition: transform 0.1s; }
     input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+    .info-row { display: flex; justify-content: flex-end; }
+    .density-note { font-size: 0.68rem; color: var(--text-muted); font-style: italic; }
 
-    .info-row {
-      display: flex;
-      justify-content: flex-end;
-    }
+    .dalle-base { margin: 0 0.8rem 0.6rem; padding: 0.6rem 0.8rem; background: #F0EDE9; border-radius: var(--radius); border: 1px dashed var(--border); flex-shrink: 0; }
+    .dalle-base-label { font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); font-weight: 500; }
+    .dalle-base-desc { font-size: 0.72rem; color: var(--text-light); margin-top: 0.15rem; }
 
-    .density-note {
-      font-size: 0.68rem;
-      color: var(--text-muted);
-      font-style: italic;
-    }
+    .total-bar { border-top: 2px solid var(--border); padding: 1rem 1.2rem; background: var(--surface); flex-shrink: 0; }
+    .total-label { font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); font-weight: 500; margin-bottom: 0.3rem; }
+    .total-value { font-family: 'DM Mono', monospace; font-size: 1.8rem; font-weight: 500; color: var(--sylve-dark); line-height: 1; }
+    .total-unit { font-size: 0.8rem; color: var(--text-muted); margin-left: 0.3rem; }
+    .total-note { font-size: 0.68rem; color: var(--text-light); margin-top: 0.3rem; font-style: italic; }
 
-    /* Base dalle */
-    .dalle-base {
-      margin: 0 0.8rem 0.6rem;
-      padding: 0.6rem 0.8rem;
-      background: #F0EDE9;
-      border-radius: var(--radius);
-      border: 1px dashed var(--border);
-    }
-
-    .dalle-base-label {
-      font-size: 0.7rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      font-weight: 500;
-    }
-
-    .dalle-base-desc {
-      font-size: 0.72rem;
-      color: var(--text-light);
-      margin-top: 0.15rem;
-    }
-
-    /* ── TOTAL ── */
-    .total-bar {
-      border-top: 2px solid var(--border);
-      padding: 1rem 1.2rem;
-      background: var(--surface);
-    }
-
-    .total-label {
-      font-size: 0.68rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      font-weight: 500;
-      margin-bottom: 0.3rem;
-    }
-
-    .total-value {
-      font-family: 'DM Mono', monospace;
-      font-size: 1.8rem;
-      font-weight: 500;
-      color: var(--sylve-dark);
-      line-height: 1;
-    }
-
-    .total-unit {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      margin-left: 0.3rem;
-    }
-
-    .total-note {
-      font-size: 0.68rem;
-      color: var(--text-light);
-      margin-top: 0.3rem;
-      font-style: italic;
-    }
-
-    /* ── PANNEAU DROIT ── */
+    /* PANNEAU DROIT */
     .panel-right {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      margin: 0 2rem 2rem 1rem;
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      display: flex; flex-direction: column; overflow: hidden; margin: 0 2rem 2rem 1rem;
     }
+    .schema-header { padding: 1rem 1.4rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .schema-header h2 { font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); font-weight: 500; }
+    .schema-hint { font-size: 0.68rem; color: var(--text-light); font-style: italic; }
+    .schema-container { flex: 1; padding: 1.5rem; display: flex; align-items: stretch; justify-content: center; overflow: hidden; }
+    #schema-svg { width: 100%; height: 100%; overflow: visible; }
 
-    .schema-header {
-      padding: 1rem 1.4rem;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .schema-header h2 {
-      font-size: 0.72rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      font-weight: 500;
-    }
-
-    .schema-hint {
-      font-size: 0.68rem;
-      color: var(--text-light);
-      font-style: italic;
-    }
-
-    .schema-container {
-      flex: 1;
-      padding: 1.5rem;
-      display: flex;
-      align-items: stretch;
-      justify-content: center;
-      overflow: hidden;
-    }
-
-    #schema-svg {
-      width: 100%;
-      height: 100%;
-      overflow: visible;
-    }
-
-    /* ── MODAL AJOUT ── */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.3);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 100;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.2s;
-    }
-
-    .modal-overlay.open {
-      opacity: 1;
-      pointer-events: all;
-    }
-
-    .modal {
-      background: white;
-      border-radius: 10px;
-      padding: 1.5rem;
-      width: 340px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.15);
-      transform: translateY(8px);
-      transition: transform 0.2s;
-    }
-
+    /* MODAL */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal { background: white; border-radius: 10px; padding: 1.5rem; width: 360px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); transform: translateY(8px); transition: transform 0.2s; }
     .modal-overlay.open .modal { transform: translateY(0); }
-
-    .modal h3 {
-      font-family: 'Instrument Serif', serif;
-      font-size: 1.1rem;
-      font-weight: 400;
-      margin-bottom: 1rem;
-      color: var(--text);
-    }
-
-    .modal-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-    }
-
-    .modal-type-btn {
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 0.6rem 0.5rem;
-      font-family: 'DM Sans', sans-serif;
-      font-size: 0.75rem;
-      font-weight: 400;
-      cursor: pointer;
-      background: white;
-      color: var(--text);
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      transition: all 0.15s;
-    }
-
+    .modal h3 { font-family: 'Instrument Serif', serif; font-size: 1.1rem; font-weight: 400; margin-bottom: 1rem; color: var(--text); }
+    .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 1rem; }
+    .modal-type-btn { border: 1px solid var(--border); border-radius: var(--radius); padding: 0.6rem 0.5rem; font-family: 'DM Sans', sans-serif; font-size: 0.75rem; font-weight: 400; cursor: pointer; background: white; color: var(--text); display: flex; align-items: center; gap: 0.4rem; transition: all 0.15s; }
     .modal-type-btn:hover { border-color: var(--sylve); background: var(--sylve-light); }
     .modal-type-btn.selected { border-color: var(--sylve); background: var(--sylve-light); color: var(--sylve-dark); }
-
-    .modal-type-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 2px;
-      flex-shrink: 0;
-    }
-
-    .modal-footer {
-      display: flex;
-      gap: 0.5rem;
-      justify-content: flex-end;
-    }
-
-    .btn-secondary {
-      font-family: 'DM Sans', sans-serif;
-      font-size: 0.78rem;
-      border: 1px solid var(--border);
-      background: white;
-      color: var(--text-muted);
-      border-radius: var(--radius);
-      padding: 6px 14px;
-      cursor: pointer;
-      transition: background 0.15s;
-    }
-
+    .modal-type-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+    .modal-mat-row { margin-bottom: 1rem; }
+    .modal-mat-label { font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); font-weight: 500; margin-bottom: 0.3rem; }
+    .modal-footer { display: flex; gap: 0.5rem; justify-content: flex-end; }
+    .btn-secondary { font-family: 'DM Sans', sans-serif; font-size: 0.78rem; border: 1px solid var(--border); background: white; color: var(--text-muted); border-radius: var(--radius); padding: 6px 14px; cursor: pointer; transition: background 0.15s; }
     .btn-secondary:hover { background: var(--bg); }
-
-    .btn-primary {
-      font-family: 'DM Sans', sans-serif;
-      font-size: 0.78rem;
-      border: none;
-      background: var(--sylve);
-      color: white;
-      border-radius: var(--radius);
-      padding: 6px 14px;
-      cursor: pointer;
-      transition: background 0.15s;
-    }
-
+    .btn-primary { font-family: 'DM Sans', sans-serif; font-size: 0.78rem; border: none; background: var(--sylve); color: white; border-radius: var(--radius); padding: 6px 14px; cursor: pointer; transition: background 0.15s; }
     .btn-primary:hover { background: var(--sylve-dark); }
 
-    /* SVG schéma styles */
-    .svg-layer-group { cursor: ns-resize; }
-    .svg-layer-rect { transition: opacity 0.15s; }
-    .svg-layer-rect:hover { opacity: 0.85; }
+    .drag-handle { cursor: ns-resize; }
+    #svg-tooltip { position: fixed; background: var(--text); color: white; font-family: 'DM Mono', monospace; font-size: 0.7rem; padding: 4px 8px; border-radius: 4px; pointer-events: none; opacity: 0; transition: opacity 0.15s; z-index: 200; }
 
-    /* Drag handle */
-    .drag-handle {
-      cursor: ns-resize;
-    }
-
-    .drag-handle-line {
-      stroke: rgba(255,255,255,0.6);
-      stroke-width: 2;
-      stroke-dasharray: 4,3;
-    }
-
-    /* Tooltip */
-    #svg-tooltip {
-      position: fixed;
-      background: var(--text);
-      color: white;
-      font-family: 'DM Mono', monospace;
-      font-size: 0.7rem;
-      padding: 4px 8px;
-      border-radius: 4px;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.15s;
-      z-index: 200;
-    }
-
-    /* Responsive */
     @media (max-width: 900px) {
-      .app {
-        grid-template-columns: 1fr;
-        grid-template-rows: auto auto;
-        height: auto;
-      }
+      .app { grid-template-columns: 1fr; grid-template-rows: auto auto; height: auto; }
       .panel-left { margin: 0 1rem 1rem; height: auto; min-height: 400px; }
       .panel-right { margin: 0 1rem 2rem; height: 450px; }
       .page-title { padding: 1.5rem 1rem 1rem; }
@@ -645,86 +170,55 @@
   </style>
 </head>
 <body>
-
-  <!-- GATE AUTH -->
-  <div id="auth-gate">
-    <div class="gate-card">
-      <span class="gate-logo">sylve</span>
-      <div class="gate-title">Accès gratuit</div>
-      <p class="gate-sub">Connectez-vous pour accéder au calculateur.<br>Un lien de connexion vous sera envoyé par email.</p>
-      <a href="/login" class="gate-btn">Accéder à l'outil</a>
-      <p class="gate-note">Aucun mot de passe. Gratuit.</p>
-    </div>
-  </div>
-
-  <!-- HEADER -->
   <header>
-    <a href="/projet" class="header-brand">
+    <a href="https://sylve.eco" class="header-brand">
       <span class="logo">sylve</span>
       <span class="sub">projet</span>
     </a>
-    <div style="display:flex;align-items:center;gap:1rem">
-      <span id="header-user" style="font-size:0.75rem;color:#7A7672"></span>
-      <span class="header-tag">outil gratuit</span>
-    </div>
+    <span class="header-tag">outil gratuit</span>
   </header>
 
-  <!-- TITRE -->
   <div class="page-title">
     <h1>Calculateur de charges sur dalle</h1>
-    <p>Calcul du poids d'un complexe végétatif en kg/m² — état saturé. Modifiez les couches ou faites glisser les épaisseurs sur le schéma.</p>
+    <p>Calcul du poids d'un complexe végétatif en kg/m² — état saturé. Glissez les couches pour les réordonner, ou faites glisser leur bord supérieur sur le schéma.</p>
   </div>
 
-  <!-- APP -->
   <div class="app">
-
-    <!-- PANNEAU GAUCHE : CALCULATEUR -->
     <div class="panel-left">
       <div class="panel-header">
         <h2>Composition du complexe</h2>
-        <button class="btn-add" onclick="openModal()">
-          <span>+</span> Ajouter une couche
-        </button>
+        <button class="btn-add" onclick="openModal()"><span>+</span> Ajouter une couche</button>
       </div>
-
-      <div class="layers-container" id="layers-container">
-        <!-- Couches générées par JS -->
-      </div>
-
+      <div class="layers-container" id="layers-container"></div>
       <div class="dalle-base">
         <div class="dalle-base-label">Dalle / étanchéité</div>
         <div class="dalle-base-desc">Base du complexe — non incluse dans le calcul de charges</div>
       </div>
-
       <div class="total-bar">
         <div class="total-label">Charge totale</div>
-        <div>
-          <span class="total-value" id="total-value">0</span>
-          <span class="total-unit">kg/m²</span>
-        </div>
+        <div><span class="total-value" id="total-value">0</span><span class="total-unit">kg/m²</span></div>
         <div class="total-note">Calculé à l'état saturé — pire cas pour l'ingénieur structure</div>
       </div>
     </div>
 
-    <!-- PANNEAU DROIT : SCHEMA -->
     <div class="panel-right">
       <div class="schema-header">
         <h2>Coupe schématique</h2>
-        <span class="schema-hint">Faire glisser le bord supérieur des couches pour modifier l'épaisseur</span>
+        <span class="schema-hint">Glisser les couches (⠿) pour réordonner · Tirer le bord des couches pour modifier l'épaisseur</span>
       </div>
       <div class="schema-container">
         <svg id="schema-svg" viewBox="0 0 500 560" preserveAspectRatio="xMidYMid meet"></svg>
       </div>
     </div>
-
   </div>
 
-  <!-- MODAL AJOUT COUCHE -->
   <div class="modal-overlay" id="modal-overlay" onclick="handleModalClick(event)">
     <div class="modal">
       <h3>Ajouter une couche</h3>
-      <div class="modal-grid" id="modal-types">
-        <!-- Générés par JS -->
+      <div class="modal-grid" id="modal-types"></div>
+      <div class="modal-mat-row" id="modal-mat-row" style="display:none">
+        <div class="modal-mat-label">Matériau</div>
+        <select id="modal-mat-select"></select>
       </div>
       <div class="modal-footer">
         <button class="btn-secondary" onclick="closeModal()">Annuler</button>
@@ -732,686 +226,577 @@
       </div>
     </div>
   </div>
-
   <div id="svg-tooltip"></div>
 
-  <script>
-  // ═══════════════════════════════════════════════════════════
-  //  BASE DE DONNÉES MATÉRIAUX
-  // ═══════════════════════════════════════════════════════════
+<script>
+// ═══════════════════════════════════════════════
+//  BASE DE DONNÉES MATÉRIAUX
+// ═══════════════════════════════════════════════
 
-  const CATEGORIES = {
-    protection: {
-      label: 'Protection mécanique',
-      color: '#C4B8A8',
-      pattern: 'dots',
-      materials: [
-        { id: 'feutre-ap', name: 'Feutre anti-poinçonnement', type: 'forfait', value: 0.5, unit: 'kg/m²' },
-        { id: 'film-pe', name: 'Film PE de protection', type: 'forfait', value: 0.15, unit: 'kg/m²' },
-      ]
-    },
-    drainage: {
-      label: 'Drainage',
-      color: '#8FAFC7',
-      pattern: 'honeycomb',
-      materials: [
-        { id: 'nid-abeille', name: 'Nid d\'abeille HDPE (gravier)', type: 'volumique', value: 100, min_ep: 4, max_ep: 20, default_ep: 6 },
-        { id: 'billes-argile', name: 'Billes d\'argile expansée', type: 'volumique', value: 420, min_ep: 5, max_ep: 30, default_ep: 8 },
-        { id: 'gravier', name: 'Gravier 20/40', type: 'volumique', value: 1700, min_ep: 5, max_ep: 30, default_ep: 8 },
-        { id: 'panneau-drainant', name: 'Panneau drainant composite', type: 'forfait', value: 8, unit: 'kg/m²' },
-        { id: 'pouzzolane', name: 'Pouzzolane', type: 'volumique', value: 900, min_ep: 5, max_ep: 30, default_ep: 8 },
-      ]
-    },
-    filtration: {
-      label: 'Filtration',
-      color: '#B8C9A3',
-      pattern: 'lines',
-      materials: [
-        { id: 'geotextile', name: 'Géotextile filtrant', type: 'forfait', value: 0.35, unit: 'kg/m²' },
-        { id: 'nappe-sep', name: 'Nappe de séparation', type: 'forfait', value: 0.2, unit: 'kg/m²' },
-      ]
-    },
-    substrat: {
-      label: 'Substrat / Terre',
-      color: '#A67C5B',
-      pattern: 'granular',
-      materials: [
-        { id: 'substrat-ext', name: 'Substrat extensif', type: 'volumique', value: 1050, min_ep: 5, max_ep: 30, default_ep: 8 },
-        { id: 'substrat-semi', name: 'Substrat semi-intensif', type: 'volumique', value: 1250, min_ep: 10, max_ep: 50, default_ep: 20 },
-        { id: 'substrat-int', name: 'Substrat intensif', type: 'volumique', value: 1450, min_ep: 15, max_ep: 80, default_ep: 30 },
-        { id: 'terre-veg', name: 'Terre végétale amendée', type: 'volumique', value: 1750, min_ep: 15, max_ep: 100, default_ep: 40 },
-        { id: 'terre-alleg', name: 'Terre végétale allégée', type: 'volumique', value: 1350, min_ep: 15, max_ep: 80, default_ep: 30 },
-      ]
-    },
-    paillage: {
-      label: 'Paillage',
-      color: '#C4A882',
-      pattern: 'organic',
-      materials: [
-        { id: 'paillage-org', name: 'Paillage organique (écorce)', type: 'volumique', value: 450, min_ep: 3, max_ep: 15, default_ep: 7 },
-        { id: 'paillage-min', name: 'Paillage minéral (gravier)', type: 'volumique', value: 1500, min_ep: 3, max_ep: 10, default_ep: 5 },
-      ]
-    },
-    vegetation: {
-      label: 'Végétation',
-      color: '#6B9E6B',
-      pattern: 'organic2',
-      materials: [
-        { id: 'sedum', name: 'Sedum / extensif', type: 'forfait', value: 3.5, unit: 'kg/m²' },
-        { id: 'vivaces', name: 'Vivaces et graminées', type: 'forfait', value: 5.5, unit: 'kg/m²' },
-        { id: 'arbustes', name: 'Arbustes', type: 'forfait', value: 10, unit: 'kg/m²' },
-        { id: 'gazon', name: 'Gazon', type: 'forfait', value: 4, unit: 'kg/m²' },
-      ]
-    }
-  };
-
-  // ═══════════════════════════════════════════════════════════
-  //  ÉTAT DE L'APPLICATION
-  // ═══════════════════════════════════════════════════════════
-
-  let layers = [];
-  let nextId = 1;
-
-  // Complexe pré-chargé (extensif type toiture)
-  function initDefaultLayers() {
-    layers = [
-      createLayer('protection', 'feutre-ap'),
-      createLayer('drainage', 'nid-abeille', 6),
-      createLayer('filtration', 'geotextile'),
-      createLayer('substrat', 'substrat-ext', 8),
-      createLayer('paillage', 'paillage-org', 7),
-      createLayer('vegetation', 'sedum'),
-    ];
-    render();
+const CATEGORIES = {
+  protection: {
+    label: 'Protection mécanique', color: '#C4B8A8', pattern: 'dots',
+    materials: [
+      { id: 'feutre-ap', name: 'Feutre anti-poinçonnement', type: 'forfait', value: 0.5 },
+      { id: 'film-pe',   name: 'Film PE de protection',     type: 'forfait', value: 0.15 },
+      { id: 'natte-abs', name: 'Natte absorbante',          type: 'forfait', value: 0.3 },
+    ]
+  },
+  retention: {
+    label: 'Rétention / stockage eau', color: '#6CA0B8', pattern: 'waves',
+    materials: [
+      { id: 'hydro-2',  name: 'Hydro-rétenteur 2 cm',  type: 'volumique', value: 750, min_ep: 2,  max_ep: 2,  default_ep: 2  },
+      { id: 'hydro-4',  name: 'Hydro-rétenteur 4 cm',  type: 'volumique', value: 750, min_ep: 4,  max_ep: 4,  default_ep: 4  },
+      { id: 'hydro-8',  name: 'Hydro-rétenteur 8 cm',  type: 'volumique', value: 750, min_ep: 8,  max_ep: 8,  default_ep: 8  },
+      { id: 'hydro-12', name: 'Hydro-rétenteur 12 cm', type: 'volumique', value: 750, min_ep: 12, max_ep: 12, default_ep: 12 },
+    ]
+  },
+  drainage: {
+    label: 'Drainage', color: '#8FAFC7', pattern: 'honeycomb',
+    materials: [
+      { id: 'nid-abeille',     name: 'Nid d\'abeille HDPE (gravier)', type: 'volumique', value: 100,  min_ep: 4,  max_ep: 20, default_ep: 6 },
+      { id: 'billes-argile',   name: 'Billes d\'argile expansée',     type: 'volumique', value: 420,  min_ep: 5,  max_ep: 30, default_ep: 8 },
+      { id: 'gravier',         name: 'Gravier 20/40',                 type: 'volumique', value: 1700, min_ep: 5,  max_ep: 30, default_ep: 8 },
+      { id: 'panneau-drainant',name: 'Panneau drainant composite',    type: 'forfait',   value: 8 },
+      { id: 'pouzzolane',      name: 'Pouzzolane',                    type: 'volumique', value: 900,  min_ep: 5,  max_ep: 30, default_ep: 8 },
+    ]
+  },
+  filtration: {
+    label: 'Filtration', color: '#B8C9A3', pattern: 'lines',
+    materials: [
+      { id: 'geotextile', name: 'Géotextile filtrant',  type: 'forfait', value: 0.35 },
+      { id: 'nappe-sep',  name: 'Nappe de séparation',  type: 'forfait', value: 0.2  },
+    ]
+  },
+  substrat: {
+    label: 'Substrat / Terre', color: '#A67C5B', pattern: 'granular',
+    materials: [
+      { id: 'substrat-ext',  name: 'Substrat extensif',         type: 'volumique', value: 1050, min_ep: 5,  max_ep: 30, default_ep: 8  },
+      { id: 'substrat-semi', name: 'Substrat semi-intensif',    type: 'volumique', value: 1250, min_ep: 10, max_ep: 50, default_ep: 20 },
+      { id: 'substrat-int',  name: 'Substrat intensif',         type: 'volumique', value: 1450, min_ep: 15, max_ep: 80, default_ep: 30 },
+      { id: 'terre-veg',     name: 'Terre végétale amendée',    type: 'volumique', value: 1750, min_ep: 15, max_ep: 100, default_ep: 40 },
+      { id: 'terre-alleg',   name: 'Terre végétale allégée',    type: 'volumique', value: 1350, min_ep: 15, max_ep: 80, default_ep: 30 },
+    ]
+  },
+  paillage: {
+    label: 'Paillage', color: '#C4A882', pattern: 'organic',
+    materials: [
+      { id: 'paillage-org', name: 'Paillage organique (écorce)', type: 'volumique', value: 450,  min_ep: 3, max_ep: 15, default_ep: 7 },
+      { id: 'paillage-min', name: 'Paillage minéral (gravier)',  type: 'volumique', value: 1500, min_ep: 3, max_ep: 10, default_ep: 5 },
+      { id: 'paillage-bois',name: 'Plaquettes de bois',         type: 'volumique', value: 300,  min_ep: 5, max_ep: 15, default_ep: 7 },
+    ]
+  },
+  revetement: {
+    label: 'Revêtement / Structure', color: '#9B9B9B', pattern: 'grid',
+    materials: [
+      { id: 'platelage-bois', name: 'Platelage bois',             type: 'volumique', value: 600, min_ep: 2, max_ep: 8, default_ep: 4  },
+      { id: 'dalle-plot',     name: 'Dalle sur plot (béton)',     type: 'forfait',   value: 120 },
+      { id: 'dalle-ba',       name: 'Dalle béton armé',           type: 'volumique', value: 2400, min_ep: 8, max_ep: 30, default_ep: 12 },
+    ]
+  },
+  vegetation: {
+    label: 'Végétation', color: '#6B9E6B', pattern: 'organic2',
+    materials: [
+      { id: 'sedum',   name: 'Sedum / extensif',     type: 'forfait', value: 3.5 },
+      { id: 'vivaces', name: 'Vivaces et graminées', type: 'forfait', value: 5.5 },
+      { id: 'arbustes',name: 'Arbustes',             type: 'forfait', value: 10  },
+      { id: 'gazon',   name: 'Gazon',                type: 'forfait', value: 4   },
+    ]
   }
+};
 
-  function createLayer(catKey, matId, thickness = null) {
-    const cat = CATEGORIES[catKey];
-    const mat = cat.materials.find(m => m.id === matId) || cat.materials[0];
-    const ep = thickness !== null ? thickness : (mat.type === 'volumique' ? mat.default_ep : null);
-    return {
-      id: nextId++,
-      catKey,
-      matId: mat.id,
-      thickness: ep,
-      customDensity: null,
-      open: false,
-    };
-  }
+// ═══════════════════════════════════════════════
+//  ÉTAT
+// ═══════════════════════════════════════════════
+let layers = [];
+let nextId = 1;
 
-  function getMat(layer) {
-    return CATEGORIES[layer.catKey].materials.find(m => m.id === layer.matId) || CATEGORIES[layer.catKey].materials[0];
-  }
+function initDefaultLayers() {
+  layers = [
+    createLayer('protection', 'feutre-ap'),
+    createLayer('drainage', 'nid-abeille', 6),
+    createLayer('filtration', 'geotextile'),
+    createLayer('substrat', 'substrat-ext', 8),
+    createLayer('paillage', 'paillage-org', 7),
+    createLayer('vegetation', 'sedum'),
+  ];
+  render();
+}
 
-  function getLayerWeight(layer) {
+function createLayer(catKey, matId, thickness = null) {
+  const cat = CATEGORIES[catKey];
+  const mat = cat.materials.find(m => m.id === matId) || cat.materials[0];
+  const ep = thickness !== null ? thickness : (mat.type === 'volumique' ? mat.default_ep : null);
+  return { id: nextId++, catKey, matId: mat.id, thickness: ep, customDensity: null, open: false };
+}
+
+function getMat(layer) {
+  return CATEGORIES[layer.catKey].materials.find(m => m.id === layer.matId) || CATEGORIES[layer.catKey].materials[0];
+}
+
+function getLayerWeight(layer) {
+  const mat = getMat(layer);
+  const density = layer.customDensity !== null ? layer.customDensity : mat.value;
+  if (mat.type === 'forfait') return density;
+  const ep = layer.thickness || (mat.default_ep || 0);
+  return (density * ep) / 100;
+}
+
+function getTotalWeight() {
+  return layers.reduce((sum, l) => sum + getLayerWeight(l), 0);
+}
+
+// ═══════════════════════════════════════════════
+//  RENDU
+// ═══════════════════════════════════════════════
+function render() {
+  renderLayers();
+  renderSchema();
+  document.getElementById('total-value').textContent = getTotalWeight().toFixed(1);
+}
+
+function renderLayers() {
+  const container = document.getElementById('layers-container');
+  container.innerHTML = '';
+  const displayLayers = [...layers].reverse();
+
+  displayLayers.forEach((layer) => {
+    const cat = CATEGORIES[layer.catKey];
     const mat = getMat(layer);
+    const weight = getLayerWeight(layer);
+    const isVolumic = mat.type === 'volumique';
     const density = layer.customDensity !== null ? layer.customDensity : mat.value;
-    if (mat.type === 'forfait') return density;
     const ep = layer.thickness || (mat.default_ep || 0);
-    return (density * ep) / 100; // kg/m³ × cm / 100 = kg/m²
-  }
 
-  function getTotalWeight() {
-    return layers.reduce((sum, l) => sum + getLayerWeight(l), 0);
-  }
+    const card = document.createElement('div');
+    card.className = 'layer-card' + (layer.open ? ' active' : '');
+    card.dataset.id = layer.id;
+    card.draggable = true;
 
-  // ═══════════════════════════════════════════════════════════
-  //  RENDU CALCULATEUR
-  // ═══════════════════════════════════════════════════════════
+    // Drag reorder events
+    card.addEventListener('dragstart', onCardDragStart);
+    card.addEventListener('dragover', onCardDragOver);
+    card.addEventListener('dragleave', onCardDragLeave);
+    card.addEventListener('drop', onCardDrop);
+    card.addEventListener('dragend', onCardDragEnd);
 
-  function render() {
-    renderLayers();
-    renderSchema();
-    document.getElementById('total-value').textContent = getTotalWeight().toFixed(1);
-  }
-
-  function renderLayers() {
-    const container = document.getElementById('layers-container');
-    container.innerHTML = '';
-
-    // Affichage de bas en haut (index inversé pour l'affichage)
-    const displayLayers = [...layers].reverse();
-
-    displayLayers.forEach((layer, displayIdx) => {
-      const realIdx = layers.length - 1 - displayIdx;
-      const cat = CATEGORIES[layer.catKey];
-      const mat = getMat(layer);
-      const weight = getLayerWeight(layer);
-      const isVolumic = mat.type === 'volumique';
-
-      const card = document.createElement('div');
-      card.className = 'layer-card' + (layer.open ? ' active' : '');
-      card.dataset.id = layer.id;
-
-      const density = layer.customDensity !== null ? layer.customDensity : mat.value;
-      const ep = layer.thickness || (mat.default_ep || 0);
-
-      card.innerHTML = `
-        <div class="layer-header" onclick="toggleLayer(${layer.id})">
-          <div class="layer-color-dot" style="background:${cat.color}"></div>
-          <span class="layer-name">${mat.name}</span>
-          <span class="layer-weight">${weight.toFixed(1)} kg/m²</span>
-          <button class="layer-delete" onclick="deleteLayer(event, ${layer.id})">×</button>
+    card.innerHTML = `
+      <div class="layer-header" onclick="toggleLayer(${layer.id})">
+        <div class="drag-grip" title="Glisser pour déplacer">
+          <span></span><span></span><span></span>
         </div>
-        ${layer.open ? `
-        <div class="layer-body">
+        <div class="layer-color-dot" style="background:${cat.color}"></div>
+        <span class="layer-name">${mat.name}</span>
+        <span class="layer-weight">${weight.toFixed(1)} kg/m²</span>
+        <button class="layer-delete" onclick="deleteLayer(event, ${layer.id})">×</button>
+      </div>
+      ${layer.open ? `
+      <div class="layer-body">
+        <div class="field-row">
+          <span class="field-label">Matériau</span>
+          <select onchange="changeMaterial(${layer.id}, this.value)">
+            ${Object.entries(CATEGORIES).map(([cKey, c]) =>
+              `<optgroup label="${c.label}">
+                ${c.materials.map(m =>
+                  `<option value="${cKey}:${m.id}" ${layer.catKey === cKey && layer.matId === m.id ? 'selected' : ''}>${m.name}</option>`
+                ).join('')}
+              </optgroup>`
+            ).join('')}
+          </select>
+        </div>
+        ${isVolumic ? `
           <div class="field-row">
-            <span class="field-label">Matériau</span>
-            <select onchange="changeMaterial(${layer.id}, this.value)">
-              ${Object.entries(CATEGORIES).map(([cKey, c]) =>
-                `<optgroup label="${c.label}">
-                  ${c.materials.map(m =>
-                    `<option value="${cKey}:${m.id}" ${layer.catKey === cKey && layer.matId === m.id ? 'selected' : ''}>${m.name}</option>`
-                  ).join('')}
-                </optgroup>`
-              ).join('')}
-            </select>
+            <span class="field-label">Densité saturée (kg/m³)</span>
+            <input type="number" value="${density}" min="50" max="2500" step="10"
+              onchange="changeDensity(${layer.id}, this.value)" />
+            <div class="info-row"><span class="density-note">Valeur par défaut : ${mat.value} kg/m³</span></div>
           </div>
-          ${isVolumic ? `
-            <div class="field-row">
-              <span class="field-label">Densité saturée (kg/m³)</span>
-              <input type="number" value="${density}" min="50" max="2500" step="10"
-                onchange="changeDensity(${layer.id}, this.value)" />
-              <div class="info-row"><span class="density-note">Valeur par défaut : ${mat.value} kg/m³</span></div>
+          <div class="field-row">
+            <span class="field-label">Épaisseur (cm)</span>
+            <div class="thickness-row">
+              <input type="range" min="${mat.min_ep||1}" max="${mat.max_ep||100}" value="${ep}" step="1"
+                oninput="changeThickness(${layer.id}, this.value, this)" />
+              <input type="number" value="${ep}" min="${mat.min_ep||1}" max="${mat.max_ep||100}" step="1"
+                onchange="changeThickness(${layer.id}, this.value)" id="ep-num-${layer.id}" />
             </div>
-            <div class="field-row">
-              <span class="field-label">Épaisseur (cm)</span>
-              <div class="thickness-row">
-                <input type="range" min="${mat.min_ep || 1}" max="${mat.max_ep || 100}" value="${ep}" step="1"
-                  oninput="changeThickness(${layer.id}, this.value, this)" />
-                <input type="number" value="${ep}" min="${mat.min_ep || 1}" max="${mat.max_ep || 100}" step="1"
-                  onchange="changeThickness(${layer.id}, this.value)" id="ep-num-${layer.id}" />
-              </div>
-            </div>
-          ` : `
-            <div class="field-row">
-              <span class="field-label">Poids forfaitaire (kg/m²)</span>
-              <input type="number" value="${density}" min="0.1" max="100" step="0.1"
-                onchange="changeDensity(${layer.id}, this.value)" />
-            </div>
-          `}
-        </div>` : ''}
-      `;
-      container.appendChild(card);
-    });
-  }
-
-  function toggleLayer(id) {
-    const layer = layers.find(l => l.id === id);
-    if (layer) {
-      layer.open = !layer.open;
-      render();
-    }
-  }
-
-  function deleteLayer(e, id) {
-    e.stopPropagation();
-    layers = layers.filter(l => l.id !== id);
-    render();
-  }
-
-  function changeMaterial(id, value) {
-    const [catKey, matId] = value.split(':');
-    const layer = layers.find(l => l.id === id);
-    if (!layer) return;
-    layer.catKey = catKey;
-    layer.matId = matId;
-    layer.customDensity = null;
-    const mat = getMat(layer);
-    layer.thickness = mat.type === 'volumique' ? mat.default_ep : null;
-    render();
-  }
-
-  function changeDensity(id, val) {
-    const layer = layers.find(l => l.id === id);
-    if (layer) { layer.customDensity = parseFloat(val) || 0; render(); }
-  }
-
-  function changeThickness(id, val, sliderEl = null) {
-    const layer = layers.find(l => l.id === id);
-    if (!layer) return;
-    layer.thickness = parseFloat(val) || 0;
-    // Sync le champ numérique si slider
-    if (sliderEl) {
-      const numInput = document.getElementById(`ep-num-${id}`);
-      if (numInput) numInput.value = val;
-    }
-    render();
-  }
-
-  // ═══════════════════════════════════════════════════════════
-  //  MODAL AJOUT
-  // ═══════════════════════════════════════════════════════════
-
-  let selectedModalType = null;
-
-  function openModal() {
-    selectedModalType = null;
-    const grid = document.getElementById('modal-types');
-    grid.innerHTML = Object.entries(CATEGORIES).map(([key, cat]) =>
-      `<button class="modal-type-btn" onclick="selectModalType('${key}', this)">
-        <div class="modal-type-dot" style="background:${cat.color}"></div>
-        ${cat.label}
-      </button>`
-    ).join('');
-    document.getElementById('modal-overlay').classList.add('open');
-  }
-
-  function selectModalType(key, btn) {
-    selectedModalType = key;
-    document.querySelectorAll('.modal-type-btn').forEach(b => b.classList.remove('selected'));
-    btn.classList.add('selected');
-  }
-
-  function closeModal() {
-    document.getElementById('modal-overlay').classList.remove('open');
-  }
-
-  function handleModalClick(e) {
-    if (e.target === document.getElementById('modal-overlay')) closeModal();
-  }
-
-  function addLayerFromModal() {
-    if (!selectedModalType) return;
-    const cat = CATEGORIES[selectedModalType];
-    const mat = cat.materials[0];
-    layers.push(createLayer(selectedModalType, mat.id));
-    closeModal();
-    render();
-  }
-
-  // ═══════════════════════════════════════════════════════════
-  //  SCHÉMA SVG
-  // ═══════════════════════════════════════════════════════════
-
-  const SVG_NS = 'http://www.w3.org/2000/svg';
-  const SVG_W = 500;
-  const SVG_H = 560;
-  const SCHEMA_X = 80;
-  const SCHEMA_W = 300;
-  const DALLE_H = 30;
-  const MAX_COMPLEX_H = 420;
-  const LABEL_X = SCHEMA_X + SCHEMA_W + 14;
-
-  let dragState = null;
-
-  function getTotalThickness() {
-    return layers.reduce((sum, l) => {
-      const mat = getMat(l);
-      if (mat.type === 'volumique') return sum + (l.thickness || 0);
-      return sum; // couches forfait : épaisseur visuelle fixe 4cm pour l'affichage
-    }, 0) + layers.filter(l => getMat(l).type !== 'volumique').length * 4;
-  }
-
-  function getLayerDisplayH(layer, totalVisualH) {
-    const mat = getMat(layer);
-    const totalT = getTotalThickness();
-    if (totalT === 0) return 0;
-    const visualEp = mat.type === 'volumique' ? (layer.thickness || 0) : 4;
-    return (visualEp / totalT) * totalVisualH;
-  }
-
-  function renderSchema() {
-    const svg = document.getElementById('schema-svg');
-    svg.innerHTML = '';
-
-    // Définitions (patterns + defs)
-    const defs = document.createElementNS(SVG_NS, 'defs');
-    defs.innerHTML = `
-      <pattern id="pat-dots" width="6" height="6" patternUnits="userSpaceOnUse">
-        <circle cx="3" cy="3" r="1" fill="rgba(255,255,255,0.3)"/>
-      </pattern>
-      <pattern id="pat-honeycomb" width="12" height="10" patternUnits="userSpaceOnUse">
-        <path d="M6,0 L12,3 L12,7 L6,10 L0,7 L0,3 Z" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>
-      </pattern>
-      <pattern id="pat-lines" width="8" height="8" patternUnits="userSpaceOnUse">
-        <line x1="0" y1="0" x2="8" y2="8" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>
-      </pattern>
-      <pattern id="pat-granular" width="8" height="8" patternUnits="userSpaceOnUse">
-        <circle cx="2" cy="2" r="1.2" fill="rgba(255,255,255,0.2)"/>
-        <circle cx="6" cy="6" r="1.0" fill="rgba(255,255,255,0.15)"/>
-        <circle cx="6" cy="2" r="0.8" fill="rgba(255,255,255,0.1)"/>
-      </pattern>
-      <pattern id="pat-organic" width="10" height="6" patternUnits="userSpaceOnUse">
-        <path d="M0,4 Q2,2 4,4 Q6,6 8,4 Q9,3 10,4" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>
-      </pattern>
-      <pattern id="pat-organic2" width="10" height="10" patternUnits="userSpaceOnUse">
-        <path d="M2,8 Q5,2 8,8" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
-      </pattern>
-      <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
-        <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.1"/>
-      </filter>
+          </div>
+        ` : `
+          <div class="field-row">
+            <span class="field-label">Poids forfaitaire (kg/m²)</span>
+            <input type="number" value="${density}" min="0.1" max="5000" step="0.5"
+              onchange="changeDensity(${layer.id}, this.value)" />
+          </div>
+        `}
+      </div>` : ''}
     `;
-    svg.appendChild(defs);
+    container.appendChild(card);
+  });
+}
 
-    if (layers.length === 0) {
-      const txt = document.createElementNS(SVG_NS, 'text');
-      txt.setAttribute('x', SVG_W / 2);
-      txt.setAttribute('y', SVG_H / 2);
-      txt.setAttribute('text-anchor', 'middle');
-      txt.setAttribute('fill', '#A09C98');
-      txt.setAttribute('font-family', 'DM Sans, sans-serif');
-      txt.setAttribute('font-size', '13');
-      txt.textContent = 'Ajoutez des couches pour afficher le schéma';
-      svg.appendChild(txt);
-      return;
+function toggleLayer(id) {
+  const layer = layers.find(l => l.id === id);
+  if (layer) { layer.open = !layer.open; render(); }
+}
+
+function deleteLayer(e, id) {
+  e.stopPropagation();
+  layers = layers.filter(l => l.id !== id);
+  render();
+}
+
+function changeMaterial(id, value) {
+  const [catKey, matId] = value.split(':');
+  const layer = layers.find(l => l.id === id);
+  if (!layer) return;
+  layer.catKey = catKey; layer.matId = matId; layer.customDensity = null;
+  const mat = getMat(layer);
+  layer.thickness = mat.type === 'volumique' ? mat.default_ep : null;
+  render();
+}
+
+function changeDensity(id, val) {
+  const layer = layers.find(l => l.id === id);
+  if (layer) { layer.customDensity = parseFloat(val) || 0; render(); }
+}
+
+function changeThickness(id, val, sliderEl = null) {
+  const layer = layers.find(l => l.id === id);
+  if (!layer) return;
+  layer.thickness = parseFloat(val) || 0;
+  if (sliderEl) { const n = document.getElementById(`ep-num-${id}`); if (n) n.value = val; }
+  render();
+}
+
+// ═══════════════════════════════════════════════
+//  DRAG & DROP RÉORDONNANCEMENT DES CARTES
+// ═══════════════════════════════════════════════
+let dragCardId = null;
+
+function onCardDragStart(e) {
+  // Ne pas déclencher si on clique sur un champ de saisie
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') { e.preventDefault(); return; }
+  dragCardId = parseInt(this.dataset.id);
+  this.classList.add('dragging-card');
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function onCardDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const targetId = parseInt(this.dataset.id);
+  if (targetId !== dragCardId) this.classList.add('drag-over-card');
+}
+
+function onCardDragLeave() {
+  this.classList.remove('drag-over-card');
+}
+
+function onCardDrop(e) {
+  e.preventDefault();
+  this.classList.remove('drag-over-card');
+  const targetId = parseInt(this.dataset.id);
+  if (targetId === dragCardId) return;
+
+  // Les cartes affichées sont dans l'ordre inversé (layers.reverse() pour affichage)
+  // On réordonne le tableau layers
+  const fromIdx = layers.findIndex(l => l.id === dragCardId);
+  const toIdx   = layers.findIndex(l => l.id === targetId);
+  if (fromIdx === -1 || toIdx === -1) return;
+
+  const [moved] = layers.splice(fromIdx, 1);
+  layers.splice(toIdx, 0, moved);
+  render();
+}
+
+function onCardDragEnd() {
+  this.classList.remove('dragging-card');
+  document.querySelectorAll('.layer-card').forEach(c => c.classList.remove('drag-over-card'));
+  dragCardId = null;
+}
+
+// ═══════════════════════════════════════════════
+//  MODAL
+// ═══════════════════════════════════════════════
+let selectedModalType = null;
+
+function openModal() {
+  selectedModalType = null;
+  document.getElementById('modal-mat-row').style.display = 'none';
+  const grid = document.getElementById('modal-types');
+  grid.innerHTML = Object.entries(CATEGORIES).map(([key, cat]) =>
+    `<button class="modal-type-btn" onclick="selectModalType('${key}', this)">
+      <div class="modal-type-dot" style="background:${cat.color}"></div>${cat.label}
+    </button>`
+  ).join('');
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function selectModalType(key, btn) {
+  selectedModalType = key;
+  document.querySelectorAll('.modal-type-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  // Afficher le sélecteur de matériau
+  const cat = CATEGORIES[key];
+  const sel = document.getElementById('modal-mat-select');
+  sel.innerHTML = cat.materials.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+  document.getElementById('modal-mat-row').style.display = 'block';
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+
+function handleModalClick(e) {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+}
+
+function addLayerFromModal() {
+  if (!selectedModalType) return;
+  const matId = document.getElementById('modal-mat-select').value;
+  layers.push(createLayer(selectedModalType, matId));
+  closeModal();
+  render();
+}
+
+// ═══════════════════════════════════════════════
+//  SCHÉMA SVG
+// ═══════════════════════════════════════════════
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const SVG_W = 500, SVG_H = 560;
+const SCHEMA_X = 80, SCHEMA_W = 300;
+const DALLE_H = 30, MAX_COMPLEX_H = 420;
+const LABEL_X = SCHEMA_X + SCHEMA_W + 14;
+
+let dragState = null;
+
+function getTotalThickness() {
+  return layers.reduce((sum, l) => {
+    const mat = getMat(l);
+    return sum + (mat.type === 'volumique' ? (l.thickness || 0) : 4);
+  }, 0);
+}
+
+function getLayerDisplayH(layer, totalVisualH) {
+  const mat = getMat(layer);
+  const totalT = getTotalThickness();
+  if (totalT === 0) return 0;
+  const visualEp = mat.type === 'volumique' ? (layer.thickness || 0) : 4;
+  return (visualEp / totalT) * totalVisualH;
+}
+
+function renderSchema() {
+  const svg = document.getElementById('schema-svg');
+  svg.innerHTML = '';
+
+  const defs = document.createElementNS(SVG_NS, 'defs');
+  defs.innerHTML = `
+    <pattern id="pat-dots" width="6" height="6" patternUnits="userSpaceOnUse"><circle cx="3" cy="3" r="1" fill="rgba(255,255,255,0.3)"/></pattern>
+    <pattern id="pat-waves" width="12" height="8" patternUnits="userSpaceOnUse">
+      <path d="M0,4 Q3,1 6,4 Q9,7 12,4" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1.2"/>
+    </pattern>
+    <pattern id="pat-honeycomb" width="12" height="10" patternUnits="userSpaceOnUse"><path d="M6,0 L12,3 L12,7 L6,10 L0,7 L0,3 Z" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1"/></pattern>
+    <pattern id="pat-lines" width="8" height="8" patternUnits="userSpaceOnUse"><line x1="0" y1="0" x2="8" y2="8" stroke="rgba(255,255,255,0.25)" stroke-width="1"/></pattern>
+    <pattern id="pat-granular" width="8" height="8" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.2" fill="rgba(255,255,255,0.2)"/>
+      <circle cx="6" cy="6" r="1.0" fill="rgba(255,255,255,0.15)"/>
+      <circle cx="6" cy="2" r="0.8" fill="rgba(255,255,255,0.1)"/>
+    </pattern>
+    <pattern id="pat-organic" width="10" height="6" patternUnits="userSpaceOnUse"><path d="M0,4 Q2,2 4,4 Q6,6 8,4 Q9,3 10,4" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1"/></pattern>
+    <pattern id="pat-grid" width="8" height="8" patternUnits="userSpaceOnUse">
+      <line x1="0" y1="0" x2="0" y2="8" stroke="rgba(255,255,255,0.2)" stroke-width="0.8"/>
+      <line x1="0" y1="0" x2="8" y2="0" stroke="rgba(255,255,255,0.2)" stroke-width="0.8"/>
+    </pattern>
+    <pattern id="pat-organic2" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M2,8 Q5,2 8,8" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/></pattern>
+  `;
+  svg.appendChild(defs);
+
+  if (layers.length === 0) {
+    const txt = document.createElementNS(SVG_NS, 'text');
+    txt.setAttribute('x', SVG_W/2); txt.setAttribute('y', SVG_H/2);
+    txt.setAttribute('text-anchor', 'middle'); txt.setAttribute('fill', '#A09C98');
+    txt.setAttribute('font-family', 'DM Sans, sans-serif'); txt.setAttribute('font-size', '13');
+    txt.textContent = 'Ajoutez des couches pour afficher le schéma';
+    svg.appendChild(txt); return;
+  }
+
+  const patternMap = { protection:'dots', retention:'waves', drainage:'honeycomb', filtration:'lines', substrat:'granular', paillage:'organic', revetement:'grid', vegetation:'organic2' };
+  const complexH = MAX_COMPLEX_H;
+  let currentY = 30;
+  const displayLayers = [...layers].reverse();
+  const totalT = getTotalThickness();
+  const layerRects = displayLayers.map(layer => ({ layer, h: totalT > 0 ? getLayerDisplayH(layer, complexH) : (complexH/layers.length) }));
+
+  // Axe côte gauche
+  const axeX = SCHEMA_X - 18;
+  const totalLine = document.createElementNS(SVG_NS, 'line');
+  totalLine.setAttribute('x1', axeX); totalLine.setAttribute('y1', currentY);
+  totalLine.setAttribute('x2', axeX); totalLine.setAttribute('y2', currentY + complexH);
+  totalLine.setAttribute('stroke', '#C4B8A8'); totalLine.setAttribute('stroke-width', '1');
+  svg.appendChild(totalLine);
+
+  const totalEp = layers.reduce((sum, l) => { const mat = getMat(l); return sum + (mat.type==='volumique' ? (l.thickness||0) : 4); }, 0);
+  const totalEpTxt = document.createElementNS(SVG_NS, 'text');
+  totalEpTxt.setAttribute('x', axeX-6); totalEpTxt.setAttribute('y', currentY + complexH/2);
+  totalEpTxt.setAttribute('text-anchor', 'middle'); totalEpTxt.setAttribute('fill', '#7A7672');
+  totalEpTxt.setAttribute('font-family', 'DM Mono, monospace'); totalEpTxt.setAttribute('font-size', '9');
+  totalEpTxt.setAttribute('transform', `rotate(-90, ${axeX-6}, ${currentY + complexH/2})`);
+  totalEpTxt.textContent = `${totalEp} cm`;
+  svg.appendChild(totalEpTxt);
+
+  layerRects.forEach(({ layer, h }) => {
+    const cat = CATEGORIES[layer.catKey];
+    const mat = getMat(layer);
+    const weight = getLayerWeight(layer);
+    const pat = patternMap[layer.catKey] || 'dots';
+
+    const g = document.createElementNS(SVG_NS, 'g');
+
+    const rect = document.createElementNS(SVG_NS, 'rect');
+    rect.setAttribute('x', SCHEMA_X); rect.setAttribute('y', currentY);
+    rect.setAttribute('width', SCHEMA_W); rect.setAttribute('height', Math.max(h, 6));
+    rect.setAttribute('fill', cat.color); rect.setAttribute('rx', '2');
+    g.appendChild(rect);
+
+    const rectPat = document.createElementNS(SVG_NS, 'rect');
+    rectPat.setAttribute('x', SCHEMA_X); rectPat.setAttribute('y', currentY);
+    rectPat.setAttribute('width', SCHEMA_W); rectPat.setAttribute('height', Math.max(h, 6));
+    rectPat.setAttribute('fill', `url(#pat-${pat})`);
+    g.appendChild(rectPat);
+
+    const sep = document.createElementNS(SVG_NS, 'line');
+    sep.setAttribute('x1', SCHEMA_X); sep.setAttribute('y1', currentY);
+    sep.setAttribute('x2', SCHEMA_X+SCHEMA_W); sep.setAttribute('y2', currentY);
+    sep.setAttribute('stroke', 'rgba(255,255,255,0.5)'); sep.setAttribute('stroke-width', '0.8');
+    g.appendChild(sep);
+
+    if (h > 18) {
+      const nameTxt = document.createElementNS(SVG_NS, 'text');
+      nameTxt.setAttribute('x', SCHEMA_X+10);
+      nameTxt.setAttribute('y', currentY + Math.min(h/2+4, h-4));
+      nameTxt.setAttribute('fill', 'rgba(255,255,255,0.92)');
+      nameTxt.setAttribute('font-family', 'DM Sans, sans-serif');
+      nameTxt.setAttribute('font-size', '10'); nameTxt.setAttribute('font-weight', '400');
+      nameTxt.textContent = mat.name.length > 26 ? mat.name.substring(0,24)+'…' : mat.name;
+      g.appendChild(nameTxt);
     }
 
-    const patternMap = {
-      protection: 'dots',
-      drainage: 'honeycomb',
-      filtration: 'lines',
-      substrat: 'granular',
-      paillage: 'organic',
-      vegetation: 'organic2'
-    };
+    const labelY = currentY + h/2;
+    const line = document.createElementNS(SVG_NS, 'line');
+    line.setAttribute('x1', SCHEMA_X+SCHEMA_W); line.setAttribute('y1', labelY);
+    line.setAttribute('x2', LABEL_X-2); line.setAttribute('y2', labelY);
+    line.setAttribute('stroke', '#D0CBC5'); line.setAttribute('stroke-width', '0.7');
+    g.appendChild(line);
 
-    // Zone disponible pour le complexe
-    const complexH = MAX_COMPLEX_H;
-    let currentY = 30; // top padding
+    const weightTxt = document.createElementNS(SVG_NS, 'text');
+    weightTxt.setAttribute('x', LABEL_X); weightTxt.setAttribute('y', labelY+3);
+    weightTxt.setAttribute('fill', '#3d6366'); weightTxt.setAttribute('font-family', 'DM Mono, monospace');
+    weightTxt.setAttribute('font-size', '10'); weightTxt.setAttribute('font-weight', '500');
+    weightTxt.textContent = `${weight.toFixed(1)} kg/m²`;
+    g.appendChild(weightTxt);
 
-    // On dessine de haut en bas (couche supérieure en premier)
-    const displayLayers = [...layers].reverse(); // top = dernier ajouté / végétation
-
-    // Calculer les hauteurs
-    const totalT = getTotalThickness();
-
-    const layerRects = displayLayers.map(layer => {
-      const h = totalT > 0 ? getLayerDisplayH(layer, complexH) : (complexH / layers.length);
-      return { layer, h };
-    });
-
-    // Axe de côte gauche
-    const axeX = SCHEMA_X - 18;
-    const totalLine = document.createElementNS(SVG_NS, 'line');
-    totalLine.setAttribute('x1', axeX);
-    totalLine.setAttribute('y1', currentY);
-    totalLine.setAttribute('x2', axeX);
-    totalLine.setAttribute('y2', currentY + complexH);
-    totalLine.setAttribute('stroke', '#C4B8A8');
-    totalLine.setAttribute('stroke-width', '1');
-    svg.appendChild(totalLine);
-
-    // Total épaisseur label
-    const totalEp = layers.reduce((sum, l) => {
-      const mat = getMat(l);
-      return sum + (mat.type === 'volumique' ? (l.thickness || 0) : 4);
-    }, 0);
-    const totalEpTxt = document.createElementNS(SVG_NS, 'text');
-    totalEpTxt.setAttribute('x', axeX - 6);
-    totalEpTxt.setAttribute('y', currentY + complexH / 2);
-    totalEpTxt.setAttribute('text-anchor', 'middle');
-    totalEpTxt.setAttribute('fill', '#7A7672');
-    totalEpTxt.setAttribute('font-family', 'DM Mono, monospace');
-    totalEpTxt.setAttribute('font-size', '9');
-    totalEpTxt.setAttribute('transform', `rotate(-90, ${axeX - 6}, ${currentY + complexH / 2})`);
-    totalEpTxt.textContent = `${totalEp} cm`;
-    svg.appendChild(totalEpTxt);
-
-    // Rendu des couches
-    layerRects.forEach(({ layer, h }, idx) => {
-      const cat = CATEGORIES[layer.catKey];
-      const mat = getMat(layer);
-      const weight = getLayerWeight(layer);
-      const pat = patternMap[layer.catKey] || 'dots';
-
-      const g = document.createElementNS(SVG_NS, 'g');
-      g.setAttribute('class', 'svg-layer-group');
-      g.dataset.layerId = layer.id;
-
-      // Rectangle principal
-      const rect = document.createElementNS(SVG_NS, 'rect');
-      rect.setAttribute('x', SCHEMA_X);
-      rect.setAttribute('y', currentY);
-      rect.setAttribute('width', SCHEMA_W);
-      rect.setAttribute('height', Math.max(h, 6));
-      rect.setAttribute('fill', cat.color);
-      rect.setAttribute('rx', '2');
-      g.appendChild(rect);
-
-      // Overlay pattern
-      const rectPat = document.createElementNS(SVG_NS, 'rect');
-      rectPat.setAttribute('x', SCHEMA_X);
-      rectPat.setAttribute('y', currentY);
-      rectPat.setAttribute('width', SCHEMA_W);
-      rectPat.setAttribute('height', Math.max(h, 6));
-      rectPat.setAttribute('fill', `url(#pat-${pat})`);
-      g.appendChild(rectPat);
-
-      // Séparateur
-      const sep = document.createElementNS(SVG_NS, 'line');
-      sep.setAttribute('x1', SCHEMA_X);
-      sep.setAttribute('y1', currentY);
-      sep.setAttribute('x2', SCHEMA_X + SCHEMA_W);
-      sep.setAttribute('y2', currentY);
-      sep.setAttribute('stroke', 'rgba(255,255,255,0.5)');
-      sep.setAttribute('stroke-width', '0.8');
-      g.appendChild(sep);
-
-      // Label interne (si couche assez haute)
-      if (h > 18) {
-        const nameTxt = document.createElementNS(SVG_NS, 'text');
-        nameTxt.setAttribute('x', SCHEMA_X + 10);
-        nameTxt.setAttribute('y', currentY + Math.min(h / 2 + 4, h - 4));
-        nameTxt.setAttribute('fill', 'rgba(255,255,255,0.92)');
-        nameTxt.setAttribute('font-family', 'DM Sans, sans-serif');
-        nameTxt.setAttribute('font-size', '10');
-        nameTxt.setAttribute('font-weight', '400');
-        nameTxt.textContent = mat.name.length > 26 ? mat.name.substring(0, 24) + '…' : mat.name;
-        g.appendChild(nameTxt);
-      }
-
-      // Label droit (poids + épaisseur)
-      const labelY = currentY + h / 2;
-      const line = document.createElementNS(SVG_NS, 'line');
-      line.setAttribute('x1', SCHEMA_X + SCHEMA_W);
-      line.setAttribute('y1', labelY);
-      line.setAttribute('x2', LABEL_X - 2);
-      line.setAttribute('y2', labelY);
-      line.setAttribute('stroke', '#D0CBC5');
-      line.setAttribute('stroke-width', '0.7');
-      g.appendChild(line);
-
-      const weightTxt = document.createElementNS(SVG_NS, 'text');
-      weightTxt.setAttribute('x', LABEL_X);
-      weightTxt.setAttribute('y', labelY + 3);
-      weightTxt.setAttribute('fill', '#3d6366');
-      weightTxt.setAttribute('font-family', 'DM Mono, monospace');
-      weightTxt.setAttribute('font-size', '10');
-      weightTxt.setAttribute('font-weight', '500');
-      weightTxt.textContent = `${weight.toFixed(1)} kg/m²`;
-      g.appendChild(weightTxt);
-
-      if (mat.type === 'volumique') {
-        const epTxt = document.createElementNS(SVG_NS, 'text');
-        epTxt.setAttribute('x', LABEL_X);
-        epTxt.setAttribute('y', labelY + 14);
-        epTxt.setAttribute('fill', '#A09C98');
-        epTxt.setAttribute('font-family', 'DM Mono, monospace');
-        epTxt.setAttribute('font-size', '9');
-        epTxt.textContent = `${layer.thickness || 0} cm`;
-        g.appendChild(epTxt);
-      }
-
-      // Drag handle (bord supérieur de la couche) — seulement pour couches volumiques
-      if (mat.type === 'volumique') {
-        const dragHandle = document.createElementNS(SVG_NS, 'rect');
-        dragHandle.setAttribute('x', SCHEMA_X);
-        dragHandle.setAttribute('y', currentY - 5);
-        dragHandle.setAttribute('width', SCHEMA_W);
-        dragHandle.setAttribute('height', 10);
-        dragHandle.setAttribute('fill', 'transparent');
-        dragHandle.setAttribute('class', 'drag-handle');
-        dragHandle.setAttribute('data-layer-id', layer.id);
-        dragHandle.setAttribute('data-cat', layer.catKey);
-
-        dragHandle.addEventListener('mousedown', (e) => startDrag(e, layer.id, currentY, complexH));
-        dragHandle.addEventListener('touchstart', (e) => startDrag(e, layer.id, currentY, complexH), { passive: false });
-        g.appendChild(dragHandle);
-
-        // Ligne visuelle drag
-        const dragLine = document.createElementNS(SVG_NS, 'line');
-        dragLine.setAttribute('x1', SCHEMA_X + 20);
-        dragLine.setAttribute('y1', currentY);
-        dragLine.setAttribute('x2', SCHEMA_X + SCHEMA_W - 20);
-        dragLine.setAttribute('y2', currentY);
-        dragLine.setAttribute('stroke', 'rgba(255,255,255,0.5)');
-        dragLine.setAttribute('stroke-width', '2');
-        dragLine.setAttribute('stroke-dasharray', '4,3');
-        dragLine.setAttribute('class', 'drag-handle-line');
-        g.appendChild(dragLine);
-      }
-
-      svg.appendChild(g);
-      currentY += Math.max(h, 6);
-    });
-
-    // Dalle de base
-    const dalleFill = document.createElementNS(SVG_NS, 'rect');
-    dalleFill.setAttribute('x', SCHEMA_X);
-    dalleFill.setAttribute('y', currentY);
-    dalleFill.setAttribute('width', SCHEMA_W);
-    dalleFill.setAttribute('height', DALLE_H);
-    dalleFill.setAttribute('fill', '#8A8279');
-    dalleFill.setAttribute('rx', '2');
-    svg.appendChild(dalleFill);
-
-    const dalleTxt = document.createElementNS(SVG_NS, 'text');
-    dalleTxt.setAttribute('x', SCHEMA_X + SCHEMA_W / 2);
-    dalleTxt.setAttribute('y', currentY + 19);
-    dalleTxt.setAttribute('text-anchor', 'middle');
-    dalleTxt.setAttribute('fill', 'rgba(255,255,255,0.8)');
-    dalleTxt.setAttribute('font-family', 'DM Sans, sans-serif');
-    dalleTxt.setAttribute('font-size', '10');
-    dalleTxt.setAttribute('letter-spacing', '0.08em');
-    dalleTxt.textContent = 'DALLE / ÉTANCHÉITÉ';
-    svg.appendChild(dalleTxt);
-
-    // Total bas
-    const totalW = getTotalWeight();
-    const totalTxt = document.createElementNS(SVG_NS, 'text');
-    totalTxt.setAttribute('x', SVG_W / 2 - 10);
-    totalTxt.setAttribute('y', currentY + DALLE_H + 24);
-    totalTxt.setAttribute('text-anchor', 'middle');
-    totalTxt.setAttribute('fill', '#3d6366');
-    totalTxt.setAttribute('font-family', 'DM Mono, monospace');
-    totalTxt.setAttribute('font-size', '13');
-    totalTxt.setAttribute('font-weight', '500');
-    totalTxt.textContent = `Total : ${totalW.toFixed(1)} kg/m²`;
-    svg.appendChild(totalTxt);
-
-    const satTxt = document.createElementNS(SVG_NS, 'text');
-    satTxt.setAttribute('x', SVG_W / 2 - 10);
-    satTxt.setAttribute('y', currentY + DALLE_H + 38);
-    satTxt.setAttribute('text-anchor', 'middle');
-    satTxt.setAttribute('fill', '#A09C98');
-    satTxt.setAttribute('font-family', 'DM Sans, sans-serif');
-    satTxt.setAttribute('font-size', '9');
-    satTxt.textContent = 'état saturé — pire cas';
-    svg.appendChild(satTxt);
-  }
-
-  // ═══════════════════════════════════════════════════════════
-  //  DRAG & DROP BIDIRECTIONNEL
-  // ═══════════════════════════════════════════════════════════
-
-  function startDrag(e, layerId, layerTopY, complexH) {
-    e.preventDefault();
-    const svg = document.getElementById('schema-svg');
-    const svgRect = svg.getBoundingClientRect();
-    const scaleY = SVG_H / svgRect.height;
-
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    const svgY = (clientY - svgRect.top) * scaleY;
-
-    const layer = layers.find(l => l.id === layerId);
-    const mat = getMat(layer);
-    const startThickness = layer.thickness || mat.default_ep;
-
-    dragState = {
-      layerId,
-      startSvgY: svgY,
-      startThickness,
-      scaleY,
-      svgRect,
-      complexH,
-      totalT: getTotalThickness()
-    };
-
-    document.addEventListener('mousemove', onDrag);
-    document.addEventListener('mouseup', endDrag);
-    document.addEventListener('touchmove', onDrag, { passive: false });
-    document.addEventListener('touchend', endDrag);
-  }
-
-  function onDrag(e) {
-    if (!dragState) return;
-    e.preventDefault();
-
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    const svgY = (clientY - dragState.svgRect.top) * dragState.scaleY;
-    const deltaY = svgY - dragState.startSvgY;
-
-    // delta en cm : ΔY_svgpx / (complexH_svgpx / totalT_cm) * -1 (vers le haut = plus épais)
-    const pxPerCm = dragState.complexH / dragState.totalT;
-    const deltaThickness = -deltaY / pxPerCm;
-    const layer = layers.find(l => l.id === dragState.layerId);
-    const mat = getMat(layer);
-    const minEp = mat.min_ep || 1;
-    const maxEp = mat.max_ep || 100;
-    const newThickness = Math.round(Math.max(minEp, Math.min(maxEp, dragState.startThickness + deltaThickness)));
-
-    layer.thickness = newThickness;
-    render();
-  }
-
-  function endDrag() {
-    dragState = null;
-    document.removeEventListener('mousemove', onDrag);
-    document.removeEventListener('mouseup', endDrag);
-    document.removeEventListener('touchmove', onDrag);
-    document.removeEventListener('touchend', endDrag);
-  }
-
-  // ═══════════════════════════════════════════════════════════
-  //  INIT
-  // ═══════════════════════════════════════════════════════════
-
-  initDefaultLayers();
-  </script>
-
-  <script>
-  // ═══════════════════════════════════════════════════════════
-  //  AUTH GATE — Supabase
-  //  Remplacer SUPABASE_URL et SUPABASE_ANON par vos valeurs
-  // ═══════════════════════════════════════════════════════════
-  const SUPABASE_URL  = 'https://jbqgyfbjyulezaclvmwc.supabase.co';
-  const SUPABASE_ANON = 'eyJhbicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzQyMDIsImV4cCI6MjA4ODcxMDIwMn0.dNibq1JOBz3UnqdLwENmS113TGKpw_UGWKR0cE8LgMI';
-
-  const { createClient } = supabase;
-  const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
-
-  async function checkAuth() {
-    const { data: { session } } = await sb.auth.getSession();
-
-    if (session) {
-      // Connecté — lever la gate
-      document.getElementById('auth-gate').classList.add('hidden');
-
-      // Afficher le prénom dans le header si disponible
-      const { data: profile } = await sb.from('profiles')
-        .select('prenom')
-        .eq('id', session.user.id)
-        .single();
-
-      if (profile?.prenom) {
-        document.getElementById('header-user').textContent = profile.prenom;
-      }
+    if (mat.type === 'volumique') {
+      const epTxt = document.createElementNS(SVG_NS, 'text');
+      epTxt.setAttribute('x', LABEL_X); epTxt.setAttribute('y', labelY+14);
+      epTxt.setAttribute('fill', '#A09C98'); epTxt.setAttribute('font-family', 'DM Mono, monospace');
+      epTxt.setAttribute('font-size', '9');
+      epTxt.textContent = `${layer.thickness||0} cm`;
+      g.appendChild(epTxt);
     }
-    // Sinon : la gate reste visible, redirige vers /login
-  }
 
-  checkAuth();
-  </script>
+    if (mat.type === 'volumique') {
+      const dragHandle = document.createElementNS(SVG_NS, 'rect');
+      dragHandle.setAttribute('x', SCHEMA_X); dragHandle.setAttribute('y', currentY-5);
+      dragHandle.setAttribute('width', SCHEMA_W); dragHandle.setAttribute('height', 10);
+      dragHandle.setAttribute('fill', 'transparent'); dragHandle.setAttribute('class', 'drag-handle');
+      dragHandle.addEventListener('mousedown', (e) => startDrag(e, layer.id, currentY, complexH));
+      dragHandle.addEventListener('touchstart', (e) => startDrag(e, layer.id, currentY, complexH), { passive: false });
+      g.appendChild(dragHandle);
+
+      const dragLine = document.createElementNS(SVG_NS, 'line');
+      dragLine.setAttribute('x1', SCHEMA_X+20); dragLine.setAttribute('y1', currentY);
+      dragLine.setAttribute('x2', SCHEMA_X+SCHEMA_W-20); dragLine.setAttribute('y2', currentY);
+      dragLine.setAttribute('stroke', 'rgba(255,255,255,0.5)'); dragLine.setAttribute('stroke-width', '2');
+      dragLine.setAttribute('stroke-dasharray', '4,3');
+      g.appendChild(dragLine);
+    }
+
+    svg.appendChild(g);
+    currentY += Math.max(h, 6);
+  });
+
+  // Dalle base
+  const dalleFill = document.createElementNS(SVG_NS, 'rect');
+  dalleFill.setAttribute('x', SCHEMA_X); dalleFill.setAttribute('y', currentY);
+  dalleFill.setAttribute('width', SCHEMA_W); dalleFill.setAttribute('height', DALLE_H);
+  dalleFill.setAttribute('fill', '#8A8279'); dalleFill.setAttribute('rx', '2');
+  svg.appendChild(dalleFill);
+
+  const dalleTxt = document.createElementNS(SVG_NS, 'text');
+  dalleTxt.setAttribute('x', SCHEMA_X+SCHEMA_W/2); dalleTxt.setAttribute('y', currentY+19);
+  dalleTxt.setAttribute('text-anchor', 'middle'); dalleTxt.setAttribute('fill', 'rgba(255,255,255,0.8)');
+  dalleTxt.setAttribute('font-family', 'DM Sans, sans-serif'); dalleTxt.setAttribute('font-size', '10');
+  dalleTxt.setAttribute('letter-spacing', '0.08em'); dalleTxt.textContent = 'DALLE / ÉTANCHÉITÉ';
+  svg.appendChild(dalleTxt);
+
+  const totalTxt = document.createElementNS(SVG_NS, 'text');
+  totalTxt.setAttribute('x', SVG_W/2-10); totalTxt.setAttribute('y', currentY+DALLE_H+24);
+  totalTxt.setAttribute('text-anchor', 'middle'); totalTxt.setAttribute('fill', '#3d6366');
+  totalTxt.setAttribute('font-family', 'DM Mono, monospace'); totalTxt.setAttribute('font-size', '13');
+  totalTxt.setAttribute('font-weight', '500');
+  totalTxt.textContent = `Total : ${getTotalWeight().toFixed(1)} kg/m²`;
+  svg.appendChild(totalTxt);
+
+  const satTxt = document.createElementNS(SVG_NS, 'text');
+  satTxt.setAttribute('x', SVG_W/2-10); satTxt.setAttribute('y', currentY+DALLE_H+38);
+  satTxt.setAttribute('text-anchor', 'middle'); satTxt.setAttribute('fill', '#A09C98');
+  satTxt.setAttribute('font-family', 'DM Sans, sans-serif'); satTxt.setAttribute('font-size', '9');
+  satTxt.textContent = 'état saturé — pire cas';
+  svg.appendChild(satTxt);
+}
+
+// ═══════════════════════════════════════════════
+//  DRAG ÉPAISSEUR SUR SVG
+// ═══════════════════════════════════════════════
+function startDrag(e, layerId, layerTopY, complexH) {
+  e.preventDefault();
+  const svg = document.getElementById('schema-svg');
+  const svgRect = svg.getBoundingClientRect();
+  const scaleY = SVG_H / svgRect.height;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  const svgY = (clientY - svgRect.top) * scaleY;
+  const layer = layers.find(l => l.id === layerId);
+  const mat = getMat(layer);
+  dragState = { layerId, startSvgY: svgY, startThickness: layer.thickness || mat.default_ep, scaleY, svgRect, complexH, totalT: getTotalThickness() };
+  document.addEventListener('mousemove', onDrag);
+  document.addEventListener('mouseup', endDrag);
+  document.addEventListener('touchmove', onDrag, { passive: false });
+  document.addEventListener('touchend', endDrag);
+}
+
+function onDrag(e) {
+  if (!dragState) return;
+  e.preventDefault();
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  const svgY = (clientY - dragState.svgRect.top) * dragState.scaleY;
+  const deltaY = svgY - dragState.startSvgY;
+  const pxPerCm = dragState.complexH / dragState.totalT;
+  const deltaThickness = -deltaY / pxPerCm;
+  const layer = layers.find(l => l.id === dragState.layerId);
+  const mat = getMat(layer);
+  const minEp = mat.min_ep || 1, maxEp = mat.max_ep || 100;
+  layer.thickness = Math.round(Math.max(minEp, Math.min(maxEp, dragState.startThickness + deltaThickness)));
+  render();
+}
+
+function endDrag() {
+  dragState = null;
+  document.removeEventListener('mousemove', onDrag);
+  document.removeEventListener('mouseup', endDrag);
+  document.removeEventListener('touchmove', onDrag);
+  document.removeEventListener('touchend', endDrag);
+}
+
+initDefaultLayers();
+</script>
 </body>
 </html>
