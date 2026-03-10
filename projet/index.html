@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SYLVE Projet — Vos outils</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400&family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --sylve:        #5E8B8F;
+      --sylve-dark:   #3d6366;
+      --sylve-light:  #E8F0F1;
+      --projet:       #8A8279;
+      --projet-light: #F0EDEA;
+      --bg:           #F7F6F4;
+      --surface:      #FFFFFF;
+      --border:       #E2DED9;
+      --text:         #2A2826;
+      --text-muted:   #7A7672;
+      --text-light:   #A09C98;
+      --radius:       8px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 52px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: baseline;
+      gap: 0.6rem;
+    }
+
+    .logo {
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      font-size: 1.1rem;
+      letter-spacing: 0.18em;
+      color: var(--sylve);
+      text-decoration: none;
+    }
+
+    .logo-sub {
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      color: var(--projet);
+      text-transform: uppercase;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .user-greeting {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .user-greeting strong {
+      color: var(--text);
+      font-weight: 400;
+    }
+
+    .btn-logout {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.72rem;
+      color: var(--text-light);
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 4px 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-logout:hover { border-color: var(--text-muted); color: var(--text-muted); }
+
+    /* ── CONTENU ── */
+    .page {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 3rem 2rem 4rem;
+    }
+
+    .page-intro {
+      margin-bottom: 2.5rem;
+    }
+
+    .page-eyebrow {
+      font-size: 0.68rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-light);
+      font-weight: 500;
+      margin-bottom: 0.7rem;
+    }
+
+    .page-title {
+      font-family: 'Instrument Serif', serif;
+      font-size: 1.8rem;
+      font-weight: 400;
+      color: var(--text);
+      line-height: 1.2;
+      margin-bottom: 0.5rem;
+    }
+
+    .page-sub {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      max-width: 480px;
+    }
+
+    /* ── SECTION ── */
+    .section-label {
+      font-size: 0.68rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-light);
+      font-weight: 500;
+      margin-bottom: 1rem;
+      padding-bottom: 0.6rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* ── GRILLE OUTILS ── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .tool-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.4rem;
+      text-decoration: none;
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+      cursor: pointer;
+    }
+
+    .tool-card:hover {
+      border-color: var(--sylve);
+      box-shadow: 0 4px 16px rgba(94,139,143,0.1);
+      transform: translateY(-1px);
+    }
+
+    .tool-card.locked {
+      opacity: 0.5;
+      cursor: default;
+      pointer-events: none;
+    }
+
+    .tool-card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .tool-tag {
+      font-size: 0.62rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-weight: 500;
+      flex-shrink: 0;
+    }
+
+    .tool-tag.gratuit {
+      background: var(--sylve-light);
+      color: var(--sylve-dark);
+    }
+
+    .tool-tag.bientot {
+      background: var(--projet-light);
+      color: var(--projet);
+    }
+
+    .tool-icon {
+      font-size: 1.2rem;
+      line-height: 1;
+    }
+
+    .tool-name {
+      font-family: 'Instrument Serif', serif;
+      font-size: 1.05rem;
+      font-weight: 400;
+      color: var(--text);
+      line-height: 1.25;
+    }
+
+    .tool-desc {
+      font-size: 0.77rem;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+
+    .tool-arrow {
+      font-size: 0.8rem;
+      color: var(--text-light);
+      margin-top: auto;
+      padding-top: 0.4rem;
+    }
+
+    /* ── LOADING ── */
+    #loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+    }
+
+    .loading-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--sylve);
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.2; transform: scale(0.8); }
+      50%       { opacity: 1;   transform: scale(1.1); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-left">
+      <a href="https://sylve.eco" class="logo">sylve</a>
+      <span class="logo-sub">projet</span>
+    </div>
+    <div class="header-right">
+      <span class="user-greeting" id="user-greeting"></span>
+      <button class="btn-logout" onclick="logout()">Déconnexion</button>
+    </div>
+  </header>
+
+  <!-- LOADING -->
+  <div id="loading"><div class="loading-dot"></div></div>
+
+  <!-- CONTENU (masqué jusqu'au chargement) -->
+  <div class="page" id="page-content" style="display:none">
+
+    <div class="page-intro">
+      <div class="page-eyebrow">Tableau de bord</div>
+      <h1 class="page-title" id="page-title">Vos outils</h1>
+      <p class="page-sub">Outils techniques pour les professionnels du paysage. Gratuits pendant la phase beta.</p>
+    </div>
+
+    <!-- Outils disponibles -->
+    <div class="section-label">Outils disponibles</div>
+    <div class="tools-grid">
+
+      <a href="/projet/calculateur-charges" class="tool-card">
+        <div class="tool-card-top">
+          <span class="tool-icon">⬜</span>
+          <span class="tool-tag gratuit">Gratuit</span>
+        </div>
+        <div class="tool-name">Calculateur de charges sur dalle</div>
+        <div class="tool-desc">Calcul du poids d'un complexe végétatif en kg/m², avec schéma en coupe interactif et synchronisé.</div>
+        <div class="tool-arrow">Ouvrir l'outil →</div>
+      </a>
+
+    </div>
+
+    <!-- Outils à venir -->
+    <div class="section-label">À venir</div>
+    <div class="tools-grid">
+
+      <div class="tool-card locked">
+        <div class="tool-card-top">
+          <span class="tool-icon">🌿</span>
+          <span class="tool-tag bientot">Bientôt</span>
+        </div>
+        <div class="tool-name">Compatibilité végétale</div>
+        <div class="tool-desc">Score de compatibilité d'un mélange végétal. Exigences culturales, concurrence, cohérence écologique.</div>
+      </div>
+
+      <div class="tool-card locked">
+        <div class="tool-card-top">
+          <span class="tool-icon">📐</span>
+          <span class="tool-tag bientot">Bientôt</span>
+        </div>
+        <div class="tool-name">Calculateur conformité PLU</div>
+        <div class="tool-desc">Vérification CBS, IVB, pourcentage d'indigènes. Suggestions d'optimisation par palier.</div>
+      </div>
+
+      <div class="tool-card locked">
+        <div class="tool-card-top">
+          <span class="tool-icon">📄</span>
+          <span class="tool-tag bientot">Bientôt</span>
+        </div>
+        <div class="tool-name">Générateur CCTP + DPGF</div>
+        <div class="tool-desc">Document vivant, synchronisation temps réel entre CCTP et DPGF. Codification unifiée.</div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+  // ═══════════════════════════════════════════════════════════
+  //  CONFIG SUPABASE — mêmes valeurs que login.html
+  // ═══════════════════════════════════════════════════════════
+  const SUPABASE_URL  = 'https://jbqgyfbjyulezaclvmwc.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpicWd5ZmJqeXVsZXphY2x2bXdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzQyMDIsImV4cCI6MjA4ODcxMDIwMn0.dNibq1JOBz3UnqdLwENmS113TGKpw_UGWKR0cE8LgMI';
+
+  const { createClient } = supabase;
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+  // ═══════════════════════════════════════════════════════════
+  //  PROTECTION : rediriger si non connecté
+  // ═══════════════════════════════════════════════════════════
+
+  async function init() {
+    const { data: { session } } = await sb.auth.getSession();
+
+    if (!session) {
+      window.location.href = '/login';
+      return;
+    }
+
+    // Charger le profil
+    const { data: profile } = await sb.from('profiles')
+      .select('prenom, metier')
+      .eq('id', session.user.id)
+      .single();
+
+    // Afficher
+    const prenom = profile?.prenom;
+    if (prenom) {
+      document.getElementById('user-greeting').innerHTML = `Bonjour, <strong>${prenom}</strong>`;
+      document.getElementById('page-title').textContent = `Bonjour ${prenom}`;
+    } else {
+      document.getElementById('page-title').textContent = 'Vos outils';
+    }
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('page-content').style.display = 'block';
+  }
+
+  async function logout() {
+    await sb.auth.signOut();
+    window.location.href = '/login';
+  }
+
+  init();
+  </script>
+
+</body>
+</html>
