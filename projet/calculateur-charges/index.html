@@ -435,7 +435,20 @@ function renderLayers() {
 
 function toggleLayer(id) {
   const layer = layers.find(l => l.id === id);
-  if (layer) { layer.open = !layer.open; render(); }
+  if (!layer) return;
+  const wasOpen = layer.open;
+  // Ferme toutes les couches (accordion)
+  layers.forEach(l => l.open = false);
+  // Ouvre celle cliquée seulement si elle était fermée
+  layer.open = !wasOpen;
+  render();
+  // Scroll automatique vers la couche ouverte
+  if (layer.open) {
+    requestAnimationFrame(() => {
+      const card = document.querySelector(`.layer-card[data-id="${id}"]`);
+      if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+  }
 }
 
 function deleteLayer(e, id) {
