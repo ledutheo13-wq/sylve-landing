@@ -370,14 +370,8 @@
   <main>
     <div class="card">
 
-      <!-- ÉTAT 0 : Chargement -->
-      <div id="state-loading">
-        <div class="spinner"></div>
-        <div class="loading-text">Vérification de la session…</div>
-      </div>
-
       <!-- ÉTAT 1 : Saisie email -->
-      <div id="state-email" style="display:none">
+      <div id="state-email">
         <div class="card-eyebrow">Accès outils</div>
         <h1 class="card-title">Connexion à SYLVE</h1>
         <p class="card-sub">Entrez votre email — nous vous envoyons un lien de connexion. Aucun mot de passe.</p>
@@ -480,14 +474,12 @@
   // ═══════════════════════════════════════════════════════════
 
   function showEmailState() {
-    document.getElementById('state-loading').style.display = 'none';
     document.getElementById('state-email').style.display = 'block';
     document.getElementById('state-sent').style.display = 'none';
     document.getElementById('state-profile').style.display = 'none';
   }
 
   function showSentState(email) {
-    document.getElementById('state-loading').style.display = 'none';
     document.getElementById('state-email').style.display = 'none';
     document.getElementById('state-sent').style.display = 'block';
     document.getElementById('state-profile').style.display = 'none';
@@ -495,7 +487,6 @@
   }
 
   function showProfileState() {
-    document.getElementById('state-loading').style.display = 'none';
     document.getElementById('state-email').style.display = 'none';
     document.getElementById('state-sent').style.display = 'none';
     document.getElementById('state-profile').style.display = 'block';
@@ -593,21 +584,29 @@
   // ═══════════════════════════════════════════════════════════
 
   async function checkSession() {
-    const { data: { session } } = await sb.auth.getSession();
+    // Timeout 3s : si Supabase ne répond pas, afficher le formulaire
+    const timeout = setTimeout(() => showEmailState(), 3000);
 
-    if (session) {
-      const { data: profile } = await sb.from('profiles')
-        .select('prenom, metier')
-        .eq('id', session.user.id)
-        .single();
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      clearTimeout(timeout);
 
-      if (!profile?.prenom) {
-        showProfileState();
+      if (session) {
+        const { data: profile } = await sb.from('profiles')
+          .select('prenom, metier')
+          .eq('id', session.user.id)
+          .single();
+
+        if (!profile?.prenom) {
+          showProfileState();
+        } else {
+          window.location.href = '/dashboard';
+        }
       } else {
-        window.location.href = '/dashboard';
+        showEmailState();
       }
-    } else {
-      // Pas de session — afficher le formulaire immédiatement
+    } catch (e) {
+      clearTimeout(timeout);
       showEmailState();
     }
   }
@@ -628,7 +627,7 @@
     }
   });
 
-  checkSession();
+  // Afficher le formulaire directement — pas de vérification session au chargement
   </script>
 
 </body>

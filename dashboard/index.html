@@ -227,10 +227,26 @@
 
     /* ── LOADING ── */
     .loading {
-      text-align: center;
-      color: var(--text-muted);
-      font-size: 0.85rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
       padding: 4rem;
+    }
+
+    .spinner {
+      width: 32px; height: 32px;
+      border: 2px solid var(--border);
+      border-top-color: var(--sylve);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-text {
+      font-size: 0.78rem;
+      color: var(--text-muted);
     }
   </style>
 </head>
@@ -294,7 +310,10 @@
       </div>
     </div>
 
-    <div class="loading" id="loading">Chargement...</div>
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <div class="loading-text">Connexion en cours…</div>
+    </div>
   </main>
 
   <footer>sylve.eco — outils numeriques pour les professionnels du paysage</footer>
@@ -307,14 +326,35 @@
   const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 
   async function init() {
-    const { data: { session } } = await sb.auth.getSession();
+    // Écouter les changements de session (retour depuis magic link)
+    sb.auth.onAuthStateChange(async (event, session) => {
+      if (session) {
+        await loadDashboard(session);
+      }
+    });
 
-    if (!session) {
+    // Timeout 5s : si Supabase ne répond pas, rediriger vers login
+    const timeout = setTimeout(() => {
       window.location.href = '/login';
-      return;
-    }
+    }, 5000);
 
-    // Recuperer le profil
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      clearTimeout(timeout);
+
+      if (!session) {
+        window.location.href = '/login';
+        return;
+      }
+
+      await loadDashboard(session);
+    } catch (e) {
+      clearTimeout(timeout);
+      window.location.href = '/login';
+    }
+  }
+
+  async function loadDashboard(session) {
     const { data: profile } = await sb.from('profiles')
       .select('prenom')
       .eq('id', session.user.id)
