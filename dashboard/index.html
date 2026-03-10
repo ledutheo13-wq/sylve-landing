@@ -325,33 +325,25 @@
   const { createClient } = supabase;
   const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 
-  async function init() {
-    // Écouter les changements de session (retour depuis magic link)
-    sb.auth.onAuthStateChange(async (event, session) => {
-      if (session) {
-        await loadDashboard(session);
-      }
-    });
+  let dashboardLoaded = false;
 
-    // Timeout 5s : si Supabase ne répond pas, rediriger vers login
-    const timeout = setTimeout(() => {
-      window.location.href = '/login';
-    }, 5000);
-
-    try {
-      const { data: { session } } = await sb.auth.getSession();
-      clearTimeout(timeout);
-
-      if (!session) {
-        window.location.href = '/login';
-        return;
-      }
-
+  // onAuthStateChange se déclenche immédiatement depuis le localStorage
+  // sans attendre un appel réseau — c'est la bonne façon de restaurer la session
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && session && !dashboardLoaded) {
+      dashboardLoaded = true;
       await loadDashboard(session);
-    } catch (e) {
-      clearTimeout(timeout);
+    }
+    if (event === 'SIGNED_OUT') {
       window.location.href = '/login';
     }
+  });
+
+  async function init() {
+    // Timeout 4s : si aucune session restaurée, rediriger vers login
+    setTimeout(() => {
+      if (!dashboardLoaded) window.location.href = '/login';
+    }, 4000);
   }
 
   async function loadDashboard(session) {
