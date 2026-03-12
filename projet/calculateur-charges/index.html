@@ -73,7 +73,7 @@
 
     /* DRAG REORDER dans la liste */
     .layer-card {
-      border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden;
+      border: 1px solid var(--border); border-radius: var(--radius);
       transition: border-color 0.15s, box-shadow 0.15s;
       user-select: none;
     }
@@ -102,11 +102,7 @@
     .layer-body {
       padding: 0.6rem 0.8rem 0.8rem; border-top: 1px solid var(--border);
       display: flex; flex-direction: column; gap: 0.55rem; background: #FAFAF9;
-      max-height: 260px; overflow-y: auto;
     }
-    .layer-body::-webkit-scrollbar { width: 4px; }
-    .layer-body::-webkit-scrollbar-track { background: transparent; }
-    .layer-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
     .field-row { display: flex; flex-direction: column; gap: 0.25rem; }
     .field-label { font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); font-weight: 500; }
     select, input[type="number"] {
@@ -140,7 +136,7 @@
     .schema-header { padding: 1rem 1.4rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
     .schema-header h2 { font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); font-weight: 500; }
     .schema-hint { font-size: 0.68rem; color: var(--text-light); font-style: italic; }
-    .schema-container { flex: 1; padding: 1.5rem; display: flex; align-items: stretch; justify-content: center; overflow: hidden; }
+    .schema-container { flex: 1; padding: 1.5rem; display: flex; align-items: stretch; justify-content: center; overflow: hidden; min-height: 500px; }
     #schema-svg { width: 100%; height: 100%; overflow: visible; }
 
     /* MODAL */
@@ -211,7 +207,7 @@
         <span class="schema-hint">Glisser les couches (⠿) pour réordonner · Tirer le bord des couches pour modifier l'épaisseur</span>
       </div>
       <div class="schema-container">
-        <svg id="schema-svg" viewBox="0 0 500 760" preserveAspectRatio="xMidYMid meet"></svg>
+        <svg id="schema-svg" viewBox="0 0 600 760" preserveAspectRatio="xMidYMid meet"></svg>
       </div>
     </div>
   </div>
@@ -571,7 +567,7 @@ function addLayerFromModal() {
 //  SCHÉMA SVG
 // ═══════════════════════════════════════════════
 const SVG_NS = 'http://www.w3.org/2000/svg';
-const SVG_W = 500, SVG_H = 760;
+const SVG_W = 600, SVG_H = 760;
 const SCHEMA_X = 80, SCHEMA_W = 300;
 const DALLE_H = 30, MAX_COMPLEX_H = 340;
 const VEG_ZONE_H = 220;
@@ -738,29 +734,70 @@ function drawVegetationSymbol(svg, matId, groundY, vegH, schemaX, schemaW) {
   svg.appendChild(g);
 }
 
+function getPatternId(catKey, matId) {
+  if (catKey === 'protection') return 'pattern-protection';
+  if (catKey === 'drainage') {
+    if (matId === 'nid-abeille') return 'pattern-drainage-hdpe';
+    if (matId === 'gravier' || matId === 'billes-argile' || matId === 'pouzzolane') return 'pattern-drainage-gravier';
+    return 'pattern-drainage-autre';
+  }
+  if (catKey === 'filtration') return 'pattern-filtration';
+  if (catKey === 'retention') return 'pattern-retention';
+  if (catKey === 'substrat') return 'pattern-substrat';
+  if (catKey === 'paillage') {
+    if (matId === 'paillage-org') return 'pattern-paillage-organique';
+    if (matId === 'paillage-min') return 'pattern-paillage-mineral';
+    if (matId === 'paillage-bois') return 'pattern-paillage-bois';
+    return 'pattern-paillage-organique';
+  }
+  return 'pattern-protection';
+}
+
 function renderSchema() {
   const svg = document.getElementById('schema-svg');
   svg.innerHTML = '';
 
   const defs = document.createElementNS(SVG_NS, 'defs');
   defs.innerHTML = `
-    <pattern id="pat-dots" width="6" height="6" patternUnits="userSpaceOnUse"><circle cx="3" cy="3" r="1" fill="rgba(255,255,255,0.3)"/></pattern>
-    <pattern id="pat-waves" width="12" height="8" patternUnits="userSpaceOnUse">
-      <path d="M0,4 Q3,1 6,4 Q9,7 12,4" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1.2"/>
+    <pattern id="pattern-dalle" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="4" stroke="#000" stroke-width="0.8" stroke-opacity="0.5"/>
     </pattern>
-    <pattern id="pat-honeycomb" width="12" height="10" patternUnits="userSpaceOnUse"><path d="M6,0 L12,3 L12,7 L6,10 L0,7 L0,3 Z" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1"/></pattern>
-    <pattern id="pat-lines" width="8" height="8" patternUnits="userSpaceOnUse"><line x1="0" y1="0" x2="8" y2="8" stroke="rgba(255,255,255,0.25)" stroke-width="1"/></pattern>
-    <pattern id="pat-granular" width="8" height="8" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1.2" fill="rgba(255,255,255,0.2)"/>
-      <circle cx="6" cy="6" r="1.0" fill="rgba(255,255,255,0.15)"/>
-      <circle cx="6" cy="2" r="0.8" fill="rgba(255,255,255,0.1)"/>
+    <pattern id="pattern-protection" width="4" height="4" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="0.6" fill="#000" fill-opacity="0.5"/>
     </pattern>
-    <pattern id="pat-organic" width="10" height="6" patternUnits="userSpaceOnUse"><path d="M0,4 Q2,2 4,4 Q6,6 8,4 Q9,3 10,4" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1"/></pattern>
-    <pattern id="pat-grid" width="8" height="8" patternUnits="userSpaceOnUse">
-      <line x1="0" y1="0" x2="0" y2="8" stroke="rgba(255,255,255,0.2)" stroke-width="0.8"/>
-      <line x1="0" y1="0" x2="8" y2="0" stroke="rgba(255,255,255,0.2)" stroke-width="0.8"/>
+    <pattern id="pattern-drainage-hdpe" width="12" height="10" patternUnits="userSpaceOnUse">
+      <path d="M6,0 L12,3 L12,7 L6,10 L0,7 L0,3 Z" fill="none" stroke="#000" stroke-width="0.7" stroke-opacity="0.5"/>
     </pattern>
-    <pattern id="pat-organic2" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M2,8 Q5,2 8,8" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/></pattern>
+    <pattern id="pattern-drainage-gravier" width="3" height="3" patternUnits="userSpaceOnUse">
+      <circle cx="1.5" cy="1.5" r="0.8" fill="#000" fill-opacity="0.5"/>
+    </pattern>
+    <pattern id="pattern-drainage-autre" width="8" height="4" patternUnits="userSpaceOnUse">
+      <line x1="0" y1="2" x2="8" y2="2" stroke="#000" stroke-width="0.6" stroke-opacity="0.5"/>
+    </pattern>
+    <pattern id="pattern-filtration" width="8" height="2" patternUnits="userSpaceOnUse">
+      <line x1="0" y1="1" x2="8" y2="1" stroke="#000" stroke-width="0.4" stroke-opacity="0.5"/>
+    </pattern>
+    <pattern id="pattern-retention" width="5" height="5" patternUnits="userSpaceOnUse">
+      <line x1="0" y1="0" x2="0" y2="5" stroke="#000" stroke-width="0.5" stroke-opacity="0.5"/>
+      <line x1="0" y1="0" x2="5" y2="0" stroke="#000" stroke-width="0.5" stroke-opacity="0.5"/>
+    </pattern>
+    <pattern id="pattern-substrat" width="5" height="5" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="0.5" fill="#000" fill-opacity="0.5"/>
+      <circle cx="3.5" cy="3.5" r="1" fill="#000" fill-opacity="0.4"/>
+      <circle cx="4" cy="1.5" r="0.5" fill="#000" fill-opacity="0.3"/>
+    </pattern>
+    <pattern id="pattern-paillage-organique" width="20" height="5" patternUnits="userSpaceOnUse">
+      <path d="M0,2.5 Q5,0.5 10,2.5 Q15,4.5 20,2.5" fill="none" stroke="#000" stroke-width="0.8" stroke-opacity="0.5"/>
+    </pattern>
+    <pattern id="pattern-paillage-mineral" width="4" height="4" patternUnits="userSpaceOnUse">
+      <line x1="0" y1="0" x2="0" y2="4" stroke="#000" stroke-width="0.6" stroke-opacity="0.5"/>
+      <line x1="0" y1="0" x2="4" y2="0" stroke="#000" stroke-width="0.6" stroke-opacity="0.5"/>
+    </pattern>
+    <pattern id="pattern-paillage-bois" width="12" height="6" patternUnits="userSpaceOnUse">
+      <line x1="0" y1="3" x2="12" y2="3" stroke="#000" stroke-width="0.7" stroke-opacity="0.5"/>
+      <line x1="3" y1="1" x2="3" y2="5" stroke="#000" stroke-width="0.7" stroke-opacity="0.5"/>
+      <line x1="9" y1="1" x2="9" y2="5" stroke="#000" stroke-width="0.7" stroke-opacity="0.5"/>
+    </pattern>
   `;
   svg.appendChild(defs);
 
@@ -773,98 +810,96 @@ function renderSchema() {
     svg.appendChild(txt); return;
   }
 
-  const patternMap = { protection:'dots', retention:'waves', drainage:'honeycomb', filtration:'lines', substrat:'granular', paillage:'organic', revetement:'grid', vegetation:'organic2' };
   const complexH = MAX_COMPLEX_H;
-  let currentY = VEG_ZONE_H + 30; // zone végétation + marge
+  let currentY = VEG_ZONE_H + 30;
   const displayLayers = [...layers].reverse();
   const totalT = getTotalThickness();
   const layerRects = displayLayers
     .filter(layer => layer.catKey !== 'vegetation')
     .map(layer => ({ layer, h: totalT > 0 ? getLayerDisplayH(layer, complexH) : (complexH/layers.length) }));
 
-  // Axe côte gauche — uniquement le complexe sans végétation
-  const complexLayers = layers.filter(l => l.catKey !== 'vegetation');
   const vegLayer = [...layers].reverse().find(l => l.catKey === 'vegetation');
-
-  const axeX = SCHEMA_X - 18;
-  const totalLine = document.createElementNS(SVG_NS, 'line');
-  totalLine.setAttribute('x1', axeX); totalLine.setAttribute('y1', currentY);
-  totalLine.setAttribute('x2', axeX); totalLine.setAttribute('y2', currentY + complexH);
-  totalLine.setAttribute('stroke', '#C4B8A8'); totalLine.setAttribute('stroke-width', '1');
-  svg.appendChild(totalLine);
-
-  const totalEp = complexLayers.reduce((sum, l) => { const mat = getMat(l); return sum + (mat.type==='volumique' ? (l.thickness||0) : 0); }, 0);
-  const totalEpTxt = document.createElementNS(SVG_NS, 'text');
-  totalEpTxt.setAttribute('x', axeX-6); totalEpTxt.setAttribute('y', currentY + complexH/2);
-  totalEpTxt.setAttribute('text-anchor', 'middle'); totalEpTxt.setAttribute('fill', '#7A7672');
-  totalEpTxt.setAttribute('font-family', 'DM Mono, monospace'); totalEpTxt.setAttribute('font-size', '9');
-  totalEpTxt.setAttribute('transform', `rotate(-90, ${axeX-6}, ${currentY + complexH/2})`);
-  totalEpTxt.textContent = `${totalEp} cm`;
-  svg.appendChild(totalEpTxt);
+  const complexTopY = currentY;
 
   layerRects.forEach(({ layer, h }) => {
     const cat = CATEGORIES[layer.catKey];
     const mat = getMat(layer);
     const weight = getLayerWeight(layer);
-    const pat = patternMap[layer.catKey] || 'dots';
+    const patId = getPatternId(layer.catKey, layer.matId);
 
     const g = document.createElementNS(SVG_NS, 'g');
 
-    const rect = document.createElementNS(SVG_NS, 'rect');
-    rect.setAttribute('x', SCHEMA_X); rect.setAttribute('y', currentY);
-    rect.setAttribute('width', SCHEMA_W); rect.setAttribute('height', Math.max(h, 6));
-    rect.setAttribute('fill', cat.color); rect.setAttribute('rx', '2');
-    g.appendChild(rect);
+    // White background
+    const rectBg = document.createElementNS(SVG_NS, 'rect');
+    rectBg.setAttribute('x', SCHEMA_X); rectBg.setAttribute('y', currentY);
+    rectBg.setAttribute('width', SCHEMA_W); rectBg.setAttribute('height', Math.max(h, 6));
+    rectBg.setAttribute('fill', '#FFFFFF'); rectBg.setAttribute('rx', '2');
+    g.appendChild(rectBg);
 
+    // Pattern overlay + stroke
     const rectPat = document.createElementNS(SVG_NS, 'rect');
     rectPat.setAttribute('x', SCHEMA_X); rectPat.setAttribute('y', currentY);
     rectPat.setAttribute('width', SCHEMA_W); rectPat.setAttribute('height', Math.max(h, 6));
-    rectPat.setAttribute('fill', `url(#pat-${pat})`);
+    rectPat.setAttribute('fill', `url(#${patId})`); rectPat.setAttribute('rx', '2');
+    rectPat.setAttribute('stroke', '#2D2D2D'); rectPat.setAttribute('stroke-width', '0.5');
     g.appendChild(rectPat);
 
-    const sep = document.createElementNS(SVG_NS, 'line');
-    sep.setAttribute('x1', SCHEMA_X); sep.setAttribute('y1', currentY);
-    sep.setAttribute('x2', SCHEMA_X+SCHEMA_W); sep.setAttribute('y2', currentY);
-    sep.setAttribute('stroke', 'rgba(255,255,255,0.5)'); sep.setAttribute('stroke-width', '0.8');
-    g.appendChild(sep);
-
-    if (h > 18) {
-      const nameTxt = document.createElementNS(SVG_NS, 'text');
-      nameTxt.setAttribute('x', SCHEMA_X+10);
-      nameTxt.setAttribute('y', currentY + Math.min(h/2+4, h-4));
-      nameTxt.setAttribute('fill', 'rgba(255,255,255,0.92)');
-      nameTxt.setAttribute('font-family', 'DM Sans, sans-serif');
-      nameTxt.setAttribute('font-size', '10'); nameTxt.setAttribute('font-weight', '400');
-      nameTxt.textContent = mat.name.length > 26 ? mat.name.substring(0,24)+'…' : mat.name;
-      g.appendChild(nameTxt);
-    }
-
-    const labelY = currentY + h/2;
+    // Right-side labels
+    const labelY = currentY + h / 2;
     const line = document.createElementNS(SVG_NS, 'line');
-    line.setAttribute('x1', SCHEMA_X+SCHEMA_W); line.setAttribute('y1', labelY);
-    line.setAttribute('x2', LABEL_X-2); line.setAttribute('y2', labelY);
+    line.setAttribute('x1', SCHEMA_X + SCHEMA_W); line.setAttribute('y1', labelY);
+    line.setAttribute('x2', LABEL_X - 2); line.setAttribute('y2', labelY);
     line.setAttribute('stroke', '#D0CBC5'); line.setAttribute('stroke-width', '0.7');
     g.appendChild(line);
 
-    const weightTxt = document.createElementNS(SVG_NS, 'text');
-    weightTxt.setAttribute('x', LABEL_X); weightTxt.setAttribute('y', labelY+3);
-    weightTxt.setAttribute('fill', '#3d6366'); weightTxt.setAttribute('font-family', 'DM Mono, monospace');
-    weightTxt.setAttribute('font-size', '10'); weightTxt.setAttribute('font-weight', '500');
-    weightTxt.textContent = `${weight.toFixed(1)} kg/m²`;
-    g.appendChild(weightTxt);
-
     if (mat.type === 'volumique') {
+      // 3 lines: name, weight, thickness
+      const nameTxt = document.createElementNS(SVG_NS, 'text');
+      nameTxt.setAttribute('x', LABEL_X); nameTxt.setAttribute('y', labelY - 6);
+      nameTxt.setAttribute('fill', '#2D2D2D');
+      nameTxt.setAttribute('font-family', 'Helvetica, Arial, sans-serif');
+      nameTxt.setAttribute('font-size', '11');
+      nameTxt.textContent = mat.name;
+      g.appendChild(nameTxt);
+
+      const weightTxt = document.createElementNS(SVG_NS, 'text');
+      weightTxt.setAttribute('x', LABEL_X); weightTxt.setAttribute('y', labelY + 7);
+      weightTxt.setAttribute('fill', '#2D2D2D');
+      weightTxt.setAttribute('font-family', 'Helvetica, Arial, sans-serif');
+      weightTxt.setAttribute('font-size', '11');
+      weightTxt.textContent = `${weight.toFixed(1)} kg/m²`;
+      g.appendChild(weightTxt);
+
       const epTxt = document.createElementNS(SVG_NS, 'text');
-      epTxt.setAttribute('x', LABEL_X); epTxt.setAttribute('y', labelY+14);
-      epTxt.setAttribute('fill', '#A09C98'); epTxt.setAttribute('font-family', 'DM Mono, monospace');
-      epTxt.setAttribute('font-size', '9');
-      epTxt.textContent = `${layer.thickness||0} cm`;
+      epTxt.setAttribute('x', LABEL_X); epTxt.setAttribute('y', labelY + 19);
+      epTxt.setAttribute('fill', '#2D2D2D'); epTxt.setAttribute('opacity', '0.6');
+      epTxt.setAttribute('font-family', 'Helvetica, Arial, sans-serif');
+      epTxt.setAttribute('font-size', '11');
+      epTxt.textContent = `${layer.thickness || 0} cm`;
       g.appendChild(epTxt);
+    } else {
+      // 2 lines: name, weight
+      const nameTxt = document.createElementNS(SVG_NS, 'text');
+      nameTxt.setAttribute('x', LABEL_X); nameTxt.setAttribute('y', labelY - 1);
+      nameTxt.setAttribute('fill', '#2D2D2D');
+      nameTxt.setAttribute('font-family', 'Helvetica, Arial, sans-serif');
+      nameTxt.setAttribute('font-size', '11');
+      nameTxt.textContent = mat.name;
+      g.appendChild(nameTxt);
+
+      const weightTxt = document.createElementNS(SVG_NS, 'text');
+      weightTxt.setAttribute('x', LABEL_X); weightTxt.setAttribute('y', labelY + 12);
+      weightTxt.setAttribute('fill', '#2D2D2D');
+      weightTxt.setAttribute('font-family', 'Helvetica, Arial, sans-serif');
+      weightTxt.setAttribute('font-size', '11');
+      weightTxt.textContent = `${weight.toFixed(1)} kg/m²`;
+      g.appendChild(weightTxt);
     }
 
+    // Drag handle for volumique layers
     if (mat.type === 'volumique') {
       const dragHandle = document.createElementNS(SVG_NS, 'rect');
-      dragHandle.setAttribute('x', SCHEMA_X); dragHandle.setAttribute('y', currentY-5);
+      dragHandle.setAttribute('x', SCHEMA_X); dragHandle.setAttribute('y', currentY - 5);
       dragHandle.setAttribute('width', SCHEMA_W); dragHandle.setAttribute('height', 10);
       dragHandle.setAttribute('fill', 'transparent'); dragHandle.setAttribute('class', 'drag-handle');
       dragHandle.addEventListener('mousedown', (e) => startDrag(e, layer.id, currentY, complexH));
@@ -872,9 +907,9 @@ function renderSchema() {
       g.appendChild(dragHandle);
 
       const dragLine = document.createElementNS(SVG_NS, 'line');
-      dragLine.setAttribute('x1', SCHEMA_X+20); dragLine.setAttribute('y1', currentY);
-      dragLine.setAttribute('x2', SCHEMA_X+SCHEMA_W-20); dragLine.setAttribute('y2', currentY);
-      dragLine.setAttribute('stroke', 'rgba(255,255,255,0.5)'); dragLine.setAttribute('stroke-width', '2');
+      dragLine.setAttribute('x1', SCHEMA_X + 20); dragLine.setAttribute('y1', currentY);
+      dragLine.setAttribute('x2', SCHEMA_X + SCHEMA_W - 20); dragLine.setAttribute('y2', currentY);
+      dragLine.setAttribute('stroke', 'rgba(0,0,0,0.15)'); dragLine.setAttribute('stroke-width', '2');
       dragLine.setAttribute('stroke-dasharray', '4,3');
       g.appendChild(dragLine);
     }
@@ -883,11 +918,48 @@ function renderSchema() {
     currentY += Math.max(h, 6);
   });
 
-  // ── LIGNE DE SOL + SYMBOLES VÉGÉTAUX ──
-  const topOfComplex = VEG_ZONE_H + 30; // Y du dessus du complexe
-  const groundY = topOfComplex; // la ligne de sol = haut du complexe
+  const complexBottomY = currentY;
 
-  // Ligne de sol
+  // ── COTATION TECHNIQUE ──
+  const complexLayers = layers.filter(l => l.catKey !== 'vegetation');
+  const totalEp = complexLayers.reduce((sum, l) => { const mat = getMat(l); return sum + (mat.type === 'volumique' ? (l.thickness || 0) : 0); }, 0);
+  const cotX = SCHEMA_X - 22;
+
+  const cotLine = document.createElementNS(SVG_NS, 'line');
+  cotLine.setAttribute('x1', cotX); cotLine.setAttribute('y1', complexTopY);
+  cotLine.setAttribute('x2', cotX); cotLine.setAttribute('y2', complexBottomY);
+  cotLine.setAttribute('stroke', '#2D2D2D'); cotLine.setAttribute('stroke-width', '0.8');
+  svg.appendChild(cotLine);
+
+  // Top perpendicular bar
+  const cotBarTop = document.createElementNS(SVG_NS, 'line');
+  cotBarTop.setAttribute('x1', cotX - 4); cotBarTop.setAttribute('y1', complexTopY);
+  cotBarTop.setAttribute('x2', cotX + 4); cotBarTop.setAttribute('y2', complexTopY);
+  cotBarTop.setAttribute('stroke', '#2D2D2D'); cotBarTop.setAttribute('stroke-width', '0.8');
+  svg.appendChild(cotBarTop);
+
+  // Bottom perpendicular bar
+  const cotBarBot = document.createElementNS(SVG_NS, 'line');
+  cotBarBot.setAttribute('x1', cotX - 4); cotBarBot.setAttribute('y1', complexBottomY);
+  cotBarBot.setAttribute('x2', cotX + 4); cotBarBot.setAttribute('y2', complexBottomY);
+  cotBarBot.setAttribute('stroke', '#2D2D2D'); cotBarBot.setAttribute('stroke-width', '0.8');
+  svg.appendChild(cotBarBot);
+
+  // Cotation value
+  const cotMidY = (complexTopY + complexBottomY) / 2;
+  const cotTxt = document.createElementNS(SVG_NS, 'text');
+  cotTxt.setAttribute('x', cotX - 8); cotTxt.setAttribute('y', cotMidY);
+  cotTxt.setAttribute('text-anchor', 'middle'); cotTxt.setAttribute('fill', '#2D2D2D');
+  cotTxt.setAttribute('font-family', 'Helvetica, Arial, sans-serif'); cotTxt.setAttribute('font-weight', '300');
+  cotTxt.setAttribute('font-size', '11');
+  cotTxt.setAttribute('transform', `rotate(-90, ${cotX - 8}, ${cotMidY})`);
+  cotTxt.textContent = `${totalEp} cm`;
+  svg.appendChild(cotTxt);
+
+  // ── LIGNE DE SOL + SYMBOLES VÉGÉTAUX ──
+  const topOfComplex = VEG_ZONE_H + 30;
+  const groundY = topOfComplex;
+
   const groundLine = document.createElementNS(SVG_NS, 'line');
   groundLine.setAttribute('x1', SCHEMA_X - 10); groundLine.setAttribute('y1', groundY);
   groundLine.setAttribute('x2', SCHEMA_X + SCHEMA_W + 10); groundLine.setAttribute('y2', groundY);
@@ -896,17 +968,13 @@ function renderSchema() {
 
   if (vegLayer) {
     const mat = getMat(vegLayer);
-    // Trouver l'épaisseur du substrat pour calculer la hauteur de végétation
     const substratLayer = [...layers].reverse().find(l => l.catKey === 'substrat');
     const substratEp = substratLayer ? (substratLayer.thickness || getMat(substratLayer).default_ep || 20) : 20;
-
-    // Hauteur visuelle végétation proportionnelle au substrat
     const pxPerCm = complexH / (totalT || 1);
     const coeff = mat.id === 'arbustes' ? 2.2 : 1.0;
     const vegH = Math.max(substratEp * pxPerCm * coeff, 16);
     drawVegetationSymbol(svg, mat.id, groundY, vegH, SCHEMA_X, SCHEMA_W);
 
-    // Label végétation à droite
     const vegLabelY = groundY - vegH / 2;
     const vegLine2 = document.createElementNS(SVG_NS, 'line');
     vegLine2.setAttribute('x1', SCHEMA_X + SCHEMA_W); vegLine2.setAttribute('y1', vegLabelY);
@@ -914,47 +982,56 @@ function renderSchema() {
     vegLine2.setAttribute('stroke', '#D0CBC5'); vegLine2.setAttribute('stroke-width', '0.7');
     svg.appendChild(vegLine2);
 
-    const vegTxt = document.createElementNS(SVG_NS, 'text');
-    vegTxt.setAttribute('x', LABEL_X); vegTxt.setAttribute('y', vegLabelY + 3);
-    vegTxt.setAttribute('fill', '#3d6366'); vegTxt.setAttribute('font-family', 'DM Mono, monospace');
-    vegTxt.setAttribute('font-size', '10'); vegTxt.setAttribute('font-weight', '500');
-    vegTxt.textContent = `${getLayerWeight(vegLayer).toFixed(1)} kg/m²`;
-    svg.appendChild(vegTxt);
-
     const vegNameTxt = document.createElementNS(SVG_NS, 'text');
-    vegNameTxt.setAttribute('x', LABEL_X); vegNameTxt.setAttribute('y', vegLabelY + 14);
-    vegNameTxt.setAttribute('fill', '#A09C98'); vegNameTxt.setAttribute('font-family', 'DM Sans, sans-serif');
-    vegNameTxt.setAttribute('font-size', '9');
+    vegNameTxt.setAttribute('x', LABEL_X); vegNameTxt.setAttribute('y', vegLabelY - 2);
+    vegNameTxt.setAttribute('fill', '#2D2D2D');
+    vegNameTxt.setAttribute('font-family', 'Helvetica, Arial, sans-serif');
+    vegNameTxt.setAttribute('font-size', '11');
     vegNameTxt.textContent = mat.name;
     svg.appendChild(vegNameTxt);
+
+    const vegWeightTxt = document.createElementNS(SVG_NS, 'text');
+    vegWeightTxt.setAttribute('x', LABEL_X); vegWeightTxt.setAttribute('y', vegLabelY + 11);
+    vegWeightTxt.setAttribute('fill', '#2D2D2D');
+    vegWeightTxt.setAttribute('font-family', 'Helvetica, Arial, sans-serif');
+    vegWeightTxt.setAttribute('font-size', '11');
+    vegWeightTxt.textContent = `${getLayerWeight(vegLayer).toFixed(1)} kg/m²`;
+    svg.appendChild(vegWeightTxt);
   }
 
   // Dalle base
+  const dalleBgRect = document.createElementNS(SVG_NS, 'rect');
+  dalleBgRect.setAttribute('x', SCHEMA_X); dalleBgRect.setAttribute('y', currentY);
+  dalleBgRect.setAttribute('width', SCHEMA_W); dalleBgRect.setAttribute('height', DALLE_H);
+  dalleBgRect.setAttribute('fill', '#FFFFFF'); dalleBgRect.setAttribute('rx', '2');
+  svg.appendChild(dalleBgRect);
+
   const dalleFill = document.createElementNS(SVG_NS, 'rect');
   dalleFill.setAttribute('x', SCHEMA_X); dalleFill.setAttribute('y', currentY);
   dalleFill.setAttribute('width', SCHEMA_W); dalleFill.setAttribute('height', DALLE_H);
-  dalleFill.setAttribute('fill', '#8A8279'); dalleFill.setAttribute('rx', '2');
+  dalleFill.setAttribute('fill', 'url(#pattern-dalle)'); dalleFill.setAttribute('rx', '2');
+  dalleFill.setAttribute('stroke', '#2D2D2D'); dalleFill.setAttribute('stroke-width', '0.5');
   svg.appendChild(dalleFill);
 
   const dalleTxt = document.createElementNS(SVG_NS, 'text');
-  dalleTxt.setAttribute('x', SCHEMA_X+SCHEMA_W/2); dalleTxt.setAttribute('y', currentY+19);
-  dalleTxt.setAttribute('text-anchor', 'middle'); dalleTxt.setAttribute('fill', 'rgba(255,255,255,0.8)');
-  dalleTxt.setAttribute('font-family', 'DM Sans, sans-serif'); dalleTxt.setAttribute('font-size', '10');
+  dalleTxt.setAttribute('x', SCHEMA_X + SCHEMA_W / 2); dalleTxt.setAttribute('y', currentY + 19);
+  dalleTxt.setAttribute('text-anchor', 'middle'); dalleTxt.setAttribute('fill', '#2D2D2D');
+  dalleTxt.setAttribute('font-family', 'Helvetica, Arial, sans-serif'); dalleTxt.setAttribute('font-size', '10');
   dalleTxt.setAttribute('letter-spacing', '0.08em'); dalleTxt.textContent = 'DALLE / ÉTANCHÉITÉ';
   svg.appendChild(dalleTxt);
 
   const totalTxt = document.createElementNS(SVG_NS, 'text');
-  totalTxt.setAttribute('x', SVG_W/2-10); totalTxt.setAttribute('y', currentY+DALLE_H+24);
-  totalTxt.setAttribute('text-anchor', 'middle'); totalTxt.setAttribute('fill', '#3d6366');
-  totalTxt.setAttribute('font-family', 'DM Mono, monospace'); totalTxt.setAttribute('font-size', '13');
+  totalTxt.setAttribute('x', SVG_W / 2 - 10); totalTxt.setAttribute('y', currentY + DALLE_H + 24);
+  totalTxt.setAttribute('text-anchor', 'middle'); totalTxt.setAttribute('fill', '#2D2D2D');
+  totalTxt.setAttribute('font-family', 'Helvetica, Arial, sans-serif'); totalTxt.setAttribute('font-size', '13');
   totalTxt.setAttribute('font-weight', '500');
   totalTxt.textContent = `Total : ${getTotalWeight().toFixed(1)} kg/m²`;
   svg.appendChild(totalTxt);
 
   const satTxt = document.createElementNS(SVG_NS, 'text');
-  satTxt.setAttribute('x', SVG_W/2-10); satTxt.setAttribute('y', currentY+DALLE_H+38);
+  satTxt.setAttribute('x', SVG_W / 2 - 10); satTxt.setAttribute('y', currentY + DALLE_H + 38);
   satTxt.setAttribute('text-anchor', 'middle'); satTxt.setAttribute('fill', '#A09C98');
-  satTxt.setAttribute('font-family', 'DM Sans, sans-serif'); satTxt.setAttribute('font-size', '9');
+  satTxt.setAttribute('font-family', 'Helvetica, Arial, sans-serif'); satTxt.setAttribute('font-size', '9');
   satTxt.textContent = 'état saturé — pire cas';
   svg.appendChild(satTxt);
 }
@@ -1000,6 +1077,15 @@ function endDrag() {
   document.removeEventListener('touchmove', onDrag);
   document.removeEventListener('touchend', endDrag);
 }
+
+// Scroll propagation: ensure wheel events on layer cards propagate to the container
+document.getElementById('layers-container').addEventListener('wheel', function(e) {
+  const layerBody = e.target.closest('.layer-body');
+  if (layerBody) {
+    e.preventDefault();
+    this.scrollTop += e.deltaY;
+  }
+}, { passive: false });
 
 initDefaultLayers();
 </script>
