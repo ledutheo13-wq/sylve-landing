@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculateur d'arrosage — SYLVE Projet</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --sylve: #5E8B8F;
+      --sylve-light: #E8F0F1;
+      --sylve-dark: #3d6366;
+      --projet: #8A8279;
+      --projet-light: #F0EDEA;
+      --bg: #F7F6F4;
+      --surface: #FFFFFF;
+      --border: #E2DED9;
+      --text: #2A2826;
+      --text-muted: #7A7672;
+      --text-light: #A09C98;
+      --danger: #C25C3A;
+      --radius: 6px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', sans-serif; font-weight: 300; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 52px;
+    }
+    .header-brand { display: flex; align-items: baseline; gap: 0.6rem; text-decoration: none; color: var(--text); }
+    .header-brand .logo { font-family: 'DM Sans', sans-serif; font-weight: 300; font-size: 1.1rem; letter-spacing: 0.18em; color: var(--sylve); }
+    .header-brand .sub { font-size: 0.72rem; letter-spacing: 0.14em; color: var(--projet); text-transform: uppercase; }
+    .header-tag { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); background: var(--sylve-light); padding: 3px 10px; border-radius: 20px; }
+
+    /* ── PAGE ── */
+    .page { max-width: 960px; margin: 0 auto; padding: 2rem 2rem 4rem; }
+    .page-title-section { margin-bottom: 2rem; }
+    .page-title-section h1 {
+      font-family: Helvetica, 'Helvetica Neue', Arial, sans-serif;
+      font-size: 1.7rem; font-weight: 300; color: var(--sylve);
+      line-height: 1.2; letter-spacing: 6px; text-transform: lowercase;
+    }
+    .page-title-section p { font-size: 0.82rem; color: var(--text-muted); margin-top: 0.4rem; }
+
+    /* ── STEPS ── */
+    .step { margin-bottom: 2rem; }
+    .step-header {
+      font-family: Helvetica, 'Helvetica Neue', Arial, sans-serif;
+      font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--text-light); font-weight: 400;
+      margin-bottom: 1rem; padding-bottom: 0.6rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* ── CARD ── */
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.2rem;
+    }
+
+    /* ── FORM ELEMENTS ── */
+    label { font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 0.3rem; }
+    select, input[type="text"], input[type="number"] {
+      font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 300;
+      color: var(--text); background: var(--surface);
+      border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 8px 10px; width: 100%;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    select:focus, input[type="text"]:focus, input[type="number"]:focus {
+      outline: none; border-color: var(--sylve); box-shadow: 0 0 0 2px var(--sylve-light);
+    }
+    input[type="number"] { font-family: 'DM Mono', monospace; }
+
+    /* ── ETP TABLE ── */
+    .etp-table { width: 100%; border-collapse: collapse; margin-top: 0.8rem; }
+    .etp-table th {
+      font-family: Helvetica, 'Helvetica Neue', Arial, sans-serif;
+      font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--text-light); font-weight: 400; padding: 6px 4px; text-align: center;
+    }
+    .etp-table td { padding: 3px 2px; text-align: center; }
+    .etp-table input {
+      width: 54px; text-align: center; padding: 5px 2px;
+      font-family: 'DM Mono', monospace; font-size: 0.78rem;
+    }
+    .etp-total {
+      font-family: 'DM Mono', monospace; font-size: 0.85rem;
+      color: var(--sylve-dark); font-weight: 500; margin-top: 0.6rem; text-align: right;
+    }
+
+    /* ── ZONES ── */
+    .zone-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1rem 1.2rem; margin-bottom: 0.8rem;
+    }
+    .zone-card:hover { border-color: var(--sylve); }
+    .zone-header { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.8rem; }
+    .zone-color {
+      width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0;
+    }
+    .zone-header input[type="text"] { flex: 1; font-weight: 400; }
+    .zone-delete {
+      width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
+      border: none; background: none; cursor: pointer; color: var(--text-light);
+      border-radius: 3px; transition: color 0.15s, background 0.15s; font-size: 1rem;
+    }
+    .zone-delete:hover { color: var(--danger); background: #FDF0EC; }
+    .zone-fields { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.8rem; }
+    .zone-fields.four-cols { grid-template-columns: 1fr 1fr 1fr 1fr; }
+    .field-group { display: flex; flex-direction: column; gap: 0.2rem; }
+
+    /* ── BUTTONS ── */
+    .btn-add {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      font-family: 'DM Sans', sans-serif; font-size: 0.78rem; font-weight: 400;
+      color: var(--sylve); background: var(--sylve-light); border: none;
+      border-radius: var(--radius); padding: 7px 14px; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-add:hover { background: #d0e3e5; }
+
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 400;
+      color: #fff; background: var(--sylve); border: none;
+      border-radius: var(--radius); padding: 10px 20px; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-primary:hover { background: var(--sylve-dark); }
+
+    /* ── TOGGLE ── */
+    .toggle-wrap { display: flex; gap: 0; margin-bottom: 1rem; }
+    .toggle-btn {
+      font-family: 'DM Sans', sans-serif; font-size: 0.78rem; font-weight: 400;
+      padding: 7px 16px; border: 1px solid var(--border); background: var(--surface);
+      color: var(--text-muted); cursor: pointer; transition: all 0.15s;
+    }
+    .toggle-btn:first-child { border-radius: var(--radius) 0 0 var(--radius); }
+    .toggle-btn:last-child { border-radius: 0 var(--radius) var(--radius) 0; border-left: none; }
+    .toggle-btn.active { background: var(--sylve); color: #fff; border-color: var(--sylve); }
+    .toggle-btn.active + .toggle-btn { border-left-color: var(--sylve); }
+
+    .warning-box {
+      background: #FFF8F0; border: 1px solid #F0D8B8; border-radius: var(--radius);
+      padding: 0.8rem 1rem; font-size: 0.78rem; color: #8B6A3F; line-height: 1.6;
+      margin-bottom: 1rem;
+    }
+
+    /* ── SLIDERS ── */
+    .slider-group { margin-bottom: 0.6rem; }
+    .slider-label {
+      display: flex; justify-content: space-between; align-items: baseline;
+      font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.2rem;
+    }
+    .slider-value { font-family: 'DM Mono', monospace; font-weight: 400; color: var(--sylve-dark); }
+    input[type="range"] {
+      -webkit-appearance: none; appearance: none; width: 100%; height: 4px;
+      background: var(--border); border-radius: 2px; outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none; width: 14px; height: 14px;
+      background: var(--sylve); border-radius: 50%; cursor: pointer;
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 14px; height: 14px; background: var(--sylve);
+      border-radius: 50%; cursor: pointer; border: none;
+    }
+
+    /* ── RESULTS ── */
+    .result-big {
+      font-family: 'DM Mono', monospace; font-size: 2.8rem; font-weight: 500;
+      color: var(--sylve-dark); line-height: 1;
+    }
+    .result-unit { font-size: 1rem; color: var(--text-muted); font-weight: 300; }
+    .result-label { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.3rem; }
+
+    #chart-container { margin: 1.5rem 0; }
+    #chart-container canvas { width: 100% !important; max-height: 320px; }
+
+    .recap-table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.8rem; }
+    .recap-table th {
+      font-family: Helvetica, 'Helvetica Neue', Arial, sans-serif;
+      font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--text-light); font-weight: 400; padding: 8px 6px;
+      text-align: left; border-bottom: 1px solid var(--border);
+    }
+    .recap-table td {
+      padding: 8px 6px; border-bottom: 1px solid var(--border); vertical-align: middle;
+    }
+    .recap-table td.mono { font-family: 'DM Mono', monospace; font-weight: 400; }
+    .recap-dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+
+    /* ── GATE OVERLAY ── */
+    .gate-overlay {
+      position: fixed; inset: 0; background: rgba(247,246,244,0.92);
+      display: flex; align-items: center; justify-content: center; z-index: 100;
+    }
+    .gate-box {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 2.5rem; text-align: center; max-width: 400px;
+    }
+    .gate-box h2 {
+      font-family: Helvetica, 'Helvetica Neue', Arial, sans-serif;
+      font-size: 1.1rem; font-weight: 300; color: var(--text); margin-bottom: 0.6rem;
+    }
+    .gate-box p { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1.2rem; line-height: 1.5; }
+    .gate-box a {
+      display: inline-block; font-family: 'DM Sans', sans-serif; font-size: 0.85rem;
+      color: #fff; background: var(--sylve); border-radius: var(--radius);
+      padding: 10px 24px; text-decoration: none; transition: background 0.15s;
+    }
+    .gate-box a:hover { background: var(--sylve-dark); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 640px) {
+      .zone-fields, .zone-fields.four-cols { grid-template-columns: 1fr 1fr; }
+      .result-big { font-size: 2rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <a href="/projet" class="header-brand">
+      <span class="logo">sylve</span>
+      <span class="sub">projet</span>
+    </a>
+    <span class="header-tag">Beta</span>
+  </header>
+
+  <div class="page">
+    <div class="page-title-section">
+      <h1>calculateur d'arrosage</h1>
+      <p>Estimez les besoins en eau de vos amenagements paysagers par zone et par mois.</p>
+    </div>
+
+    <!-- ═══ ÉTAPE 1 — ETP ═══ -->
+    <div class="step" id="step-etp">
+      <div class="step-header">Etape 1 — Evapotranspiration (ETP)</div>
+      <div class="card">
+        <div class="field-group" style="max-width:360px; margin-bottom:0.8rem;">
+          <label for="dept-select">Departement</label>
+          <select id="dept-select"><option value="">— Choisir un departement —</option></select>
+        </div>
+        <div id="etp-grid" style="display:none;">
+          <table class="etp-table">
+            <thead><tr id="etp-months"></tr></thead>
+            <tbody><tr id="etp-values"></tr></tbody>
+          </table>
+          <div class="etp-total">Total annuel : <span id="etp-total">0</span> mm</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ ÉTAPE 2 — ZONES ═══ -->
+    <div class="step" id="step-zones">
+      <div class="step-header">Etape 2 — Zones de vegetation</div>
+      <div id="zones-list"></div>
+      <button class="btn-add" onclick="addZone()">+ Ajouter une zone</button>
+    </div>
+
+    <!-- ═══ ÉTAPE 3 — MODE ═══ -->
+    <div class="step" id="step-mode">
+      <div class="step-header">Etape 3 — Mode d'arrosage</div>
+      <div class="toggle-wrap">
+        <button class="toggle-btn active" onclick="setMode('simple')">Simplifie</button>
+        <button class="toggle-btn" onclick="setMode('detail')">Detaille</button>
+      </div>
+      <div id="warning-simple" class="warning-box">
+        &#9888;&#65039; Mode simplifie — Les resultats sont bases sur des moyennes generales et des hypotheses d'efficience standard.
+        Ils sont adaptes aux phases amont (ESQ, APS) pour des estimations de consommation. Pour un dimensionnement precis, passez en mode detaille avec le materiel prevu.
+      </div>
+      <div id="irrigation-config"></div>
+    </div>
+
+    <!-- ═══ CALCULER ═══ -->
+    <div style="text-align:center; margin: 1.5rem 0;">
+      <button class="btn-primary" onclick="calculate()">Calculer les besoins en eau</button>
+    </div>
+
+    <!-- ═══ ÉTAPE 4 — RÉSULTATS ═══ -->
+    <div class="step" id="step-results" style="display:none;">
+      <div class="step-header">Etape 4 — Resultats</div>
+      <div class="card" style="text-align:center; margin-bottom:1.2rem;">
+        <div class="result-label">Volume annuel total</div>
+        <div class="result-big"><span id="total-volume">0</span> <span class="result-unit">m&#179;/an</span></div>
+      </div>
+      <div class="card" id="chart-container">
+        <canvas id="chart" height="300"></canvas>
+      </div>
+      <div class="card" style="margin-top:1rem; overflow-x:auto;">
+        <table class="recap-table" id="recap-table">
+          <thead>
+            <tr>
+              <th>Zone</th><th>Surface</th><th>Kc</th><th>Equipement</th>
+              <th>Efficience</th><th>Volume (m&#179;/an)</th><th id="th-pic" style="display:none;">Pic (h/sem)</th>
+            </tr>
+          </thead>
+          <tbody id="recap-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- GATE OVERLAY -->
+  <div class="gate-overlay" id="gate" style="display:none;">
+    <div class="gate-box">
+      <h2>Connectez-vous pour acceder aux resultats</h2>
+      <p>Creez un compte gratuit ou connectez-vous pour utiliser le calculateur d'arrosage.</p>
+      <a href="/login?redirect=/projet/arrosage">Se connecter</a>
+    </div>
+  </div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  SUPABASE
+// ═══════════════════════════════════════════════════════════
+const SUPABASE_URL  = 'https://jbqgyfbjyulezaclvmwc.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpicWd5ZmJqeXVsZXphY2x2bXdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzQyMDIsImV4cCI6MjA4ODcxMDIwMn0.dNibq1JOBz3UnqdLwENmS113TGKpw_UGWKR0cE8LgMI';
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+let hasSession = false;
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  hasSession = !!session;
+})();
+
+// ═══════════════════════════════════════════════════════════
+//  BASE ETP PAR DEPARTEMENT
+// ═══════════════════════════════════════════════════════════
+const MONTHS = ['Jan','Fev','Mar','Avr','Mai','Jun','Jul','Aou','Sep','Oct','Nov','Dec'];
+const MONTHS_SHORT = ['J','F','M','A','M','J','J','A','S','O','N','D'];
+
+const ETP_PROFILES = {
+  oceanique:       [8,11,24,48,82,112,132,122,76,36,14,8],
+  semi_oceanique:  [10,14,28,56,94,130,152,142,88,45,19,12],
+  continental:     [9,13,27,55,92,127,149,137,86,43,17,11],
+  montagne:        [8,10,24,48,82,112,130,120,78,42,16,9],
+  semi_continental:[13,17,33,64,104,142,165,155,102,54,24,15],
+  atlantique_so:   [14,19,36,66,108,148,172,160,105,56,26,16],
+  transition_med:  [12,16,30,58,97,133,155,145,97,52,22,13],
+};
+
+const ETP_SPECIFIC = {
+  '04':[18,24,42,72,115,158,188,178,122,68,36,24],
+  '06':[22,28,48,80,125,165,195,185,125,72,38,26],
+  '11':[25,32,54,90,138,180,210,200,138,80,44,30],
+  '13':[26,33,56,92,142,185,215,205,140,82,44,30],
+  '30':[26,33,56,92,142,185,215,205,140,82,44,30],
+  '34':[26,33,56,92,142,185,215,205,140,82,44,30],
+  '66':[20,26,46,82,132,180,210,200,135,75,40,26],
+  '83':[28,35,58,95,145,190,220,210,145,85,46,32],
+  '84':[24,31,54,88,138,180,210,200,135,78,42,28],
+  '2A':[24,31,54,88,138,180,210,200,135,78,42,28],
+  '2B':[22,28,48,80,125,165,195,185,125,72,38,26],
+  '971':[130,128,135,140,145,150,155,158,152,140,132,130],
+  '972':[135,130,140,145,155,160,162,160,150,138,128,132],
+  '973':[155,158,160,155,145,140,142,145,158,165,162,160],
+  '974':[145,142,138,125,110,95,92,98,115,132,142,145],
+  '976':[120,118,115,110,105,95,92,100,112,125,128,125],
+};
+
+const DEPT_ZONE = {};
+['14','22','29','35','50','56'].forEach(d => DEPT_ZONE[d]='oceanique');
+['02','10','18','28','36','37','41','44','45','49','51','52','53','61','70','71','72','75','77','78','79','85','86','88','89','90','91','92','93','94','95'].forEach(d => DEPT_ZONE[d]='semi_oceanique');
+['08','21','25','27','39','54','55','57','58','59','60','62','67','68','76','80'].forEach(d => DEPT_ZONE[d]='continental');
+['05','09','12','15','23','43','48','63','65','73','74'].forEach(d => DEPT_ZONE[d]='montagne');
+['01','03','19','38','42','69','87'].forEach(d => DEPT_ZONE[d]='semi_continental');
+['16','17','24','31','32','33','40','46','47','64','82'].forEach(d => DEPT_ZONE[d]='atlantique_so');
+['07','26','81'].forEach(d => DEPT_ZONE[d]='transition_med');
+
+function getETP(dept) {
+  if (ETP_SPECIFIC[dept]) return [...ETP_SPECIFIC[dept]];
+  if (DEPT_ZONE[dept]) return [...ETP_PROFILES[DEPT_ZONE[dept]]];
+  return [10,14,28,56,94,130,152,142,88,45,19,12]; // fallback semi-oceanique
+}
+
+// ═══════════════════════════════════════════════════════════
+//  DÉPARTEMENTS
+// ═══════════════════════════════════════════════════════════
+const DEPT_NAMES = {
+  '01':'Ain','02':'Aisne','03':'Allier','04':'Alpes-de-Haute-Provence','05':'Hautes-Alpes',
+  '06':'Alpes-Maritimes','07':'Ardeche','08':'Ardennes','09':'Ariege','10':'Aube',
+  '11':'Aude','12':'Aveyron','13':'Bouches-du-Rhone','14':'Calvados','15':'Cantal',
+  '16':'Charente','17':'Charente-Maritime','18':'Cher','19':'Correze','21':"Cote-d'Or",
+  '22':"Cotes-d'Armor",'23':'Creuse','24':'Dordogne','25':'Doubs','26':'Drome',
+  '27':'Eure','28':'Eure-et-Loir','29':'Finistere','30':'Gard','31':'Haute-Garonne',
+  '32':'Gers','33':'Gironde','34':'Herault','35':'Ille-et-Vilaine','36':'Indre',
+  '37':'Indre-et-Loire','38':'Isere','39':'Jura','40':'Landes','41':'Loir-et-Cher',
+  '42':'Loire','43':'Haute-Loire','44':'Loire-Atlantique','45':'Loiret','46':'Lot',
+  '47':'Lot-et-Garonne','48':'Lozere','49':'Maine-et-Loire','50':'Manche',
+  '51':'Marne','52':'Haute-Marne','53':'Mayenne','54':'Meurthe-et-Moselle',
+  '55':'Meuse','56':'Morbihan','57':'Moselle','58':'Nievre','59':'Nord','60':'Oise',
+  '61':'Orne','62':'Pas-de-Calais','63':'Puy-de-Dome','64':'Pyrenees-Atlantiques',
+  '65':'Hautes-Pyrenees','66':'Pyrenees-Orientales','67':'Bas-Rhin','68':'Haut-Rhin',
+  '69':'Rhone','70':'Haute-Saone','71':'Saone-et-Loire','72':'Sarthe','73':'Savoie',
+  '74':'Haute-Savoie','75':'Paris','76':'Seine-Maritime','77':'Seine-et-Marne',
+  '78':'Yvelines','79':'Deux-Sevres','80':'Somme','81':'Tarn','82':'Tarn-et-Garonne',
+  '83':'Var','84':'Vaucluse','85':'Vendee','86':'Vienne','87':'Haute-Vienne',
+  '88':'Vosges','89':'Yonne','90':'Territoire de Belfort','91':'Essonne',
+  '92':'Hauts-de-Seine','93':'Seine-Saint-Denis','94':'Val-de-Marne',
+  '95':"Val-d'Oise",'2A':'Corse-du-Sud','2B':'Haute-Corse',
+  '971':'Guadeloupe','972':'Martinique','973':'Guyane','974':'Reunion','976':'Mayotte'
+};
+
+// Populate select
+const sel = document.getElementById('dept-select');
+const deptKeys = Object.keys(DEPT_NAMES).sort((a,b) => {
+  const na = a.replace('A','00').replace('B','01');
+  const nb = b.replace('A','00').replace('B','01');
+  return na.localeCompare(nb, undefined, {numeric:true});
+});
+deptKeys.forEach(code => {
+  const opt = document.createElement('option');
+  opt.value = code;
+  opt.textContent = code + ' — ' + DEPT_NAMES[code];
+  sel.appendChild(opt);
+});
+
+// ETP grid
+let currentETP = new Array(12).fill(0);
+const etpMonthsRow = document.getElementById('etp-months');
+const etpValuesRow = document.getElementById('etp-values');
+MONTHS.forEach(m => { const th = document.createElement('th'); th.textContent = m; etpMonthsRow.appendChild(th); });
+for (let i = 0; i < 12; i++) {
+  const td = document.createElement('td');
+  const inp = document.createElement('input');
+  inp.type = 'number'; inp.min = '0'; inp.max = '300'; inp.step = '1';
+  inp.id = 'etp-' + i;
+  inp.addEventListener('input', () => { currentETP[i] = parseFloat(inp.value)||0; updateETPTotal(); });
+  td.appendChild(inp);
+  etpValuesRow.appendChild(td);
+}
+
+sel.addEventListener('change', () => {
+  const dept = sel.value;
+  if (!dept) { document.getElementById('etp-grid').style.display = 'none'; return; }
+  currentETP = getETP(dept);
+  for (let i = 0; i < 12; i++) document.getElementById('etp-'+i).value = currentETP[i];
+  document.getElementById('etp-grid').style.display = 'block';
+  updateETPTotal();
+});
+
+function updateETPTotal() {
+  document.getElementById('etp-total').textContent = currentETP.reduce((a,b)=>a+b,0);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  VEGETATION TYPES
+// ═══════════════════════════════════════════════════════════
+const VEG_TYPES = [
+  {name:"Gazon d'agrement", kc:0.80},
+  {name:"Gazon sportif", kc:0.85},
+  {name:"Arbustes", kc:0.50},
+  {name:"Vivaces et graminees", kc:0.40},
+  {name:"Arbres isoles (jeunes 1-3 ans)", kc:0.70},
+  {name:"Arbres isoles (installes >3 ans)", kc:0.50},
+  {name:"Toiture extensive", kc:0.30},
+  {name:"Toiture intensive", kc:0.60},
+  {name:"Prairie naturelle", kc:0.65},
+  {name:"Agriculture urbaine (potager)", kc:0.85},
+];
+
+const ZONE_COLORS = ['#5E8B8F','#C25C3A','#8A8279','#6B8E5A','#9B6B8E','#C2943A','#5A7E8E','#8E5A5A','#5A8E6B','#8E8E5A'];
+
+// ═══════════════════════════════════════════════════════════
+//  IRRIGATION CONFIG
+// ═══════════════════════════════════════════════════════════
+const SIMPLE_METHODS = [
+  {name:"Aspersion (generique)", eff:0.75},
+  {name:"Goutte-a-goutte (generique)", eff:0.90},
+  {name:"Micro-aspersion (generique)", eff:0.80},
+  {name:"Arrosage manuel", eff:0.60},
+  {name:"Aucun arrosage", eff:0},
+];
+
+const DETAIL_EQUIPMENT = {
+  tuyeres: {
+    name: "Tuyeres (escamotables)",
+    params: [
+      {id:'debit', label:'Debit (L/min)', min:2, max:18, step:0.5, def:8},
+      {id:'pression', label:'Pression (bar)', min:1.5, max:3.0, step:0.1, def:2.0},
+      {id:'portee', label:'Portee (m)', min:2, max:5, step:0.5, def:3.5},
+      {id:'pluvio', label:'Pluviometrie (mm/h)', min:15, max:40, step:1, def:25},
+      {id:'eff', label:'Efficience', min:0.70, max:0.80, step:0.01, def:0.75},
+    ]
+  },
+  turbines: {
+    name: "Turbines (escamotables)",
+    params: [
+      {id:'debit', label:'Debit (L/min)', min:5, max:75, step:1, def:20},
+      {id:'pression', label:'Pression (bar)', min:2.0, max:4.5, step:0.1, def:3.0},
+      {id:'portee', label:'Portee (m)', min:5, max:15, step:0.5, def:10},
+      {id:'pluvio', label:'Pluviometrie (mm/h)', min:10, max:25, step:1, def:15},
+      {id:'eff', label:'Efficience', min:0.70, max:0.80, step:0.01, def:0.75},
+    ]
+  },
+  gag: {
+    name: "Goutte-a-goutte",
+    params: [
+      {id:'debit', label:'Debit/goutteur (L/h)', min:1, max:8, step:0.5, def:2},
+      {id:'espacement', label:'Espacement (cm)', min:20, max:50, step:1, def:33},
+      {id:'pression', label:'Pression (bar)', min:0.5, max:2.5, step:0.1, def:1.5},
+      {id:'pluvio', label:'Pluviometrie eq. (mm/h)', min:3, max:15, step:0.5, def:6},
+      {id:'eff', label:'Efficience', min:0.85, max:0.95, step:0.01, def:0.90},
+    ]
+  },
+  micro: {
+    name: "Micro-asperseurs",
+    params: [
+      {id:'debit', label:'Debit (L/h)', min:20, max:150, step:5, def:50},
+      {id:'pression', label:'Pression (bar)', min:1.0, max:3.0, step:0.1, def:2.0},
+      {id:'portee', label:'Portee (m)', min:1, max:5, step:0.5, def:2.5},
+      {id:'pluvio', label:'Pluviometrie (mm/h)', min:5, max:20, step:0.5, def:10},
+      {id:'eff', label:'Efficience', min:0.75, max:0.85, step:0.01, def:0.80},
+    ]
+  },
+  manuel: {
+    name: "Arrosage manuel",
+    params: [
+      {id:'debit', label:'Debit estime (L/h)', min:500, max:1500, step:50, def:900},
+      {id:'eff', label:'Efficience', min:0.50, max:0.70, step:0.01, def:0.60},
+    ]
+  },
+};
+
+// ═══════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════
+let zones = [];
+let zoneIdCounter = 0;
+let mode = 'simple'; // 'simple' | 'detail'
+
+function addZone() {
+  const id = ++zoneIdCounter;
+  zones.push({
+    id,
+    name: 'Zone ' + id,
+    surface: 100,
+    vegType: 0,
+    kc: VEG_TYPES[0].kc,
+    simpleMethod: 0,
+    detailEquip: 'tuyeres',
+    detailParams: {},
+  });
+  renderZones();
+  renderIrrigation();
+}
+
+function removeZone(id) {
+  zones = zones.filter(z => z.id !== id);
+  renderZones();
+  renderIrrigation();
+}
+
+function renderZones() {
+  const list = document.getElementById('zones-list');
+  list.innerHTML = '';
+  zones.forEach((z, idx) => {
+    const color = ZONE_COLORS[idx % ZONE_COLORS.length];
+    const div = document.createElement('div');
+    div.className = 'zone-card';
+    div.innerHTML = `
+      <div class="zone-header">
+        <div class="zone-color" style="background:${color}"></div>
+        <input type="text" value="${z.name}" onchange="zones[${idx}].name=this.value">
+        <button class="zone-delete" onclick="removeZone(${z.id})" title="Supprimer">&times;</button>
+      </div>
+      <div class="zone-fields">
+        <div class="field-group">
+          <label>Surface (m&#178;)</label>
+          <input type="number" min="0" step="1" value="${z.surface}"
+            onchange="zones[${idx}].surface=parseFloat(this.value)||0">
+        </div>
+        <div class="field-group">
+          <label>Type de vegetation</label>
+          <select onchange="zones[${idx}].vegType=parseInt(this.value); zones[${idx}].kc=VEG_TYPES[this.value].kc; this.parentNode.parentNode.querySelector('.kc-input').value=VEG_TYPES[this.value].kc;">
+            ${VEG_TYPES.map((v,i) => `<option value="${i}" ${i===z.vegType?'selected':''}>${v.name}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Kc</label>
+          <input type="number" class="kc-input" min="0" max="1.5" step="0.01" value="${z.kc}"
+            onchange="zones[${idx}].kc=parseFloat(this.value)||0">
+        </div>
+      </div>
+    `;
+    list.appendChild(div);
+  });
+}
+
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll('.toggle-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', (i===0 && m==='simple') || (i===1 && m==='detail'));
+  });
+  document.getElementById('warning-simple').style.display = m==='simple' ? 'block' : 'none';
+  renderIrrigation();
+}
+
+function renderIrrigation() {
+  const container = document.getElementById('irrigation-config');
+  container.innerHTML = '';
+  if (zones.length === 0) {
+    container.innerHTML = '<p style="font-size:0.82rem;color:var(--text-light);">Ajoutez au moins une zone pour configurer l\'arrosage.</p>';
+    return;
+  }
+
+  zones.forEach((z, idx) => {
+    const color = ZONE_COLORS[idx % ZONE_COLORS.length];
+    const div = document.createElement('div');
+    div.className = 'zone-card';
+    div.style.marginBottom = '0.6rem';
+
+    if (mode === 'simple') {
+      div.innerHTML = `
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;">
+          <div class="zone-color" style="background:${color}"></div>
+          <span style="font-size:0.82rem;font-weight:400;">${z.name}</span>
+        </div>
+        <div class="field-group" style="max-width:300px;">
+          <label>Methode d'arrosage</label>
+          <select onchange="zones[${idx}].simpleMethod=parseInt(this.value)">
+            ${SIMPLE_METHODS.map((m,i) => `<option value="${i}" ${i===z.simpleMethod?'selected':''}>${m.name}</option>`).join('')}
+          </select>
+        </div>
+      `;
+    } else {
+      // Detail mode
+      const equipKeys = Object.keys(DETAIL_EQUIPMENT);
+      const currentEquip = z.detailEquip || 'tuyeres';
+      const equipDef = DETAIL_EQUIPMENT[currentEquip];
+
+      let slidersHTML = '';
+      equipDef.params.forEach(p => {
+        const val = z.detailParams[p.id] !== undefined ? z.detailParams[p.id] : p.def;
+        z.detailParams[p.id] = val;
+        slidersHTML += `
+          <div class="slider-group">
+            <div class="slider-label">
+              <span>${p.label}</span>
+              <span class="slider-value" id="sv-${z.id}-${p.id}">${val}</span>
+            </div>
+            <input type="range" min="${p.min}" max="${p.max}" step="${p.step}" value="${val}"
+              oninput="zones[${idx}].detailParams['${p.id}']=parseFloat(this.value); document.getElementById('sv-${z.id}-${p.id}').textContent=this.value;">
+          </div>
+        `;
+      });
+
+      div.innerHTML = `
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;">
+          <div class="zone-color" style="background:${color}"></div>
+          <span style="font-size:0.82rem;font-weight:400;">${z.name}</span>
+        </div>
+        <div class="field-group" style="max-width:300px;margin-bottom:0.8rem;">
+          <label>Type de materiel</label>
+          <select onchange="zones[${idx}].detailEquip=this.value; zones[${idx}].detailParams={}; renderIrrigation();">
+            ${equipKeys.map(k => `<option value="${k}" ${k===currentEquip?'selected':''}>${DETAIL_EQUIPMENT[k].name}</option>`).join('')}
+          </select>
+        </div>
+        ${slidersHTML}
+      `;
+    }
+    container.appendChild(div);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CALCULATE
+// ═══════════════════════════════════════════════════════════
+function calculate() {
+  if (!hasSession) {
+    document.getElementById('gate').style.display = 'flex';
+    return;
+  }
+  if (zones.length === 0) { alert('Ajoutez au moins une zone.'); return; }
+  if (!document.getElementById('dept-select').value) { alert('Choisissez un departement.'); return; }
+
+  // Refresh ETP from inputs
+  for (let i = 0; i < 12; i++) currentETP[i] = parseFloat(document.getElementById('etp-'+i).value)||0;
+
+  const results = zones.map((z, idx) => {
+    let eff, pluvio, equipName;
+    let excluded = false;
+
+    if (mode === 'simple') {
+      const method = SIMPLE_METHODS[z.simpleMethod];
+      if (method.eff === 0) { excluded = true; eff = 1; equipName = method.name; pluvio = null; }
+      else { eff = method.eff; equipName = method.name; pluvio = null; }
+    } else {
+      const equip = DETAIL_EQUIPMENT[z.detailEquip];
+      eff = z.detailParams.eff || equip.params.find(p=>p.id==='eff').def;
+      pluvio = z.detailParams.pluvio !== undefined ? z.detailParams.pluvio : (equip.params.find(p=>p.id==='pluvio')?.def || null);
+      equipName = equip.name;
+    }
+
+    const monthly = new Array(12).fill(0);
+    if (!excluded) {
+      for (let m = 0; m < 12; m++) {
+        monthly[m] = (z.surface * z.kc * currentETP[m]) / eff / 1000; // m3
+      }
+    }
+    const annualVol = monthly.reduce((a,b)=>a+b,0);
+
+    // Peak watering hours/week (detail mode only)
+    let peakHours = null;
+    if (mode === 'detail' && pluvio && !excluded) {
+      const peakMonth = Math.max(...currentETP);
+      const weeklyNeedMM = (z.kc * peakMonth) / (30/7) * 7 / eff; // mm/week
+      peakHours = weeklyNeedMM / pluvio;
+    }
+
+    return { zone: z, monthly, annualVol, eff, equipName, peakHours, color: ZONE_COLORS[idx % ZONE_COLORS.length] };
+  });
+
+  const totalVol = results.reduce((a,r) => a + r.annualVol, 0);
+  document.getElementById('total-volume').textContent = totalVol.toFixed(1);
+
+  // Show results
+  document.getElementById('step-results').style.display = 'block';
+  document.getElementById('step-results').scrollIntoView({ behavior: 'smooth' });
+
+  // Show/hide peak column
+  const thPic = document.getElementById('th-pic');
+  thPic.style.display = mode === 'detail' ? '' : 'none';
+
+  // Recap table
+  const tbody = document.getElementById('recap-body');
+  tbody.innerHTML = '';
+  results.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><span class="recap-dot" style="background:${r.color}"></span>${r.zone.name}</td>
+      <td class="mono">${r.zone.surface} m&#178;</td>
+      <td class="mono">${r.zone.kc}</td>
+      <td>${r.equipName}</td>
+      <td class="mono">${r.eff.toFixed(2)}</td>
+      <td class="mono">${r.annualVol.toFixed(1)}</td>
+      ${mode==='detail' ? `<td class="mono" style="${r.peakHours===null?'':''}">
+        ${r.peakHours !== null ? r.peakHours.toFixed(1) : '—'}</td>` : ''}
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Chart
+  drawChart(results);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CHART (Canvas)
+// ═══════════════════════════════════════════════════════════
+function drawChart(results) {
+  const canvas = document.getElementById('chart');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = 300 * dpr;
+  canvas.style.width = rect.width + 'px';
+  canvas.style.height = '300px';
+  ctx.scale(dpr, dpr);
+
+  const W = rect.width;
+  const H = 300;
+  const padL = 55, padR = 15, padT = 15, padB = 30;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Compute stacked data per month
+  const numZones = results.length;
+  const stackedMax = new Array(12).fill(0);
+  results.forEach(r => {
+    for (let m = 0; m < 12; m++) stackedMax[m] += r.monthly[m];
+  });
+  const maxVal = Math.max(...stackedMax, 1);
+
+  // Grid
+  ctx.strokeStyle = '#E2DED9';
+  ctx.lineWidth = 0.5;
+  const gridLines = 5;
+  for (let i = 0; i <= gridLines; i++) {
+    const y = padT + (chartH / gridLines) * i;
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+    ctx.fillStyle = '#A09C98';
+    ctx.font = '11px "DM Mono", monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(((gridLines - i) / gridLines * maxVal).toFixed(1), padL - 6, y + 4);
+  }
+
+  // Bars
+  const barGroupW = chartW / 12;
+  const barW = Math.min(barGroupW * 0.7, 40);
+
+  for (let m = 0; m < 12; m++) {
+    let cumY = 0;
+    const x = padL + barGroupW * m + (barGroupW - barW) / 2;
+
+    for (let z = 0; z < numZones; z++) {
+      const val = results[z].monthly[m];
+      const barH = (val / maxVal) * chartH;
+      const y = padT + chartH - cumY - barH;
+      ctx.fillStyle = results[z].color;
+      ctx.beginPath();
+      // Rounded top for last segment
+      if (z === numZones - 1 && barH > 3) {
+        const r = Math.min(3, barH / 2);
+        ctx.moveTo(x, y + barH);
+        ctx.lineTo(x, y + r);
+        ctx.quadraticCurveTo(x, y, x + r, y);
+        ctx.lineTo(x + barW - r, y);
+        ctx.quadraticCurveTo(x + barW, y, x + barW, y + r);
+        ctx.lineTo(x + barW, y + barH);
+        ctx.closePath();
+      } else {
+        ctx.rect(x, y, barW, barH);
+      }
+      ctx.fill();
+      cumY += barH;
+    }
+
+    // Month label
+    ctx.fillStyle = '#7A7672';
+    ctx.font = '11px "DM Sans", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(MONTHS_SHORT[m], padL + barGroupW * m + barGroupW / 2, H - 8);
+  }
+
+  // Y axis label
+  ctx.save();
+  ctx.translate(12, padT + chartH / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillStyle = '#A09C98';
+  ctx.font = '10px "DM Sans", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('m\u00B3', 0, 0);
+  ctx.restore();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════
+addZone();
+</script>
+</body>
+</html>
