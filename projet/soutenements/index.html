@@ -489,28 +489,32 @@ function compute() {
   // Moment destabilisant
   const Md = Pa_total * y;
 
-  let Fs_r = null, Fs_g = null, Ms = null;
+  let Fs_r = null, Fs_g = null, Ms = null, Wmur = 0, Wsem = 0, Wterre = 0, N = 0;
+  // Semelle thickness estimate (m): 15cm for concrete, same as wall for metal
+  const eSem = t.unit === 'mm' ? e : 0.15;
+
   if (!t.fiche && !blocked) {
-    // Weight of wall (per m of length)
-    const Wmur = gammaMur * e * H; // kN/m
+    // 1. Poids propre du mur vertical
+    Wmur = gammaMur * e * H; // kN/m
 
-    // Weight of soil on semelle (behind wall)
+    // 2. Poids propre de la semelle
+    Wsem = t.hasSemelle ? gammaMur * eSem * L : 0;
+
+    // 3. Poids de la terre sur la semelle (terme dominant)
     const Lsol = L > e ? L - e : 0;
-    const Wsol = gammaSol * Lsol * H;
+    Wterre = gammaSol * H * Lsol;
 
-    // Weight of surcharge on semelle soil
+    // Total vertical force (includes surcharge on soil above semelle)
     const Wq = q * Lsol;
+    N = Wmur + Wsem + Wterre + Wq;
 
-    // Total vertical force
-    const N = Wmur + Wsol + Wq;
-
-    // Stabilizing moment about toe (front of semelle)
-    // Toe is at left edge of semelle. Wall center = e/2 from left
-    // For L-type: semelle extends behind wall, toe at front
+    // Stabilizing moment about toe (arete avant du mur, cote aval)
+    // Bras de levier mesures depuis le pied avant du mur
     const brasMur = e / 2;
-    const brasSol = e + Lsol / 2;
+    const brasSem = L / 2;
+    const brasTerre = e + Lsol / 2;
     const brasQ = e + Lsol / 2;
-    Ms = Wmur * brasMur + Wsol * brasSol + Wq * brasQ;
+    Ms = Wmur * brasMur + Wsem * brasSem + Wterre * brasTerre + Wq * brasQ;
 
     // Fs renversement
     Fs_r = Md > 0 ? Ms / Md : 99;
@@ -527,7 +531,7 @@ function compute() {
   return {
     type: t, idx, H, e, L, phi, gammaSol, c, q, gammaMur, blocked,
     Ka, Pa_sol, Pa_q, Pa_total, y, Md, Ms, Fs_r, Fs_g, Fs_min,
-    epRaw,
+    epRaw, Wmur, Wsem, Wterre, N, eSem,
   };
 }
 
@@ -561,90 +565,100 @@ function drawSVG(r) {
 
   const wallH = r.H * scale;
   const wallW = Math.max(r.e * scale, 4); // min visible width
-  const semH = r.type.hasSemelle ? Math.max(r.e * scale * 0.6, 8) : 0;
-  const semW = r.L * scale;
+  const semHpx = r.type.hasSemelle ? Math.max(r.eSem * scale, 8) : 0;
+  const semWpx = r.L * scale;
 
-  // Position: wall base center
-  const baseY = svgH - margin - semH;
-  const wallX = margin + 80; // left edge of wall
+  // Position: wall front (aval) at wallX, base at baseY (top of semelle)
+  const baseY = svgH - margin - semHpx;
+  const wallX = margin + 60; // left edge of wall (aval side)
   const wallTopY = baseY - wallH;
 
-  // Terre zone
+  // Semelle extends behind wall (from wallX to wallX + semWpx)
+  const semEndX = r.type.hasSemelle ? wallX + Math.max(semWpx, wallW) : wallX + wallW;
+
+  // Terre zone: from right side of wall to semelle end + overshoot
   const terreX = wallX + wallW;
-  const terreW = 120;
+  const terreEndX = semEndX + 60;
+  const terreW = terreEndX - terreX;
 
   let html = '';
 
-  // Defs: hachures
+  // Defs: hachures + markers
   html += `
     <defs>
       <pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
         <line x1="0" y1="0" x2="0" y2="8" stroke="#7A7672" stroke-width="0.6"/>
       </pattern>
+      <marker id="arrowRed" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0,0 8,3 0,6" fill="#EF4444"/></marker>
+      <marker id="arrowBlk" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0,0 8,3 0,6" fill="#2A2826"/></marker>
+      <marker id="arrowOrg" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0,0 8,3 0,6" fill="#F59E0B"/></marker>
+      <marker id="arrowGrn" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0,0 8,3 0,6" fill="#10B981"/></marker>
     </defs>
   `;
 
-  // Terre (hatched)
+  // ── TERRE (hachurée) repose SUR la semelle ──
   html += `<rect x="${terreX}" y="${wallTopY}" width="${terreW}" height="${wallH}" fill="url(#hatch)" stroke="#7A7672" stroke-width="0.5"/>`;
 
-  // Semelle
+  // ── SEMELLE (profil en L) ──
   if (r.type.hasSemelle && r.L > 0) {
-    const semX = wallX;
-    const semEndX = wallX + Math.max(semW, wallW);
-    html += `<rect x="${semX}" y="${baseY}" width="${semEndX - semX}" height="${semH}" fill="${verdict.bg}" stroke="#2A2826" stroke-width="1.2"/>`;
+    html += `<rect x="${wallX}" y="${baseY}" width="${Math.max(semWpx, wallW)}" height="${semHpx}" fill="${verdict.bg}" stroke="#2A2826" stroke-width="1.2"/>`;
   }
 
-  // Wall
-  const wallFill = verdict.bg;
-  html += `<rect x="${wallX}" y="${wallTopY}" width="${wallW}" height="${wallH}" fill="${wallFill}" stroke="#2A2826" stroke-width="1.5"/>`;
+  // ── MUR VERTICAL ──
+  html += `<rect x="${wallX}" y="${wallTopY}" width="${wallW}" height="${wallH}" fill="${verdict.bg}" stroke="#2A2826" stroke-width="1.5"/>`;
 
-  // Fiche (dashed below ground for fiche types)
+  // ── FICHE (types fichés) ──
   if (r.type.fiche) {
     const ficheH = wallH * 0.4;
     html += `<rect x="${wallX}" y="${baseY}" width="${wallW}" height="${ficheH}" fill="none" stroke="#2A2826" stroke-width="1.2" stroke-dasharray="4,3"/>`;
-    // Ground line
     html += `<line x1="${margin}" y1="${baseY}" x2="${svgW - margin}" y2="${baseY}" stroke="#7A7672" stroke-width="1" stroke-dasharray="6,3"/>`;
   }
 
-  // ── FLECHE POUSSEE ACTIVE ──
+  // ── DIAGRAMME DE POUSSÉE TRIANGULAIRE ──
   if (r.Pa_total > 0) {
-    // Triangular distribution
-    const arrowY = baseY - r.y * scale; // point d'application
-    const arrowLen = Math.min(60, Math.max(20, r.Pa_total * 3));
-    const triTopY = wallTopY;
-    const triBaseY = baseY;
-    const triPeakX = terreX + terreW + 5;
-    const triEndX = triPeakX + arrowLen * 0.6;
+    const diagX = terreEndX + 5; // right edge of terre
+    const maxPressure = Math.min(60, Math.max(20, r.Pa_total * 3));
 
-    // Triangular pressure distribution (outline)
-    html += `<polygon points="${terreX + terreW},${triTopY} ${triEndX},${triBaseY} ${terreX + terreW},${triBaseY}" fill="rgba(239,68,68,0.08)" stroke="#EF4444" stroke-width="0.8"/>`;
+    // Triangle de poussée sol (zéro en haut, max en bas)
+    const solMaxW = maxPressure * (r.Pa_sol / Math.max(r.Pa_total, 0.01));
+    html += `<polygon points="${diagX},${wallTopY} ${diagX},${baseY} ${diagX + solMaxW},${baseY}" fill="rgba(239,68,68,0.08)" stroke="#EF4444" stroke-width="0.8"/>`;
 
-    // Resultant arrow at H/3
-    const arrStartX = terreX + terreW + arrowLen * 0.4;
-    html += `<line x1="${arrStartX}" y1="${arrowY}" x2="${terreX + terreW + 2}" y2="${arrowY}" stroke="#EF4444" stroke-width="1.5" marker-end="url(#arrowRed)"/>`;
-    html += `<defs><marker id="arrowRed" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0,0 8,3 0,6" fill="#EF4444"/></marker></defs>`;
+    // Rectangle de poussée surcharge (si q > 0)
+    if (r.Pa_q > 0) {
+      const qW = maxPressure * (r.Pa_q / Math.max(r.Pa_total, 0.01)) * 0.5;
+      html += `<rect x="${diagX}" y="${wallTopY}" width="${qW}" height="${wallH}" fill="rgba(245,158,11,0.06)" stroke="#F59E0B" stroke-width="0.6"/>`;
+    }
 
-    // H/3 label
-    html += `<text x="${arrStartX + 4}" y="${arrowY - 5}" font-family="'DM Mono', monospace" font-size="9" fill="#EF4444">Pa @ H/3</text>`;
+    // Résultante Pa au bon point d'application
+    const arrowY = baseY - r.y * scale;
+    const arrStartX = diagX + maxPressure * 0.5;
+    html += `<line x1="${arrStartX}" y1="${arrowY}" x2="${terreX + 2}" y2="${arrowY}" stroke="#EF4444" stroke-width="1.5" marker-end="url(#arrowRed)"/>`;
+    html += `<text x="${arrStartX + 4}" y="${arrowY - 5}" font-family="'DM Mono', monospace" font-size="9" fill="#EF4444">Pa</text>`;
   }
 
-  // ── FLECHE POIDS PROPRE ──
+  // ── FLÈCHE POIDS PROPRE MUR ──
   const cgX = wallX + wallW / 2;
   const cgY = wallTopY + wallH / 2;
-  html += `<line x1="${cgX}" y1="${cgY}" x2="${cgX}" y2="${cgY + 35}" stroke="#2A2826" stroke-width="1.2" marker-end="url(#arrowBlk)"/>`;
-  html += `<defs><marker id="arrowBlk" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0,0 8,3 0,6" fill="#2A2826"/></marker></defs>`;
-  html += `<text x="${cgX + 5}" y="${cgY + 20}" font-family="'DM Mono', monospace" font-size="9" fill="#2A2826">W</text>`;
+  html += `<line x1="${cgX}" y1="${cgY}" x2="${cgX}" y2="${cgY + 30}" stroke="#2A2826" stroke-width="1.2" marker-end="url(#arrowBlk)"/>`;
+  html += `<text x="${cgX - 12}" y="${cgY + 18}" font-family="'DM Mono', monospace" font-size="8" fill="#2A2826">Wm</text>`;
 
-  // ── FLECHE SURCHARGE ──
+  // ── FLÈCHE POIDS TERRE SUR SEMELLE ──
+  if (r.type.hasSemelle && r.L > r.e) {
+    const terreCenterX = wallX + wallW + (Math.max(semWpx, wallW) - wallW) / 2;
+    const terreCenterY = wallTopY + wallH * 0.4;
+    html += `<line x1="${terreCenterX}" y1="${terreCenterY}" x2="${terreCenterX}" y2="${terreCenterY + 30}" stroke="#10B981" stroke-width="1.2" marker-end="url(#arrowGrn)"/>`;
+    html += `<text x="${terreCenterX + 5}" y="${terreCenterY + 18}" font-family="'DM Mono', monospace" font-size="8" fill="#10B981">Wt</text>`;
+  }
+
+  // ── FLÈCHE SURCHARGE ──
   if (r.q > 0) {
     const qX1 = terreX + 15;
-    const qX2 = terreX + terreW - 15;
+    const qX2 = terreEndX - 15;
     const qMid = (qX1 + qX2) / 2;
     for (const qx of [qX1, qMid, qX2]) {
       html += `<line x1="${qx}" y1="${wallTopY - 20}" x2="${qx}" y2="${wallTopY - 2}" stroke="#F59E0B" stroke-width="1.2" marker-end="url(#arrowOrg)"/>`;
     }
-    html += `<defs><marker id="arrowOrg" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0,0 8,3 0,6" fill="#F59E0B"/></marker></defs>`;
-    html += `<text x="${qMid}" y="${wallTopY - 25}" font-family="'DM Mono', monospace" font-size="9" fill="#F59E0B" text-anchor="middle">q = ${r.q} kN/m&#178;</text>`;
+    html += `<text x="${qMid}" y="${wallTopY - 25}" font-family="'DM Mono', monospace" font-size="9" fill="#F59E0B" text-anchor="middle">q = ${r.q} kN/m\u00B2</text>`;
   }
 
   // ── COTES ──
@@ -657,7 +671,7 @@ function drawSVG(r) {
 
   // Epaisseur e
   const epLabel = r.type.unit === 'mm' ? r.epRaw + 'mm' : r.epRaw + 'cm';
-  const epCoteY = baseY + semH + 18;
+  const epCoteY = baseY + semHpx + 18;
   html += `<line x1="${wallX}" y1="${epCoteY}" x2="${wallX + wallW}" y2="${epCoteY}" stroke="#2A2826" stroke-width="0.7"/>`;
   html += `<line x1="${wallX}" y1="${epCoteY - 3}" x2="${wallX}" y2="${epCoteY + 3}" stroke="#2A2826" stroke-width="0.7"/>`;
   html += `<line x1="${wallX + wallW}" y1="${epCoteY - 3}" x2="${wallX + wallW}" y2="${epCoteY + 3}" stroke="#2A2826" stroke-width="0.7"/>`;
@@ -665,8 +679,7 @@ function drawSVG(r) {
 
   // Semelle L
   if (r.type.hasSemelle && r.L > 0) {
-    const semCoteY = baseY + semH + 35;
-    const semEndX = wallX + Math.max(semW, wallW);
+    const semCoteY = baseY + semHpx + 35;
     html += `<line x1="${wallX}" y1="${semCoteY}" x2="${semEndX}" y2="${semCoteY}" stroke="#2A2826" stroke-width="0.7"/>`;
     html += `<line x1="${wallX}" y1="${semCoteY - 3}" x2="${wallX}" y2="${semCoteY + 3}" stroke="#2A2826" stroke-width="0.7"/>`;
     html += `<line x1="${semEndX}" y1="${semCoteY - 3}" x2="${semEndX}" y2="${semCoteY + 3}" stroke="#2A2826" stroke-width="0.7"/>`;
@@ -713,8 +726,11 @@ function drawResults(r) {
   }
 
   // Full results
-  rows += calcRow('Moment destabilisant Md', 'Pa &#215; y', r.Md.toFixed(2) + ' kN.m/m');
-  rows += calcRow('Moment stabilisant Ms', '&#931; W &#215; bras', r.Ms.toFixed(2) + ' kN.m/m');
+  rows += calcRow('W mur — Poids propre mur', '&#947;mur &#215; e &#215; H', r.Wmur.toFixed(2) + ' kN/m');
+  rows += calcRow('W semelle — Poids propre semelle', '&#947;mur &#215; e_sem &#215; L', r.Wsem.toFixed(2) + ' kN/m');
+  rows += calcRow('W terre — Poids terre sur semelle', '&#947;sol &#215; H &#215; (L - e)', r.Wterre.toFixed(2) + ' kN/m');
+  rows += calcRow('Moment destabilisant Md', 'Pa_sol&#215;H/3 + Pa_q&#215;H/2', r.Md.toFixed(2) + ' kN.m/m');
+  rows += calcRow('Moment stabilisant Ms', '&#931; Wi &#215; bras_i', r.Ms.toFixed(2) + ' kN.m/m');
   rows += calcRowFs('Fs renversement', 'Ms / Md', r.Fs_r);
   rows += calcRowFs('Fs glissement', '(N&#215;tan&#948; + c&#215;B) / Pa', r.Fs_g);
 
