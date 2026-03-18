@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculateur de platelages bois — SYLVE Projet</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --sylve: #5E8B8F;
+      --sylve-light: #E8F0F1;
+      --sylve-dark: #3d6366;
+      --projet: #8A8279;
+      --projet-light: #F0EDEA;
+      --bg: #F7F6F4;
+      --surface: #FFFFFF;
+      --border: #E2DED9;
+      --text: #2A2826;
+      --text-muted: #7A7672;
+      --text-light: #A09C98;
+      --radius: 6px;
+      --blue: #3B82F6;
+      --green: #10B981;
+      --orange: #F59E0B;
+      --red: #EF4444;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', sans-serif; font-weight: 300; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 52px;
+      position: sticky; top: 0; z-index: 10;
+    }
+    .header-brand { display: flex; align-items: baseline; gap: 0.6rem; text-decoration: none; color: var(--text); }
+    .header-brand .logo { font-family: 'DM Sans', sans-serif; font-weight: 300; font-size: 1.1rem; letter-spacing: 0.18em; color: var(--sylve); }
+    .header-brand .sub { font-size: 0.72rem; letter-spacing: 0.14em; color: var(--projet); text-transform: uppercase; }
+    .header-tag { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); background: var(--sylve-light); padding: 3px 10px; border-radius: 20px; }
+
+    /* ── LAYOUT ── */
+    .page-title-section { padding: 1.5rem 2rem 1rem; max-width: 1400px; margin: 0 auto; }
+    .page-title-section h1 {
+      font-family: Helvetica, 'Helvetica Neue', Arial, sans-serif;
+      font-size: 1.7rem; font-weight: 300; color: var(--sylve);
+      line-height: 1.2; letter-spacing: 6px; text-transform: lowercase;
+    }
+    .page-title-section p { font-size: 0.82rem; color: var(--text-muted); margin-top: 0.4rem; }
+
+    .app {
+      display: grid; grid-template-columns: 420px 1fr; gap: 0;
+      max-width: 1400px; margin: 0 auto;
+      min-height: calc(100vh - 52px - 80px);
+    }
+
+    /* ── PANEL LEFT ── */
+    .panel-left {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      display: flex; flex-direction: column; overflow: hidden; margin: 0 0 2rem 2rem;
+    }
+    .panel-header {
+      padding: 0.8rem 1.2rem; border-bottom: 1px solid var(--border);
+      font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--text-muted); font-weight: 500; flex-shrink: 0;
+    }
+    .panel-body { flex: 1; overflow-y: auto; padding: 1rem 1.2rem; }
+    .panel-body::-webkit-scrollbar { width: 4px; }
+    .panel-body::-webkit-scrollbar-track { background: transparent; }
+    .panel-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    /* ── PANEL RIGHT ── */
+    .panel-right {
+      display: flex; flex-direction: column; padding: 0 2rem 2rem 1rem; gap: 1rem;
+    }
+
+    /* ── FORM ── */
+    .section-title {
+      font-family: Helvetica, 'Helvetica Neue', Arial, sans-serif;
+      font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--text-light); font-weight: 400; margin: 1.2rem 0 0.5rem;
+      padding-bottom: 0.4rem; border-bottom: 1px solid var(--border);
+    }
+    .section-title:first-child { margin-top: 0; }
+
+    label { font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 0.25rem; }
+    select, input[type="text"], input[type="number"] {
+      font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 300;
+      color: var(--text); background: var(--surface);
+      border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 7px 10px; width: 100%;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    select:focus, input:focus { outline: none; border-color: var(--sylve); box-shadow: 0 0 0 2px var(--sylve-light); }
+    input[type="number"] { font-family: 'DM Mono', monospace; }
+
+    .field-group { margin-bottom: 0.7rem; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+    .field-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.6rem; }
+
+    .notice {
+      font-size: 0.75rem; color: var(--sylve-dark); background: var(--sylve-light);
+      border-radius: var(--radius); padding: 0.5rem 0.7rem; margin-top: 0.4rem; line-height: 1.5;
+    }
+    .notice-warn { color: #8B6A3F; background: #FFF8F0; border: 1px solid #F0D8B8; }
+    .notice-danger { color: #9B2C2C; background: #FFF5F5; border: 1px solid #FEB2B2; }
+
+    .charges-info {
+      font-size: 0.74rem; color: var(--text-light); font-family: 'DM Mono', monospace;
+      margin-top: 0.3rem;
+    }
+
+    /* Toggle */
+    .toggle-row { display: flex; gap: 0; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    .toggle-btn {
+      flex: 1; padding: 7px 10px; font-family: 'DM Sans', sans-serif; font-size: 0.82rem; font-weight: 300;
+      background: var(--surface); color: var(--text-muted); border: none; cursor: pointer;
+      transition: all 0.15s; text-align: center;
+    }
+    .toggle-btn.active { background: var(--sylve); color: #fff; font-weight: 400; }
+    .toggle-btn:not(:last-child) { border-right: 1px solid var(--border); }
+
+    .tooltip-text {
+      font-size: 0.72rem; color: var(--text-light); line-height: 1.5; margin-top: 0.3rem;
+    }
+
+    .exo-flag { font-size: 0.7rem; margin-left: 2px; }
+
+    /* ── SVG AREA ── */
+    .svg-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 1rem; min-height: 300px; display: flex; align-items: center; justify-content: center;
+    }
+    .svg-card svg { width: 100%; height: 100%; max-height: 360px; }
+
+    /* ── RESULTS ── */
+    .results-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 1.2rem;
+    }
+
+    .result-big {
+      text-align: center; padding: 0.8rem 0;
+    }
+    .result-big-label {
+      font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.2rem;
+    }
+    .result-big-value {
+      font-family: 'DM Mono', monospace; font-size: 1.8rem; font-weight: 500; color: var(--text);
+    }
+    .result-big-unit { font-size: 0.9rem; font-weight: 300; color: var(--text-muted); }
+
+    .result-row-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;
+    }
+
+    .verdict-box {
+      border-radius: var(--radius); padding: 1rem 1.2rem; text-align: center; margin-bottom: 1rem;
+    }
+    .verdict-label { font-size: 0.82rem; font-weight: 400; margin-bottom: 0.3rem; }
+    .verdict-fs { font-family: 'DM Mono', monospace; font-size: 1.6rem; font-weight: 500; }
+
+    .prescriptions {
+      font-size: 0.78rem; line-height: 1.7; color: var(--text-muted);
+      background: var(--projet-light); border-radius: var(--radius); padding: 0.8rem 1rem;
+    }
+    .prescriptions strong { color: var(--text); font-weight: 400; }
+    .prescriptions ul { margin: 0.3rem 0 0 1.2rem; }
+
+    .calc-detail { font-size: 0.8rem; line-height: 1.7; }
+    .calc-row {
+      display: flex; justify-content: space-between; align-items: baseline;
+      padding: 0.3rem 0; border-bottom: 1px solid var(--border);
+    }
+    .calc-row:last-child { border-bottom: none; }
+    .calc-label { color: var(--text-muted); }
+    .calc-value { font-family: 'DM Mono', monospace; font-weight: 400; color: var(--text); }
+
+    .not-admitted {
+      text-align: center; padding: 1rem; color: var(--red);
+      font-size: 0.88rem; font-weight: 400;
+      background: rgba(239,68,68,0.08); border-radius: var(--radius);
+    }
+
+    /* ── GATE ── */
+    .gate-overlay {
+      position: fixed; inset: 0; background: rgba(247,246,244,0.92);
+      display: flex; align-items: center; justify-content: center; z-index: 100;
+    }
+    .gate-box {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 2.5rem; text-align: center; max-width: 400px;
+    }
+    .gate-box h2 {
+      font-family: Helvetica, 'Helvetica Neue', Arial, sans-serif;
+      font-size: 1.1rem; font-weight: 300; color: var(--text); margin-bottom: 0.6rem;
+    }
+    .gate-box p { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1.2rem; line-height: 1.5; }
+    .gate-box a {
+      display: inline-block; font-family: 'DM Sans', sans-serif; font-size: 0.85rem;
+      color: #fff; background: var(--sylve); border-radius: var(--radius);
+      padding: 10px 24px; text-decoration: none; transition: background 0.15s;
+    }
+    .gate-box a:hover { background: var(--sylve-dark); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 860px) {
+      .app { grid-template-columns: 1fr; }
+      .panel-left { margin: 0 1rem 1rem; }
+      .panel-right { padding: 0 1rem 2rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <a href="/projet" class="header-brand">
+      <span class="logo">sylve</span>
+      <span class="sub">projet</span>
+    </a>
+    <span class="header-tag">Beta</span>
+  </header>
+
+  <div class="page-title-section">
+    <h1>calculateur de platelages bois</h1>
+    <p>Dimensionnez vos platelages exterieurs en bois conformement au DTU 51.4 — entraxes lambourdes et lames.</p>
+  </div>
+
+  <div class="app">
+    <!-- ═══ PANNEAU GAUCHE ═══ -->
+    <div class="panel-left">
+      <div class="panel-header">Parametres</div>
+      <div class="panel-body">
+
+        <!-- Usage -->
+        <div class="section-title">Usage du platelage</div>
+        <div class="field-group">
+          <select id="usage-select" onchange="onParamChange()">
+            <option value="S1">S1 — Residentiel (terrasse privative, balcon, abords piscine)</option>
+            <option value="S2">S2 — ERP courant (ecole, cafe, restaurant, parc public)</option>
+            <option value="S3">S3 — ERP forte frequentation (commerce, acces batiment, quai)</option>
+          </select>
+          <div class="charges-info" id="charges-info">Charge repartie 3,5 kN/m² — concentree 2,0 kN</div>
+        </div>
+
+        <!-- Essence lames -->
+        <div class="section-title">Essence des lames</div>
+        <div class="field-group">
+          <select id="essence-lames-select" onchange="onEssenceLamesChange()">
+          </select>
+        </div>
+        <div class="field-row-3">
+          <div class="field-group">
+            <label>Classe mecanique</label>
+            <input type="text" id="classe-lames-input" value="C24" onchange="onParamChange()">
+          </div>
+          <div class="field-group">
+            <label>Classe emploi</label>
+            <input type="text" id="emploi-lames-input" value="3.2" readonly>
+          </div>
+          <div class="field-group">
+            <label>Densite (kg/m3)</label>
+            <input type="number" id="densite-lames-input" value="530" onchange="onParamChange()">
+          </div>
+        </div>
+
+        <!-- Conception -->
+        <div class="section-title">Conception</div>
+        <div class="field-group">
+          <div class="toggle-row">
+            <button class="toggle-btn active" id="btn-courante" onclick="setConception('courante')">Courante</button>
+            <button class="toggle-btn" id="btn-elaboree" onclick="setConception('elaboree')">Elaboree</button>
+          </div>
+          <div class="tooltip-text" id="conception-tooltip">Standard, sans dispositifs anti-humidite specifiques.</div>
+          <div class="notice" id="classe-emploi-notice" style="margin-top:0.4rem;">Classe d'emploi requise : <strong id="classe-emploi-requise">3.2</strong></div>
+        </div>
+
+        <!-- Dimensions lames -->
+        <div class="section-title">Dimensions des lames</div>
+        <div class="field-row">
+          <div class="field-group">
+            <label>Epaisseur (mm)</label>
+            <select id="ep-lames-select" onchange="onParamChange()">
+              <option value="21-23">21 - 23 mm</option>
+              <option value="24-27" selected>24 - 27 mm</option>
+              <option value="28-32">28 - 32 mm</option>
+              <option value="33-39">33 - 39 mm</option>
+              <option value="40-45">40 - 45 mm</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label>Largeur (mm)</label>
+            <select id="larg-lames-select" onchange="onParamChange()">
+              <option value="90">90 mm</option>
+              <option value="120" selected>120 mm</option>
+              <option value="140">140 mm</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Lambourdes -->
+        <div class="section-title">Lambourdes</div>
+        <div class="field-group">
+          <label>Section lambourde (l x h mm)</label>
+          <select id="section-lamb-select" onchange="onParamChange()">
+            <option value="40x60">40 x 60 mm (l x h)</option>
+            <option value="60x40">60 x 40 mm (l x h)</option>
+            <option value="40x70">40 x 70 mm (l x h)</option>
+            <option value="70x40">70 x 40 mm (l x h)</option>
+            <option value="45x60">45 x 60 mm (l x h)</option>
+            <option value="60x45">60 x 45 mm (l x h)</option>
+            <option value="45x75" selected>45 x 75 mm (l x h)</option>
+            <option value="75x45">75 x 45 mm (l x h)</option>
+            <option value="60x60">60 x 60 mm (l x h)</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Essence lambourde</label>
+          <select id="essence-lamb-select" onchange="onParamChange()">
+          </select>
+        </div>
+
+        <!-- Nombre d'appuis -->
+        <div class="section-title">Configuration</div>
+        <div class="field-group">
+          <label>Nombre d'appuis</label>
+          <div class="toggle-row">
+            <button class="toggle-btn active" id="btn-3appuis" onclick="setAppuis(3)">3 appuis</button>
+            <button class="toggle-btn" id="btn-2appuis" onclick="setAppuis(2)">2 appuis</button>
+          </div>
+          <div class="notice notice-warn" id="appuis-notice" style="display:none;">
+            2 appuis : reduction de 25% sur l'entraxe lambourdes et 15% sur l'entraxe lames.
+          </div>
+        </div>
+
+        <!-- Entraxe reel -->
+        <div class="field-group">
+          <label>Entraxe lambourdes prevu (mm) — optionnel</label>
+          <input type="number" id="entraxe-reel-input" placeholder="Ex : 400" min="100" max="1200" step="10" onchange="onParamChange()">
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ═══ PANNEAU DROIT ═══ -->
+    <div class="panel-right">
+      <div class="svg-card">
+        <svg id="schema" viewBox="0 0 560 320" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+      <div class="results-card" id="results-card">
+        <div class="result-row-grid" id="result-row-grid">
+          <div class="result-big">
+            <div class="result-big-label">Entraxe max lambourdes</div>
+            <div class="result-big-value" id="res-entraxe-lamb">— <span class="result-big-unit">mm</span></div>
+          </div>
+          <div class="result-big">
+            <div class="result-big-label">Entraxe max lames</div>
+            <div class="result-big-value" id="res-entraxe-lames">— <span class="result-big-unit">mm</span></div>
+          </div>
+        </div>
+        <div id="verdict-section"></div>
+        <div class="calc-detail" id="calc-detail"></div>
+        <div class="prescriptions" id="prescriptions" style="margin-top:0.8rem;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GATE -->
+  <div class="gate-overlay" id="gate" style="display:none;">
+    <div class="gate-box">
+      <h2>Connectez-vous pour acceder aux resultats</h2>
+      <p>Creez un compte gratuit ou connectez-vous pour utiliser le calculateur de platelages bois.</p>
+      <a href="/login?redirect=/projet/platelages">Se connecter</a>
+    </div>
+  </div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  SUPABASE
+// ═══════════════════════════════════════════════════════════
+const SUPABASE_URL  = 'https://jbqgyfbjyulezaclvmwc.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpicWd5ZmJqeXVsZXphY2x2bXdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzQyMDIsImV4cCI6MjA4ODcxMDIwMn0.dNibq1JOBz3UnqdLwENmS113TGKpw_UGWKR0cE8LgMI';
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+let hasSession = false;
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  hasSession = !!session;
+  if (!hasSession) document.getElementById('gate').style.display = 'flex';
+})();
+
+// ═══════════════════════════════════════════════════════════
+//  DONNÉES
+// ═══════════════════════════════════════════════════════════
+
+const USAGES = {
+  S1: { label: 'Residentiel', qRep: 3.5, qConc: 2.0, desc: 'Charge repartie 3,5 kN/m\u00B2 — concentree 2,0 kN' },
+  S2: { label: 'ERP courant', qRep: 2.5, qConc: 3.0, desc: 'Charge repartie 2,5 kN/m\u00B2 — concentree 3,0 kN' },
+  S3: { label: 'ERP forte frequentation', qRep: 5.0, qConc: 5.0, desc: 'Charge repartie 5,0 kN/m\u00B2 — concentree 5,0 kN' },
+};
+
+const essencesLames = [
+  { name: "Pin sylvestre (traite cl.4)", classe: "C18", emploi: "4", densite: 510, exotique: false },
+  { name: "Pin maritime (traite cl.4)", classe: "C18", emploi: "4", densite: 530, exotique: false },
+  { name: "Douglas", classe: "C24", emploi: "3.2", densite: 530, exotique: false },
+  { name: "Meleze", classe: "C24", emploi: "3.2", densite: 590, exotique: false },
+  { name: "Chene", classe: "D24", emploi: "4", densite: 690, exotique: false },
+  { name: "Chataignier", classe: "D24", emploi: "4", densite: 580, exotique: false },
+  { name: "Robinier (faux-acacia)", classe: "D30", emploi: "4", densite: 730, exotique: false },
+  { name: "Ipe", classe: "D50", emploi: "5", densite: 1050, exotique: true },
+  { name: "Cumaru", classe: "D45", emploi: "5", densite: 1000, exotique: true },
+  { name: "Itauba", classe: "D40", emploi: "5", densite: 950, exotique: true },
+  { name: "Padouk", classe: "D35", emploi: "5", densite: 750, exotique: true },
+  { name: "Teck", classe: "D40", emploi: "5", densite: 650, exotique: true },
+  { name: "Autre / Personnalise", classe: "", emploi: "", densite: 0, exotique: false }
+];
+
+// ── TABLEAUX DTU 51.4 — LAMBOURDES ──
+
+const lambourdesS1 = {
+  "21-23":    { h_min: 50, C18: 560, C24: 680, D18: 560, D24: 680, D30: 700, D35: 700, D40: 700, D45_40: null, D45_45: 700, D50: 700 },
+  "21-23_55": { h_min: 55, C18: 660, C24: 700, D18: 660, D24: 700, D30: 700, D35: 700, D40: 700, D45_40: 700, D45_45: 700, D50: 700 },
+  "24-27":    { h_min: 50, C18: 550, C24: 680, D18: 550, D24: 680, D30: 700, D35: 700, D40: 700, D45_40: null, D45_45: 700, D50: 700 },
+  "24-27_55": { h_min: 55, C18: 650, C24: 700, D18: 650, D24: 700, D30: 700, D35: 700, D40: 700, D45_40: 700, D45_45: 700, D50: 700 },
+  "28-32":    { h_min: 50, C18: 550, C24: 670, D18: 550, D24: 670, D30: 700, D35: 700, D40: 700, D45_40: null, D45_45: 700, D50: 700 },
+  "28-32_55": { h_min: 55, C18: 650, C24: 700, D18: 650, D24: 700, D30: 700, D35: 700, D40: 700, D45_40: 700, D45_45: 700, D50: 700 },
+  "33-39":    { h_min: 58, C18: 620, C24: 700, D18: 620, D24: 700, D30: 700, D35: 700, D40: 700, D45_40: 700, D45_45: 700, D50: 700 },
+  "40-45":    { h_min: 68, C18: 650, C24: 700, D18: 650, D24: 700, D30: 700, D35: 700, D40: 700, D45_40: 700, D45_45: 700, D50: 700 }
+};
+
+const lambourdesS2 = {
+  "21-23":    { h_min: 50, C18: 370, C24: 500, D18: 370, D24: 500, D30: 610, D35: 610, D40: 640, D45_40: null, D45_45: 640, D50: 700 },
+  "21-23_55": { h_min: 55, C18: 440, C24: 590, D18: 440, D24: 590, D30: 700, D35: 700, D40: 700, D45_40: 700, D45_45: 700, D50: 700 },
+  "24-27":    { h_min: 50, C18: 370, C24: 500, D18: 370, D24: 500, D30: 610, D35: 610, D40: 640, D45_40: null, D45_45: 640, D50: 700 },
+  "24-27_55": { h_min: 55, C18: 440, C24: 590, D18: 440, D24: 590, D30: 700, D35: 700, D40: 700, D45_40: 700, D45_45: 700, D50: 700 },
+  "28-32":    { h_min: 50, C18: 370, C24: 490, D18: 370, D24: 490, D30: 600, D35: 600, D40: 640, D45_40: null, D45_45: 640, D50: 700 },
+  "28-32_55": { h_min: 55, C18: 440, C24: 580, D18: 440, D24: 580, D30: 700, D35: 700, D40: 700, D45_40: 700, D45_45: 700, D50: 700 },
+  "33-39":    { h_min: 58, C18: 480, C24: 640, D18: 480, D24: 640, D30: 700, D35: 700, D40: 700, D45_40: 700, D45_45: 700, D50: 700 },
+  "40-45":    { h_min: 68, C18: 630, C24: 700, D18: 630, D24: 700, D30: 700, D35: 700, D40: 700, D45_40: 700, D45_45: 700, D50: 700 }
+};
+
+const lambourdesS3 = {
+  "21-23":    { h_min: 50, C18: 220, C24: 300, D18: 220, D24: 300, D30: 440, D35: 440, D40: 500, D45_40: null, D45_45: 500, D50: 580 },
+  "21-23_55": { h_min: 55, C18: 270, C24: 360, D18: 270, D24: 360, D30: 520, D35: 520, D40: 580, D45_40: 540, D45_45: 580, D50: 650 },
+  "24-27":    { h_min: 50, C18: 220, C24: 300, D18: 220, D24: 300, D30: 440, D35: 440, D40: 500, D45_40: null, D45_45: 500, D50: 580 },
+  "24-27_55": { h_min: 55, C18: 270, C24: 350, D18: 270, D24: 350, D30: 520, D35: 520, D40: 580, D45_40: 540, D45_45: 580, D50: 650 },
+  "28-32":    { h_min: 50, C18: 220, C24: 300, D18: 220, D24: 300, D30: 430, D35: 430, D40: 500, D45_40: null, D45_45: 500, D50: 580 },
+  "28-32_55": { h_min: 55, C18: 270, C24: 350, D18: 270, D24: 350, D30: 520, D35: 520, D40: 580, D45_40: 540, D45_45: 580, D50: 650 },
+  "33-39":    { h_min: 58, C18: 290, C24: 390, D18: 290, D24: 390, D30: 560, D35: 560, D40: 620, D45_40: 590, D45_45: 620, D50: 700 },
+  "40-45":    { h_min: 68, C18: 390, C24: 510, D18: 390, D24: 510, D30: 700, D35: 700, D40: 700, D45_40: 700, D45_45: 700, D50: 700 }
+};
+
+// ── TABLEAUX DTU 51.4 — LAMES ──
+
+const lamesS1 = {
+  "21-23": {
+    90:  { C18: null, C24: 360, D18: null, D24: 360, D30: 450, D35: 450, D40: 550, D45: 570, D50: 570 },
+    120: { C18: 360, C24: 480, D18: 360, D24: 480, D30: 570, D35: 570, D40: 610, D45: 620, D50: 620 },
+    140: { C18: 420, C24: 560, D18: 420, D24: 560, D30: 600, D35: 600, D40: 640, D45: 660, D50: 660 }
+  },
+  "24-27": {
+    90:  { C18: 340, C24: 460, D18: 340, D24: 460, D30: 570, D35: 570, D40: 630, D45: 650, D50: 650 },
+    120: { C18: 460, C24: 610, D18: 460, D24: 610, D30: 660, D35: 660, D40: 690, D45: 710, D50: 710 },
+    140: { C18: 530, C24: 670, D18: 530, D24: 670, D30: 690, D35: 690, D40: 730, D45: 750, D50: 750 }
+  },
+  "28-32": {
+    90:  { C18: 450, C24: 600, D18: 450, D24: 600, D30: 700, D35: 700, D40: 740, D45: 750, D50: 750 },
+    120: { C18: 600, C24: 740, D18: 600, D24: 740, D30: 770, D35: 770, D40: 810, D45: 830, D50: 830 },
+    140: { C18: 700, C24: 780, D18: 700, D24: 780, D30: 810, D35: 810, D40: 850, D45: 870, D50: 870 }
+  },
+  "33-39": {
+    90:  { C18: 610, C24: 790, D18: 610, D24: 790, D30: 820, D35: 820, D40: 870, D45: 890, D50: 890 },
+    120: { C18: 810, C24: 870, D18: 810, D24: 870, D30: 900, D35: 900, D40: 950, D45: 980, D50: 980 },
+    140: { C18: 890, C24: 920, D18: 890, D24: 920, D30: 950, D35: 950, D40: 1000, D45: 1030, D50: 1030 }
+  },
+  "40-45": {
+    90:  { C18: 860, C24: 960, D18: 860, D24: 960, D30: 990, D35: 990, D40: 1050, D45: 1080, D50: 1080 },
+    120: { C18: 1020, C24: 1060, D18: 1020, D24: 1060, D30: 1090, D35: 1090, D40: 1160, D45: 1190, D50: 1190 },
+    140: { C18: 1080, C24: 1120, D18: 1080, D24: 1120, D30: 1150, D35: 1150, D40: 1220, D45: 1250, D50: 1250 }
+  }
+};
+
+const lamesS2 = {
+  "21-23": {
+    90:  { C18: null, C24: null, D18: null, D24: null, D30: 300, D35: 300, D40: 400, D45: 490, D50: 490 },
+    120: { C18: null, C24: 320, D18: null, D24: 320, D30: 400, D35: 400, D40: 530, D45: 540, D50: 540 },
+    140: { C18: null, C24: 370, D18: null, D24: 370, D30: 460, D35: 460, D40: 560, D45: 570, D50: 570 }
+  },
+  "24-27": {
+    90:  { C18: null, C24: 300, D18: null, D24: 300, D30: 380, D35: 380, D40: 510, D45: 560, D50: 560 },
+    120: { C18: 300, C24: 400, D18: 300, D24: 400, D30: 510, D35: 510, D40: 610, D45: 620, D50: 620 },
+    140: { C18: 350, C24: 470, D18: 350, D24: 470, D30: 590, D35: 590, D40: 640, D45: 650, D50: 650 }
+  },
+  "28-32": {
+    90:  { C18: 300, C24: 400, D18: 300, D24: 400, D30: 500, D35: 500, D40: 640, D45: 660, D50: 660 },
+    120: { C18: 400, C24: 530, D18: 400, D24: 530, D30: 670, D35: 670, D40: 710, D45: 720, D50: 720 },
+    140: { C18: 470, C24: 620, D18: 470, D24: 620, D30: 700, D35: 700, D40: 740, D45: 760, D50: 760 }
+  },
+  "33-39": {
+    90:  { C18: 400, C24: 540, D18: 400, D24: 540, D30: 670, D35: 670, D40: 760, D45: 780, D50: 780 },
+    120: { C18: 540, C24: 720, D18: 540, D24: 720, D30: 790, D35: 790, D40: 830, D45: 850, D50: 850 },
+    140: { C18: 630, C24: 800, D18: 630, D24: 800, D30: 830, D35: 830, D40: 880, D45: 900, D50: 900 }
+  },
+  "40-45": {
+    90:  { C18: 570, C24: 760, D18: 570, D24: 760, D30: 870, D35: 870, D40: 920, D45: 940, D50: 940 },
+    120: { C18: 760, C24: 930, D18: 760, D24: 930, D30: 960, D35: 960, D40: 1010, D45: 1040, D50: 1040 },
+    140: { C18: 890, C24: 970, D18: 890, D24: 970, D30: 1010, D35: 1010, D40: 1060, D45: 1090, D50: 1090 }
+  }
+};
+
+const lamesS3 = {
+  "21-23": {
+    90:  { C18: null, C24: null, D18: null, D24: null, D30: null, D35: null, D40: null, D45: null, D50: null },
+    120: { C18: null, C24: null, D18: null, D24: null, D30: null, D35: null, D40: 320, D45: 400, D50: 400 },
+    140: { C18: null, C24: null, D18: null, D24: null, D30: null, D35: null, D40: 370, D45: 460, D50: 460 }
+  },
+  "24-27": {
+    90:  { C18: null, C24: null, D18: null, D24: null, D30: null, D35: null, D40: 300, D45: 380, D50: 380 },
+    120: { C18: null, C24: 300, D18: null, D24: 300, D30: null, D35: null, D40: 400, D45: 510, D50: 510 },
+    140: { C18: null, C24: null, D18: null, D24: null, D30: 350, D35: 350, D40: 470, D45: 550, D50: 550 }
+  },
+  "28-32": {
+    90:  { C18: null, C24: 300, D18: null, D24: 300, D30: null, D35: null, D40: 400, D45: 500, D50: 500 },
+    120: { C18: null, C24: 320, D18: null, D24: 320, D30: 400, D35: 400, D40: 530, D45: 610, D50: 610 },
+    140: { C18: null, C24: 370, D18: null, D24: 370, D30: 470, D35: 470, D40: 620, D45: 640, D50: 640 }
+  },
+  "33-39": {
+    90:  { C18: null, C24: 320, D18: null, D24: 320, D30: 400, D35: 400, D40: 540, D45: 650, D50: 650 },
+    120: { C18: 320, C24: 430, D18: 320, D24: 430, D30: 540, D35: 540, D40: 700, D45: 720, D50: 720 },
+    140: { C18: 380, C24: 500, D18: 380, D24: 500, D30: 630, D35: 630, D40: 740, D45: 760, D50: 760 }
+  },
+  "40-45": {
+    90:  { C18: 340, C24: 460, D18: 340, D24: 460, D30: 570, D35: 570, D40: 760, D45: 790, D50: 790 },
+    120: { C18: 460, C24: 610, D18: 460, D24: 610, D30: 760, D35: 760, D40: 850, D45: 870, D50: 870 },
+    140: { C18: 530, C24: 710, D18: 530, D24: 710, D30: 850, D35: 850, D40: 900, D45: 920, D50: 920 }
+  }
+};
+
+const lambourdesTables = { S1: lambourdesS1, S2: lambourdesS2, S3: lambourdesS3 };
+const lamesTables = { S1: lamesS1, S2: lamesS2, S3: lamesS3 };
+
+// ═══════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════
+let conception = 'courante';
+let nbAppuis = 3;
+
+// ═══════════════════════════════════════════════════════════
+//  INIT DROPDOWNS
+// ═══════════════════════════════════════════════════════════
+function initDropdowns() {
+  const selLames = document.getElementById('essence-lames-select');
+  const selLamb = document.getElementById('essence-lamb-select');
+  essencesLames.forEach((ess, i) => {
+    const flag = ess.exotique ? ' \uD83C\uDF0D' : '';
+    const opt1 = new Option(ess.name + flag, i);
+    const opt2 = new Option(ess.name + flag, i);
+    selLames.add(opt1);
+    selLamb.add(opt2);
+  });
+  // Default: Douglas (index 2)
+  selLames.value = 2;
+  selLamb.value = 2;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  EVENT HANDLERS
+// ═══════════════════════════════════════════════════════════
+function onEssenceLamesChange() {
+  const idx = parseInt(document.getElementById('essence-lames-select').value);
+  const ess = essencesLames[idx];
+  if (ess.classe) document.getElementById('classe-lames-input').value = ess.classe;
+  if (ess.emploi) document.getElementById('emploi-lames-input').value = ess.emploi;
+  if (ess.densite) document.getElementById('densite-lames-input').value = ess.densite;
+  onParamChange();
+}
+
+function setConception(val) {
+  conception = val;
+  document.getElementById('btn-courante').classList.toggle('active', val === 'courante');
+  document.getElementById('btn-elaboree').classList.toggle('active', val === 'elaboree');
+  if (val === 'courante') {
+    document.getElementById('conception-tooltip').textContent = 'Standard, sans dispositifs anti-humidite specifiques.';
+  } else {
+    document.getElementById('conception-tooltip').textContent = 'Double lambourdage, pente \u22654%, RLDC, cales polymeres, ventilation 1/50.';
+  }
+  updateClasseEmploi();
+  onParamChange();
+}
+
+function setAppuis(n) {
+  nbAppuis = n;
+  document.getElementById('btn-3appuis').classList.toggle('active', n === 3);
+  document.getElementById('btn-2appuis').classList.toggle('active', n === 2);
+  document.getElementById('appuis-notice').style.display = n === 2 ? 'block' : 'none';
+  onParamChange();
+}
+
+function updateClasseEmploi() {
+  const emploiBase = document.getElementById('emploi-lames-input').value;
+  let requise = emploiBase;
+  // Conception elaboree permet de baisser d'un cran la classe requise
+  if (conception === 'elaboree' && parseFloat(emploiBase) >= 4) {
+    requise = '3.2';
+  }
+  document.getElementById('classe-emploi-requise').textContent = requise;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  LOOKUP DTU
+// ═══════════════════════════════════════════════════════════
+function getClasseKey(classeStr) {
+  // Normalize: "C18" → "C18", "D45" → "D45", "D50" → "D50"
+  return classeStr.trim().toUpperCase();
+}
+
+function lookupLambourdes(usage, epLames, classeLamb, hLamb, bLamb) {
+  const table = lambourdesTables[usage];
+  if (!table) return null;
+
+  const row = table[epLames];
+  if (!row) return null;
+
+  // Check h_min
+  if (hLamb < row.h_min) {
+    // Try with _55 variant if h >= 55
+    const row55 = table[epLames + '_55'];
+    if (row55 && hLamb >= row55.h_min) {
+      return lookupInRow(row55, classeLamb, bLamb);
+    }
+    return null; // lambourde too short
+  }
+
+  // If h >= 55, prefer the _55 row (higher values)
+  if (hLamb >= 55) {
+    const row55 = table[epLames + '_55'];
+    if (row55) return lookupInRow(row55, classeLamb, bLamb);
+  }
+
+  return lookupInRow(row, classeLamb, bLamb);
+}
+
+function lookupInRow(row, classeLamb, bLamb) {
+  const cl = getClasseKey(classeLamb);
+  // Handle D45 special case (depends on b)
+  if (cl === 'D45') {
+    const key = bLamb >= 45 ? 'D45_45' : 'D45_40';
+    return row[key] !== undefined ? row[key] : null;
+  }
+  return row[cl] !== undefined ? row[cl] : null;
+}
+
+function lookupLames(usage, epLames, largLames, classeLames) {
+  const table = lamesTables[usage];
+  if (!table) return null;
+
+  const epRow = table[epLames];
+  if (!epRow) return null;
+
+  const largRow = epRow[largLames];
+  if (!largRow) return null;
+
+  const cl = getClasseKey(classeLames);
+  // For lames, D45 maps to D45 key
+  return largRow[cl] !== undefined ? largRow[cl] : null;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  COMPUTE
+// ═══════════════════════════════════════════════════════════
+function onParamChange() {
+  // Update charges info
+  const usage = document.getElementById('usage-select').value;
+  document.getElementById('charges-info').textContent = USAGES[usage].desc;
+  updateClasseEmploi();
+
+  const result = compute();
+  drawSVG(result);
+  drawResults(result);
+}
+
+function compute() {
+  const usage = document.getElementById('usage-select').value;
+  const epLames = document.getElementById('ep-lames-select').value;
+  const largLames = parseInt(document.getElementById('larg-lames-select').value);
+  const classeLames = document.getElementById('classe-lames-input').value.trim().toUpperCase();
+  const densiteLames = parseInt(document.getElementById('densite-lames-input').value) || 0;
+
+  const sectionStr = document.getElementById('section-lamb-select').value;
+  const [bLamb, hLamb] = sectionStr.split('x').map(Number);
+
+  const idxLamb = parseInt(document.getElementById('essence-lamb-select').value);
+  const essLamb = essencesLames[idxLamb];
+  const classeLamb = essLamb.classe || classeLames; // fallback to lames class
+
+  const entraxeReel = parseInt(document.getElementById('entraxe-reel-input').value) || 0;
+
+  // Lookup DTU tables
+  let entraxeMaxLamb = lookupLambourdes(usage, epLames, classeLamb, hLamb, bLamb);
+  let entraxeMaxLames = lookupLames(usage, epLames, largLames, classeLames);
+
+  // Apply 2-appuis reduction
+  if (nbAppuis === 2) {
+    if (entraxeMaxLamb !== null) entraxeMaxLamb = Math.round(entraxeMaxLamb * 0.75);
+    if (entraxeMaxLames !== null) entraxeMaxLames = Math.round(entraxeMaxLames * 0.85);
+  }
+
+  // Verdict (only if entraxe reel is set)
+  let verdict = null;
+  if (entraxeReel > 0 && entraxeMaxLamb !== null) {
+    const ratio = entraxeReel / entraxeMaxLamb;
+    if (ratio > 1) {
+      verdict = { color: '#EF4444', bg: 'rgba(239,68,68,0.1)', label: 'Non conforme DTU 51.4 — entraxe trop grand' };
+    } else if (ratio > 0.9) {
+      verdict = { color: '#F59E0B', bg: 'rgba(245,158,11,0.1)', label: 'Limite — marge de securite faible' };
+    } else if (ratio > 0.6) {
+      verdict = { color: '#10B981', bg: 'rgba(16,185,129,0.1)', label: 'Conforme DTU 51.4' };
+    } else {
+      verdict = { color: '#3B82F6', bg: 'rgba(59,130,246,0.1)', label: 'Surdimensionne — pourrait etre optimise' };
+    }
+  }
+
+  // Prescriptions
+  const epMid = getEpMid(epLames);
+  const visMin = (epMid <= 27 && densiteLames < 600) ? 5 : 6;
+  const isFeuillu = classeLames.startsWith('D');
+  const prePercage = isFeuillu ? 'Partout' : 'En extremite uniquement';
+
+  return {
+    usage, epLames, largLames, classeLames, classeLamb, densiteLames,
+    bLamb, hLamb, entraxeReel,
+    entraxeMaxLamb, entraxeMaxLames,
+    verdict, visMin, prePercage, nbAppuis,
+  };
+}
+
+function getEpMid(epStr) {
+  const parts = epStr.split('-').map(Number);
+  return Math.round((parts[0] + parts[1]) / 2);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  DRAW SVG
+// ═══════════════════════════════════════════════════════════
+function drawSVG(r) {
+  const svg = document.getElementById('schema');
+  const svgW = 560, svgH = 320;
+
+  // Color based on verdict or default
+  const lameColor = r.verdict ? r.verdict.color : '#5E8B8F';
+  const lameBg = r.verdict ? r.verdict.bg : 'rgba(94,139,143,0.12)';
+
+  // Dimensions (pixels) — proportional but with min sizes
+  const scale = 2.5;
+  const epMid = getEpMid(r.epLames);
+  const lameH = Math.max(epMid * scale * 0.4, 10);
+  const lameW = Math.max(r.largLames * scale * 0.5, 40);
+  const lambH = Math.max(r.hLamb * scale * 0.4, 18);
+  const lambW = Math.max(r.bLamb * scale * 0.4, 14);
+  const jeuLames = 4;
+  const plotR = 8;
+
+  // Layout
+  const baseY = svgH - 60;
+  const plotY = baseY;
+  const lambTopY = plotY - plotR - 4 - lambH;
+  const lameTopY = lambTopY - 4 - lameH;
+
+  // Entraxe lambourdes for drawing
+  const entraxeDraw = r.entraxeMaxLamb ? Math.min(r.entraxeMaxLamb * 0.35, 180) : 140;
+  const nLamb = 3;
+  const totalW = entraxeDraw * (nLamb - 1);
+  const startX = (svgW - totalW) / 2;
+
+  let html = '';
+
+  // Defs: grain pattern for lames
+  html += `<defs>
+    <pattern id="grain" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(2)">
+      <line x1="0" y1="3" x2="6" y2="3" stroke="${lameColor}" stroke-width="0.3" opacity="0.3"/>
+    </pattern>
+  </defs>`;
+
+  // ── LAMES (top) ──
+  const nLames = 5;
+  const lamesStartX = startX - 30;
+  const lameStep = lameW + jeuLames;
+  for (let i = 0; i < nLames; i++) {
+    const lx = lamesStartX + i * lameStep;
+    html += `<rect x="${lx}" y="${lameTopY}" width="${lameW}" height="${lameH}" fill="${lameBg}" stroke="${lameColor}" stroke-width="1" rx="1"/>`;
+    html += `<rect x="${lx}" y="${lameTopY}" width="${lameW}" height="${lameH}" fill="url(#grain)" rx="1"/>`;
+  }
+
+  // ── LAMBOURDES ──
+  for (let i = 0; i < nLamb; i++) {
+    const lx = startX + i * entraxeDraw - lambW / 2;
+    html += `<rect x="${lx}" y="${lambTopY}" width="${lambW}" height="${lambH}" fill="rgba(138,130,121,0.15)" stroke="#2A2826" stroke-width="1" rx="1"/>`;
+  }
+
+  // ── PLOTS (circles) ──
+  for (let i = 0; i < nLamb; i++) {
+    const cx = startX + i * entraxeDraw;
+    html += `<circle cx="${cx}" cy="${plotY}" r="${plotR}" fill="none" stroke="#7A7672" stroke-width="1.2"/>`;
+    html += `<line x1="${cx - plotR}" y1="${plotY + plotR + 2}" x2="${cx + plotR}" y2="${plotY + plotR + 2}" stroke="#7A7672" stroke-width="1"/>`;
+  }
+
+  // ── COTES ──
+  const coteFont = "font-family=\"'DM Mono', monospace\" font-size=\"9\" fill=\"#2A2826\"";
+
+  // Entraxe lambourdes (between first two)
+  const coteLambY = plotY + plotR + 20;
+  html += `<line x1="${startX}" y1="${coteLambY}" x2="${startX + entraxeDraw}" y2="${coteLambY}" stroke="#2A2826" stroke-width="0.7"/>`;
+  html += `<line x1="${startX}" y1="${coteLambY - 3}" x2="${startX}" y2="${coteLambY + 3}" stroke="#2A2826" stroke-width="0.7"/>`;
+  html += `<line x1="${startX + entraxeDraw}" y1="${coteLambY - 3}" x2="${startX + entraxeDraw}" y2="${coteLambY + 3}" stroke="#2A2826" stroke-width="0.7"/>`;
+  const entraxeLabel = r.entraxeMaxLamb !== null ? r.entraxeMaxLamb + ' mm max' : '— mm';
+  html += `<text x="${startX + entraxeDraw / 2}" y="${coteLambY + 13}" ${coteFont} text-anchor="middle">entraxe lamb. ${entraxeLabel}</text>`;
+
+  // Epaisseur lame (left side)
+  const coteEpX = lamesStartX - 12;
+  html += `<line x1="${coteEpX}" y1="${lameTopY}" x2="${coteEpX}" y2="${lameTopY + lameH}" stroke="#2A2826" stroke-width="0.7"/>`;
+  html += `<line x1="${coteEpX - 3}" y1="${lameTopY}" x2="${coteEpX + 3}" y2="${lameTopY}" stroke="#2A2826" stroke-width="0.7"/>`;
+  html += `<line x1="${coteEpX - 3}" y1="${lameTopY + lameH}" x2="${coteEpX + 3}" y2="${lameTopY + lameH}" stroke="#2A2826" stroke-width="0.7"/>`;
+  html += `<text x="${coteEpX - 5}" y="${lameTopY + lameH / 2 + 3}" ${coteFont} text-anchor="end">e=${epMid}mm</text>`;
+
+  // Hauteur lambourde (left side)
+  const coteLambHX = lamesStartX - 12;
+  html += `<line x1="${coteLambHX}" y1="${lambTopY}" x2="${coteLambHX}" y2="${lambTopY + lambH}" stroke="#2A2826" stroke-width="0.7"/>`;
+  html += `<line x1="${coteLambHX - 3}" y1="${lambTopY}" x2="${coteLambHX + 3}" y2="${lambTopY}" stroke="#2A2826" stroke-width="0.7"/>`;
+  html += `<line x1="${coteLambHX - 3}" y1="${lambTopY + lambH}" x2="${coteLambHX + 3}" y2="${lambTopY + lambH}" stroke="#2A2826" stroke-width="0.7"/>`;
+  html += `<text x="${coteLambHX - 5}" y="${lambTopY + lambH / 2 + 3}" ${coteFont} text-anchor="end">h=${r.hLamb}mm</text>`;
+
+  // Plenum (right side)
+  const plenumTop = lameTopY + lameH;
+  const plenumBot = plotY + plotR;
+  const plenumX = lamesStartX + nLames * lameStep + 20;
+  html += `<line x1="${plenumX}" y1="${plenumTop}" x2="${plenumX}" y2="${plenumBot}" stroke="#7A7672" stroke-width="0.5" stroke-dasharray="3,2"/>`;
+  html += `<text x="${plenumX + 4}" y="${(plenumTop + plenumBot) / 2 + 3}" font-family="'DM Mono', monospace" font-size="8" fill="#7A7672">\u2265100mm</text>`;
+
+  // Labels
+  html += `<text x="${svgW / 2}" y="18" font-family="'DM Sans', sans-serif" font-size="11" fill="#7A7672" text-anchor="middle" font-weight="300">Coupe transversale du platelage</text>`;
+
+  svg.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  DRAW RESULTS
+// ═══════════════════════════════════════════════════════════
+function drawResults(r) {
+  const resLamb = document.getElementById('res-entraxe-lamb');
+  const resLames = document.getElementById('res-entraxe-lames');
+  const verdictSection = document.getElementById('verdict-section');
+  const detail = document.getElementById('calc-detail');
+  const prescriptions = document.getElementById('prescriptions');
+
+  // Entraxe max lambourdes
+  if (r.entraxeMaxLamb === null) {
+    resLamb.innerHTML = '<span style="color:var(--red);">Non admis</span>';
+  } else {
+    resLamb.innerHTML = r.entraxeMaxLamb + ' <span class="result-big-unit">mm</span>';
+  }
+
+  // Entraxe max lames
+  if (r.entraxeMaxLames === null) {
+    resLames.innerHTML = '<span style="color:var(--red);">Non admis</span>';
+  } else {
+    resLames.innerHTML = r.entraxeMaxLames + ' <span class="result-big-unit">mm</span>';
+  }
+
+  // Verdict
+  if (r.entraxeMaxLamb === null || r.entraxeMaxLames === null) {
+    verdictSection.innerHTML = '<div class="not-admitted">Configuration non admise par le DTU 51.4 — changez l\'epaisseur, la largeur ou la classe mecanique.</div>';
+  } else if (r.verdict) {
+    verdictSection.innerHTML = `<div class="verdict-box" style="background:${r.verdict.bg}; color:${r.verdict.color};">
+      <div class="verdict-label">${r.verdict.label}</div>
+      <div class="verdict-fs">${r.entraxeReel} / ${r.entraxeMaxLamb} mm</div>
+    </div>`;
+  } else {
+    verdictSection.innerHTML = '';
+  }
+
+  // Detail
+  let rows = '';
+  rows += calcRow('Usage', '', USAGES[r.usage].label);
+  rows += calcRow('Classe mecanique lames', '', r.classeLames);
+  rows += calcRow('Classe mecanique lambourdes', '', r.classeLamb);
+  rows += calcRow('Section lambourde', '', r.bLamb + ' x ' + r.hLamb + ' mm');
+  rows += calcRow('Epaisseur lames', '', r.epLames + ' mm');
+  rows += calcRow('Largeur lames', '', r.largLames + ' mm');
+  rows += calcRow('Nombre d\'appuis', '', r.nbAppuis + ' appuis' + (r.nbAppuis === 2 ? ' (reductions appliquees)' : ''));
+  detail.innerHTML = rows;
+
+  // Prescriptions
+  const classeRequise = document.getElementById('classe-emploi-requise').textContent;
+  prescriptions.innerHTML = `<strong>Prescriptions complementaires DTU 51.4</strong>
+    <ul>
+      <li>Classe d'emploi requise : <strong>${classeRequise}</strong></li>
+      <li>Jeu entre lames a la pose : 5 - 7 mm</li>
+      <li>Jeu en bout de lame : 4 - 6 mm</li>
+      <li>Hauteur de plenum minimale : 100 mm</li>
+      <li>Diametre vis minimal : <strong>${r.visMin} mm</strong></li>
+      <li>Pre-percage : <strong>${r.prePercage}</strong></li>
+    </ul>`;
+}
+
+function calcRow(label, formula, value) {
+  return `<div class="calc-row">
+    <div><span class="calc-label">${label}</span></div>
+    <div class="calc-value">${value}</div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════
+initDropdowns();
+onEssenceLamesChange();
+onParamChange();
+</script>
+</body>
+</html>
