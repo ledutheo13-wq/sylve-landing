@@ -459,7 +459,8 @@ function compute() {
   const t = TYPES[idx];
   const H = parseFloat(document.getElementById('h-input').value) || 0;
   const epRaw = parseFloat(document.getElementById('ep-input').value) || 0;
-  const e = t.unit === 'mm' ? epRaw / 1000 : epRaw / 100; // convert to meters
+  // Conversion en MÈTRES : mm → /1000, cm → /100
+  const e = t.unit === 'mm' ? epRaw / 1000 : epRaw / 100;
   const L = t.hasSemelle ? (parseFloat(document.getElementById('sem-input').value) || 0) : 0;
   const phi = parseFloat(document.getElementById('phi-input').value) || 0;
   const gammaSol = parseFloat(document.getElementById('gamma-sol-input').value) || 0;
@@ -467,70 +468,67 @@ function compute() {
   const q = parseFloat(document.getElementById('q-input').value) || 0;
   const gammaMur = t.gammaMur;
   const blocked = H > 2.00;
+  const isMetallique = !!t.metal || t.fiche; // acier, alu, bac
 
-  // Ka = tan^2(45 - phi/2)
+  // Épaisseur semelle : béton/parpaings = 0.15m, acier/alu = même épaisseur que le mur
+  const eSem = isMetallique ? e : 0.15;
+
+  // ── 1. POUSSÉE ACTIVE (force déstabilisante) ──
   const phiRad = phi * Math.PI / 180;
   const Ka = Math.pow(Math.tan(Math.PI / 4 - phiRad / 2), 2);
 
-  // Pa_sol = 0.5 * gammaSol * H^2 * Ka
-  const Pa_sol = 0.5 * gammaSol * H * H * Ka;
-
-  // Pa_q = q * H * Ka
-  const Pa_q = q * H * Ka;
-
-  // Pa_totale
+  const Pa_sol = 0.5 * Ka * gammaSol * H * H;
+  const Pa_q = Ka * q * H;
   const Pa_total = Pa_sol + Pa_q;
 
-  // Point d'application
-  const y = Pa_total > 0 ? (Pa_sol * H / 3 + Pa_q * H / 2) / Pa_total : H / 3;
+  // Moment déstabilisant autour du toe (arête avant, côté aval)
+  const Md = Pa_sol * (H / 3) + Pa_q * (H / 2);
 
-  // Moment destabilisant
-  const Md = Pa_total * y;
+  // Point d'application (pour affichage flèche SVG)
+  const y = Pa_total > 0 ? Md / Pa_total : H / 3;
 
+  // ── 2. FORCES STABILISANTES ──
   let Fs_r = null, Fs_g = null, Ms = null, Wmur = 0, Wsem = 0, Wterre = 0, N = 0;
-  // Semelle thickness estimate (m): 15cm for concrete, same as wall for metal
-  const eSem = t.unit === 'mm' ? e : 0.15;
+  let brasMur = 0, brasSem = 0, brasTerre = 0;
 
   if (!t.fiche && !blocked) {
-    // 1. Poids propre du mur vertical
-    Wmur = gammaMur * e * H; // kN/m
+    // Poids du mur vertical (x=0 à x=e, côté aval)
+    Wmur = gammaMur * e * H;
+    brasMur = e / 2;
 
-    // 2. Poids propre de la semelle
-    Wsem = t.hasSemelle ? gammaMur * eSem * L : 0;
+    // Poids de la semelle (x=0 à x=L)
+    Wsem = gammaMur * L * eSem;
+    brasSem = L / 2;
 
-    // 3. Poids de la terre sur la semelle (terme dominant)
-    const Lsol = L > e ? L - e : 0;
-    Wterre = gammaSol * H * Lsol;
+    // Poids de la terre sur la semelle (x=e à x=L, hauteur H)
+    const L_terre = Math.max(L - e, 0);
+    Wterre = gammaSol * H * L_terre;
+    brasTerre = e + L_terre / 2;
 
-    // Total vertical force (includes surcharge on soil above semelle)
-    const Wq = q * Lsol;
-    N = Wmur + Wsem + Wterre + Wq;
+    // Moment stabilisant
+    Ms = Wmur * brasMur + Wsem * brasSem + Wterre * brasTerre;
 
-    // Stabilizing moment about toe (arete avant du mur, cote aval)
-    // Bras de levier mesures depuis le pied avant du mur
-    const brasMur = e / 2;
-    const brasSem = L / 2;
-    const brasTerre = e + Lsol / 2;
-    const brasQ = e + Lsol / 2;
-    Ms = Wmur * brasMur + Wsem * brasSem + Wterre * brasTerre + Wq * brasQ;
+    // Force verticale totale
+    N = Wmur + Wsem + Wterre;
 
     // Fs renversement
     Fs_r = Md > 0 ? Ms / Md : 99;
 
     // Fs glissement
-    const delta = (2 / 3) * phiRad; // interface friction
-    const B = L > 0 ? L : e; // base width
-    const Ffriction = N * Math.tan(delta) + c * B;
-    Fs_g = Pa_total > 0 ? Ffriction / Pa_total : 99;
+    const delta = (2 / 3) * phiRad;
+    const resistance = N * Math.tan(delta) + c * L;
+    Fs_g = Pa_total > 0 ? resistance / Pa_total : 99;
   }
 
   const Fs_min = (Fs_r !== null && Fs_g !== null) ? Math.min(Fs_r, Fs_g) : null;
 
   // DEBUG — temporaire
   console.log('── Stabilité ──', {
-    W_mur: Wmur, W_sem: Wsem, W_terre: Wterre, N,
-    bras_mur: e / 2, bras_sem: L / 2, bras_terre: e + (L > e ? (L - e) / 2 : 0),
-    Ms, Md, Fs_r, Fs_g, Fs_min
+    e, L, eSem, isMetallique,
+    W_mur: Wmur, bras_mur: brasMur,
+    W_sem: Wsem, bras_sem: brasSem,
+    W_terre: Wterre, bras_terre: brasTerre,
+    N, Ms, Md, Fs_r, Fs_g, Fs_min
   });
 
   return {
