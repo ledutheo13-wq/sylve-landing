@@ -353,11 +353,13 @@
       <div class="results-card" id="results-card">
         <div class="result-row-grid" id="result-row-grid">
           <div class="result-big">
-            <div class="result-big-label">Entraxe max lambourdes</div>
+            <div class="result-big-label">Espacement max entre plots</div>
+            <div class="result-big-sublabel" style="font-size:0.68rem; color:var(--text-light); margin-bottom:0.2rem;">(portee admissible de la lambourde)</div>
             <div class="result-big-value" id="res-entraxe-lamb">— <span class="result-big-unit">mm</span></div>
           </div>
           <div class="result-big">
-            <div class="result-big-label">Entraxe max lames</div>
+            <div class="result-big-label">Espacement max entre lambourdes</div>
+            <div class="result-big-sublabel" style="font-size:0.68rem; color:var(--text-light); margin-bottom:0.2rem;">(portee admissible de la lame)</div>
             <div class="result-big-value" id="res-entraxe-lames">— <span class="result-big-unit">mm</span></div>
           </div>
         </div>
@@ -687,19 +689,26 @@ function compute() {
   const usage = document.getElementById('usage-select').value;
   const epLames = document.getElementById('ep-lames-select').value;
   const largLames = parseInt(document.getElementById('larg-lames-select').value);
-  const classeLames = document.getElementById('classe-lames-input').value.trim().toUpperCase();
   const densiteLames = parseInt(document.getElementById('densite-lames-input').value) || 0;
+
+  // Classe mecanique des LAMES (depuis le dropdown essence lames)
+  const idxLames = parseInt(document.getElementById('essence-lames-select').value);
+  const essLames = essencesLames[idxLames];
+  const classeLames = (essLames.classe || document.getElementById('classe-lames-input').value).trim().toUpperCase();
+
+  // Classe mecanique des LAMBOURDES (depuis le dropdown essence lambourde)
+  const idxLamb = parseInt(document.getElementById('essence-lamb-select').value);
+  const essLamb = essencesLames[idxLamb];
+  const classeLamb = (essLamb.classe || document.getElementById('classe-lames-input').value).trim().toUpperCase();
 
   const sectionStr = document.getElementById('section-lamb-select').value;
   const [bLamb, hLamb] = sectionStr.split('x').map(Number);
 
-  const idxLamb = parseInt(document.getElementById('essence-lamb-select').value);
-  const essLamb = essencesLames[idxLamb];
-  const classeLamb = essLamb.classe || classeLames; // fallback to lames class
-
   const entraxeReel = parseInt(document.getElementById('entraxe-reel-input').value) || 0;
 
-  // Lookup DTU tables
+  // Lookup DTU tables — CHAQUE TABLEAU UTILISE LA BONNE CLASSE
+  // Lambourdes : classe de la LAMBOURDE (portee entre plots)
+  // Lames : classe de la LAME (portee entre lambourdes)
   let entraxeMaxLamb = lookupLambourdes(usage, epLames, classeLamb, hLamb, bLamb);
   let entraxeMaxLames = lookupLames(usage, epLames, largLames, classeLames);
 
@@ -750,58 +759,62 @@ function drawSVG(r) {
   const svg = document.getElementById('schema');
   const svgW = 560, svgH = 320;
 
-  // Color based on verdict or default
   const lameColor = r.verdict ? r.verdict.color : '#5E8B8F';
   const lameBg = r.verdict ? r.verdict.bg : 'rgba(94,139,143,0.12)';
 
-  // Dimensions (pixels) — proportional but with min sizes
   const scale = 2.5;
   const epMid = getEpMid(r.epLames);
   const lameH = Math.max(epMid * scale * 0.4, 10);
-  const lameW = Math.max(r.largLames * scale * 0.5, 40);
   const lambH = Math.max(r.hLamb * scale * 0.4, 18);
   const lambW = Math.max(r.bLamb * scale * 0.4, 14);
-  const jeuLames = 4;
   const plotR = 8;
+  const isDouble = conception === 'elaboree';
+  const lambGap = isDouble ? 4 : 0;
 
-  // Layout
   const baseY = svgH - 60;
   const plotY = baseY;
   const lambTopY = plotY - plotR - 4 - lambH;
   const lameTopY = lambTopY - 4 - lameH;
 
-  // Entraxe lambourdes for drawing
-  const entraxeDraw = r.entraxeMaxLamb ? Math.min(r.entraxeMaxLamb * 0.35, 180) : 140;
+  const entraxeDraw = r.entraxeMaxLames ? Math.min(r.entraxeMaxLames * 0.35, 180) : 140;
   const nLamb = 3;
   const totalW = entraxeDraw * (nLamb - 1);
   const startX = (svgW - totalW) / 2;
 
+  // Bande continue de lame : deborde de 30px de chaque cote
+  const bandX1 = startX - 50;
+  const bandX2 = startX + totalW + 50;
+  const bandW = bandX2 - bandX1;
+
   let html = '';
 
-  // Defs: grain pattern for lames
   html += `<defs>
-    <pattern id="grain" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(2)">
-      <line x1="0" y1="3" x2="6" y2="3" stroke="${lameColor}" stroke-width="0.3" opacity="0.3"/>
+    <pattern id="grain" width="8" height="${lameH}" patternUnits="userSpaceOnUse">
+      <line x1="0" y1="${lameH * 0.3}" x2="8" y2="${lameH * 0.3}" stroke="${lameColor}" stroke-width="0.4" opacity="0.25"/>
+      <line x1="0" y1="${lameH * 0.6}" x2="8" y2="${lameH * 0.6}" stroke="${lameColor}" stroke-width="0.3" opacity="0.2"/>
     </pattern>
   </defs>`;
 
-  // ── LAMES (top) ──
-  const nLames = 5;
-  const lamesStartX = startX - 30;
-  const lameStep = lameW + jeuLames;
-  for (let i = 0; i < nLames; i++) {
-    const lx = lamesStartX + i * lameStep;
-    html += `<rect x="${lx}" y="${lameTopY}" width="${lameW}" height="${lameH}" fill="${lameBg}" stroke="${lameColor}" stroke-width="1" rx="1"/>`;
-    html += `<rect x="${lx}" y="${lameTopY}" width="${lameW}" height="${lameH}" fill="url(#grain)" rx="1"/>`;
-  }
+  // ── LAME — bande continue horizontale (coupe transversale) ──
+  html += `<rect x="${bandX1}" y="${lameTopY}" width="${bandW}" height="${lameH}" fill="${lameBg}" stroke="${lameColor}" stroke-width="1" rx="1"/>`;
+  html += `<rect x="${bandX1}" y="${lameTopY}" width="${bandW}" height="${lameH}" fill="url(#grain)" rx="1"/>`;
 
-  // ── LAMBOURDES ──
+  // ── LAMBOURDES (sections en coupe) ──
   for (let i = 0; i < nLamb; i++) {
-    const lx = startX + i * entraxeDraw - lambW / 2;
-    html += `<rect x="${lx}" y="${lambTopY}" width="${lambW}" height="${lambH}" fill="rgba(138,130,121,0.15)" stroke="#2A2826" stroke-width="1" rx="1"/>`;
+    const cx = startX + i * entraxeDraw;
+    if (isDouble) {
+      // Double lambourdage : deux rectangles cote a cote avec un petit espace
+      const lx1 = cx - lambW - lambGap / 2;
+      const lx2 = cx + lambGap / 2;
+      html += `<rect x="${lx1}" y="${lambTopY}" width="${lambW}" height="${lambH}" fill="rgba(138,130,121,0.15)" stroke="#2A2826" stroke-width="1" rx="1"/>`;
+      html += `<rect x="${lx2}" y="${lambTopY}" width="${lambW}" height="${lambH}" fill="rgba(138,130,121,0.15)" stroke="#2A2826" stroke-width="1" rx="1"/>`;
+    } else {
+      const lx = cx - lambW / 2;
+      html += `<rect x="${lx}" y="${lambTopY}" width="${lambW}" height="${lambH}" fill="rgba(138,130,121,0.15)" stroke="#2A2826" stroke-width="1" rx="1"/>`;
+    }
   }
 
-  // ── PLOTS (circles) ──
+  // ── PLOTS ──
   for (let i = 0; i < nLamb; i++) {
     const cx = startX + i * entraxeDraw;
     html += `<circle cx="${cx}" cy="${plotY}" r="${plotR}" fill="none" stroke="#7A7672" stroke-width="1.2"/>`;
@@ -811,37 +824,37 @@ function drawSVG(r) {
   // ── COTES ──
   const coteFont = "font-family=\"'DM Mono', monospace\" font-size=\"9\" fill=\"#2A2826\"";
 
-  // Entraxe lambourdes (between first two)
+  // Entraxe lambourdes (entre les deux premiers)
   const coteLambY = plotY + plotR + 20;
   html += `<line x1="${startX}" y1="${coteLambY}" x2="${startX + entraxeDraw}" y2="${coteLambY}" stroke="#2A2826" stroke-width="0.7"/>`;
   html += `<line x1="${startX}" y1="${coteLambY - 3}" x2="${startX}" y2="${coteLambY + 3}" stroke="#2A2826" stroke-width="0.7"/>`;
   html += `<line x1="${startX + entraxeDraw}" y1="${coteLambY - 3}" x2="${startX + entraxeDraw}" y2="${coteLambY + 3}" stroke="#2A2826" stroke-width="0.7"/>`;
-  const entraxeLabel = r.entraxeMaxLamb !== null ? r.entraxeMaxLamb + ' mm max' : '— mm';
-  html += `<text x="${startX + entraxeDraw / 2}" y="${coteLambY + 13}" ${coteFont} text-anchor="middle">entraxe lamb. ${entraxeLabel}</text>`;
+  const entraxeLabel = r.entraxeMaxLames !== null ? r.entraxeMaxLames + ' mm max' : '\u2014 mm';
+  html += `<text x="${startX + entraxeDraw / 2}" y="${coteLambY + 13}" ${coteFont} text-anchor="middle">entre lambourdes ${entraxeLabel}</text>`;
 
-  // Epaisseur lame (left side)
-  const coteEpX = lamesStartX - 12;
+  // Epaisseur lame (gauche)
+  const coteEpX = bandX1 - 12;
   html += `<line x1="${coteEpX}" y1="${lameTopY}" x2="${coteEpX}" y2="${lameTopY + lameH}" stroke="#2A2826" stroke-width="0.7"/>`;
   html += `<line x1="${coteEpX - 3}" y1="${lameTopY}" x2="${coteEpX + 3}" y2="${lameTopY}" stroke="#2A2826" stroke-width="0.7"/>`;
   html += `<line x1="${coteEpX - 3}" y1="${lameTopY + lameH}" x2="${coteEpX + 3}" y2="${lameTopY + lameH}" stroke="#2A2826" stroke-width="0.7"/>`;
   html += `<text x="${coteEpX - 5}" y="${lameTopY + lameH / 2 + 3}" ${coteFont} text-anchor="end">e=${epMid}mm</text>`;
 
-  // Hauteur lambourde (left side)
-  const coteLambHX = lamesStartX - 12;
-  html += `<line x1="${coteLambHX}" y1="${lambTopY}" x2="${coteLambHX}" y2="${lambTopY + lambH}" stroke="#2A2826" stroke-width="0.7"/>`;
-  html += `<line x1="${coteLambHX - 3}" y1="${lambTopY}" x2="${coteLambHX + 3}" y2="${lambTopY}" stroke="#2A2826" stroke-width="0.7"/>`;
-  html += `<line x1="${coteLambHX - 3}" y1="${lambTopY + lambH}" x2="${coteLambHX + 3}" y2="${lambTopY + lambH}" stroke="#2A2826" stroke-width="0.7"/>`;
-  html += `<text x="${coteLambHX - 5}" y="${lambTopY + lambH / 2 + 3}" ${coteFont} text-anchor="end">h=${r.hLamb}mm</text>`;
+  // Hauteur lambourde (gauche)
+  html += `<line x1="${coteEpX}" y1="${lambTopY}" x2="${coteEpX}" y2="${lambTopY + lambH}" stroke="#2A2826" stroke-width="0.7"/>`;
+  html += `<line x1="${coteEpX - 3}" y1="${lambTopY}" x2="${coteEpX + 3}" y2="${lambTopY}" stroke="#2A2826" stroke-width="0.7"/>`;
+  html += `<line x1="${coteEpX - 3}" y1="${lambTopY + lambH}" x2="${coteEpX + 3}" y2="${lambTopY + lambH}" stroke="#2A2826" stroke-width="0.7"/>`;
+  html += `<text x="${coteEpX - 5}" y="${lambTopY + lambH / 2 + 3}" ${coteFont} text-anchor="end">h=${r.hLamb}mm</text>`;
 
-  // Plenum (right side)
+  // Plenum (droite)
   const plenumTop = lameTopY + lameH;
   const plenumBot = plotY + plotR;
-  const plenumX = lamesStartX + nLames * lameStep + 20;
+  const plenumX = bandX2 + 15;
   html += `<line x1="${plenumX}" y1="${plenumTop}" x2="${plenumX}" y2="${plenumBot}" stroke="#7A7672" stroke-width="0.5" stroke-dasharray="3,2"/>`;
   html += `<text x="${plenumX + 4}" y="${(plenumTop + plenumBot) / 2 + 3}" font-family="'DM Mono', monospace" font-size="8" fill="#7A7672">\u2265100mm</text>`;
 
-  // Labels
-  html += `<text x="${svgW / 2}" y="18" font-family="'DM Sans', sans-serif" font-size="11" fill="#7A7672" text-anchor="middle" font-weight="300">Coupe transversale du platelage</text>`;
+  // Titre
+  const subtitle = isDouble ? 'Coupe transversale — double lambourdage' : 'Coupe transversale du platelage';
+  html += `<text x="${svgW / 2}" y="18" font-family="'DM Sans', sans-serif" font-size="11" fill="#7A7672" text-anchor="middle" font-weight="300">${subtitle}</text>`;
 
   svg.innerHTML = html;
 }
@@ -882,8 +895,13 @@ function drawResults(r) {
     verdictSection.innerHTML = '';
   }
 
+  // Note explicative
+  let noteHtml = '<div style="font-size:0.74rem; color:var(--text-light); line-height:1.6; margin:0.6rem 0; padding:0.6rem 0.8rem; background:var(--bg); border-radius:var(--radius);">';
+  noteHtml += 'L\'espacement entre lambourdes doit respecter la portee admissible de la lame. L\'espacement entre plots doit respecter la portee admissible de la lambourde. Le dimensionnement final retient la valeur la plus contraignante.';
+  noteHtml += '</div>';
+
   // Detail
-  let rows = '';
+  let rows = noteHtml;
   rows += calcRow('Usage', '', USAGES[r.usage].label);
   rows += calcRow('Classe mecanique lames', '', r.classeLames);
   rows += calcRow('Classe mecanique lambourdes', '', r.classeLamb);
