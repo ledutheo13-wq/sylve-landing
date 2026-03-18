@@ -358,8 +358,8 @@ const TYPES = [
   { name:'Voile beton coule en place', epCm:20, semFactor:0.70, gammaMur:25, unit:'cm', hasSemelle:true,  fiche:false },
   { name:'Parpaings 20 cm',           epCm:20, semFactor:0.50, gammaMur:20, unit:'cm', hasSemelle:true,  fiche:false },
   { name:'Parpaings 10 cm',           epCm:10, semFactor:0.40, gammaMur:20, unit:'cm', hasSemelle:true,  fiche:false },
-  { name:'Volige acier + semelle',    epCm:0.3,semFactor:null, gammaMur:78, unit:'mm', hasSemelle:true,  fiche:false, metal:true },
-  { name:'Volige alu + semelle',      epCm:0.3,semFactor:null, gammaMur:27, unit:'mm', hasSemelle:true,  fiche:false, metal:true },
+  { name:'Volige acier + semelle',    epCm:0.3,semFactor:0.50, gammaMur:78, unit:'mm', hasSemelle:true,  fiche:false, metal:true },
+  { name:'Volige alu + semelle',      epCm:0.3,semFactor:0.50, gammaMur:27, unit:'mm', hasSemelle:true,  fiche:false, metal:true },
   { name:'Volige acier fichee',       epCm:0.5,semFactor:null, gammaMur:78, unit:'mm', hasSemelle:false, fiche:true },
   { name:'Bac acier / bac fibres',    epCm:0.3,semFactor:null, gammaMur:50, unit:'mm', hasSemelle:false, fiche:true },
 ];
@@ -423,9 +423,7 @@ function autoAdjustSemelle() {
   const t = TYPES[idx];
   if (!t.hasSemelle) return;
   const H = parseFloat(document.getElementById('h-input').value) || 0;
-  if (t.metal) {
-    document.getElementById('sem-input').value = (H / 3).toFixed(2);
-  } else if (t.semFactor) {
+  if (t.semFactor) {
     document.getElementById('sem-input').value = (t.semFactor * H).toFixed(2);
   }
 }
@@ -527,6 +525,13 @@ function compute() {
   }
 
   const Fs_min = (Fs_r !== null && Fs_g !== null) ? Math.min(Fs_r, Fs_g) : null;
+
+  // DEBUG — temporaire
+  console.log('── Stabilité ──', {
+    W_mur: Wmur, W_sem: Wsem, W_terre: Wterre, N,
+    bras_mur: e / 2, bras_sem: L / 2, bras_terre: e + (L > e ? (L - e) / 2 : 0),
+    Ms, Md, Fs_r, Fs_g, Fs_min
+  });
 
   return {
     type: t, idx, H, e, L, phi, gammaSol, c, q, gammaMur, blocked,
