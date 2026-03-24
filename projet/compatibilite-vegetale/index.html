@@ -231,6 +231,56 @@
       background: #FDF0EC;
     }
 
+    /* ── VALIDATION ESSENCE ── */
+    .essence-row.validated .essence-input {
+      border-left: 3px solid var(--sylve);
+      background: rgba(94, 139, 143, 0.03);
+      font-style: italic;
+    }
+
+    .essence-badge {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      color: var(--sylve);
+      font-size: 0.78rem;
+      flex-shrink: 0;
+      margin-top: 4px;
+      width: 28px;
+      height: 28px;
+    }
+
+    .essence-row.validated .essence-badge { display: flex; }
+
+    .essence-not-found {
+      font-size: 0.68rem;
+      color: var(--text-light);
+      margin-top: 0.15rem;
+      display: none;
+    }
+
+    .essence-not-found.visible { display: block; }
+
+    /* ── MODE AVANCÉ : % ── */
+    .pct-input-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      margin-top: 0.3rem;
+    }
+
+    .pct-input-wrap input[type="number"] { width: 70px; }
+    .pct-input-wrap .pct-suffix { font-size: 0.72rem; color: var(--text-muted); }
+
+    .pct-total {
+      font-size: 0.75rem;
+      margin-top: 0.6rem;
+      padding: 6px 10px;
+      border-radius: var(--radius);
+      background: #FAFAF9;
+      border: 1px solid var(--border);
+    }
+
     .btn-add-essence {
       display: flex;
       align-items: center;
@@ -830,11 +880,15 @@
       <div class="section-card">
         <button class="advanced-toggle" onclick="toggleAdvanced()">Mode avancé — Quantitatif ▾</button>
         <div class="advanced-content" id="advanced-content">
+          <div id="density-fields"></div>
+          <div class="field-group" style="margin-top:0.8rem">
+            <label class="field-label">Densité globale (plants/m²)</label>
+            <input type="number" id="global-density" placeholder="ex : 6" min="0" step="0.5" oninput="recalc()" />
+          </div>
           <div class="field-group">
-            <label class="field-label">Surface totale du mélange (m²)</label>
+            <label class="field-label">Surface totale (m²)</label>
             <input type="number" id="surface-total" placeholder="ex : 120" min="0" step="1" oninput="recalc()" />
           </div>
-          <div id="density-fields"></div>
           <p class="advanced-hint">Le mode avancé calcule les quantités, la densité globale et les pourcentages pondérés d'indigénat et de mellifère.</p>
         </div>
       </div>
@@ -941,9 +995,9 @@
               <thead>
                 <tr>
                   <th>Essence</th>
-                  <th>Densité/m²</th>
-                  <th>Quantité totale</th>
                   <th>% du mélange</th>
+                  <th>Quantité totale</th>
+                  <th>Densité effective</th>
                 </tr>
               </thead>
               <tbody id="quant-body"></tbody>
@@ -1111,13 +1165,15 @@ document.getElementById('mix-name').addEventListener('input', function() {
 // ═══════════════════════════════════════════════════════════
 //  ESSENCES STATE
 // ═══════════════════════════════════════════════════════════
-let essences = []; // array of plant objects
+let essences = []; // array of plant objects (null = empty slot)
 let advancedMode = false;
+let notFoundTimers = {}; // debounce timers per row index
 
 function addEssenceRow() {
   if (essences.length >= 12) return;
   essences.push(null);
-  renderEssences();
+  appendEssenceRow(essences.length - 1);
+  updateEssenceCounter();
 }
 
 function removeEssence(index) {
@@ -1126,94 +1182,135 @@ function removeEssence(index) {
   recalc();
 }
 
+// Full re-render — used after selection or deletion
 function renderEssences() {
   const container = document.getElementById('essences-list');
   container.innerHTML = '';
+  essences.forEach((_, i) => appendEssenceRow(i));
+  updateEssenceCounter();
+  renderAdvancedFields();
+}
 
-  essences.forEach((plant, i) => {
-    const row = document.createElement('div');
-    row.className = 'essence-row';
+// Append a single row — used by addEssenceRow to avoid destroying existing rows
+function appendEssenceRow(index) {
+  const container = document.getElementById('essences-list');
+  const plant = essences[index];
 
-    const wrap = document.createElement('div');
-    wrap.className = 'essence-search-wrap';
+  const row = document.createElement('div');
+  row.className = 'essence-row' + (plant ? ' validated' : '');
+  row.dataset.index = index;
 
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.className = 'essence-input';
-    input.placeholder = 'Rechercher une essence…';
-    input.value = plant ? plant.nom_latin : '';
-    input.dataset.index = i;
-    if (plant) input.style.fontStyle = 'italic';
+  const wrap = document.createElement('div');
+  wrap.className = 'essence-search-wrap';
 
-    const acList = document.createElement('div');
-    acList.className = 'autocomplete-list';
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'essence-input';
+  input.placeholder = 'Rechercher une essence…';
+  input.value = plant ? plant.nom_latin : '';
+  input.dataset.index = index;
 
-    input.addEventListener('input', function() {
-      const q = this.value.trim();
-      if (q.length < 2) { acList.classList.remove('open'); return; }
-      const results = searchPlantes(q);
-      renderAutocomplete(acList, results, i, input);
-    });
+  const acList = document.createElement('div');
+  acList.className = 'autocomplete-list';
 
-    input.addEventListener('focus', function() {
-      if (!plant && this.value.length >= 2) {
-        const results = searchPlantes(this.value.trim());
-        renderAutocomplete(acList, results, i, input);
-      }
-    });
+  const notFound = document.createElement('div');
+  notFound.className = 'essence-not-found';
+  notFound.textContent = 'Essence non trouvée dans la base (1 301 essences)';
 
-    input.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') acList.classList.remove('open');
-      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-        e.preventDefault();
-        const items = acList.querySelectorAll('.autocomplete-item');
-        const cur = acList.querySelector('.autocomplete-item.active');
-        let idx = -1;
-        if (cur) { idx = Array.from(items).indexOf(cur); cur.classList.remove('active'); }
-        if (e.key === 'ArrowDown') idx = Math.min(idx + 1, items.length - 1);
-        else idx = Math.max(idx - 1, 0);
-        if (items[idx]) items[idx].classList.add('active');
-      }
-      if (e.key === 'Enter') {
-        const active = acList.querySelector('.autocomplete-item.active');
-        if (active) active.click();
-      }
-    });
+  input.addEventListener('input', function() {
+    const q = this.value.trim();
+    notFound.classList.remove('visible');
+    clearTimeout(notFoundTimers[index]);
 
-    wrap.appendChild(input);
-
-    if (plant) {
-      const meta = document.createElement('div');
-      meta.className = 'essence-meta';
-      meta.textContent = formatStrate(plant.strate) + ' · ' + plant.famille;
-      wrap.appendChild(meta);
+    // If user edits a validated field, invalidate
+    if (essences[index] && q !== essences[index].nom_latin) {
+      essences[index] = null;
+      row.classList.remove('validated');
+      const meta = row.querySelector('.essence-meta');
+      if (meta) meta.remove();
+      recalc();
     }
 
-    wrap.appendChild(acList);
+    if (q.length < 3) { acList.classList.remove('open'); return; }
+    const results = searchPlantes(q);
+    renderAutocomplete(acList, results, index, input, row);
 
-    const btnDel = document.createElement('button');
-    btnDel.className = 'btn-delete-essence';
-    btnDel.innerHTML = '×';
-    btnDel.onclick = () => removeEssence(i);
-
-    row.appendChild(wrap);
-    row.appendChild(btnDel);
-    container.appendChild(row);
-  });
-
-  // Close autocomplete on click outside
-  document.addEventListener('click', function handler(e) {
-    if (!e.target.closest('.essence-search-wrap')) {
-      document.querySelectorAll('.autocomplete-list').forEach(l => l.classList.remove('open'));
+    // "Not found" after 500ms if no results
+    if (results.length === 0) {
+      notFoundTimers[index] = setTimeout(() => {
+        if (input.value.trim().length >= 3 && !essences[index]) {
+          notFound.classList.add('visible');
+        }
+      }, 500);
     }
   });
 
+  input.addEventListener('focus', function() {
+    if (!essences[index] && this.value.trim().length >= 3) {
+      const results = searchPlantes(this.value.trim());
+      renderAutocomplete(acList, results, index, input, row);
+    }
+  });
+
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') acList.classList.remove('open');
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const items = acList.querySelectorAll('.autocomplete-item');
+      const cur = acList.querySelector('.autocomplete-item.active');
+      let idx = -1;
+      if (cur) { idx = Array.from(items).indexOf(cur); cur.classList.remove('active'); }
+      if (e.key === 'ArrowDown') idx = Math.min(idx + 1, items.length - 1);
+      else idx = Math.max(idx - 1, 0);
+      if (items[idx]) items[idx].classList.add('active');
+    }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const active = acList.querySelector('.autocomplete-item.active');
+      if (active) active.click();
+    }
+  });
+
+  wrap.appendChild(input);
+
+  if (plant) {
+    const meta = document.createElement('div');
+    meta.className = 'essence-meta';
+    meta.textContent = formatStrate(plant.strate) + ' · ' + plant.famille;
+    wrap.appendChild(meta);
+  }
+
+  wrap.appendChild(notFound);
+  wrap.appendChild(acList);
+
+  const badge = document.createElement('span');
+  badge.className = 'essence-badge';
+  badge.textContent = '✓';
+
+  const btnDel = document.createElement('button');
+  btnDel.className = 'btn-delete-essence';
+  btnDel.innerHTML = '×';
+  btnDel.onclick = () => removeEssence(index);
+
+  row.appendChild(wrap);
+  row.appendChild(badge);
+  row.appendChild(btnDel);
+  container.appendChild(row);
+}
+
+function updateEssenceCounter() {
+  const validated = essences.filter(e => e).length;
   const btn = document.getElementById('btn-add');
   btn.disabled = essences.length >= 12;
-  document.getElementById('essence-counter').textContent = essences.length + ' / 12 essences';
-
-  renderDensityFields();
+  document.getElementById('essence-counter').textContent = validated + ' / 12 essences';
 }
+
+// Close autocomplete on click outside (single global listener)
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.essence-search-wrap')) {
+    document.querySelectorAll('.autocomplete-list').forEach(l => l.classList.remove('open'));
+  }
+});
 
 function formatStrate(s) {
   const map = {
@@ -1243,6 +1340,7 @@ function normalize(str) {
 }
 
 function searchPlantes(query) {
+  if (query.length < 3) return [];
   const q = normalize(query);
   const selected = essences.filter(e => e).map(e => e.id);
   return PLANTES
@@ -1251,7 +1349,7 @@ function searchPlantes(query) {
     .slice(0, 8);
 }
 
-function renderAutocomplete(container, results, essenceIndex, input) {
+function renderAutocomplete(container, results, essenceIndex, input, row) {
   container.innerHTML = '';
   if (results.length === 0) { container.classList.remove('open'); return; }
   container.classList.add('open');
@@ -1259,11 +1357,32 @@ function renderAutocomplete(container, results, essenceIndex, input) {
   results.forEach(p => {
     const item = document.createElement('div');
     item.className = 'autocomplete-item';
-    item.innerHTML = `<span class="ac-latin">${p.nom_latin}</span><span class="ac-commun">— ${p.nom_commun}</span><span class="ac-strate">${formatStrate(p.strate)}</span>`;
-    item.addEventListener('click', () => {
+    item.innerHTML = `<span class="ac-latin"><strong>${p.nom_latin}</strong></span><span class="ac-commun">— ${p.nom_commun}</span><span class="ac-strate">${formatStrate(p.strate)}</span>`;
+    item.addEventListener('click', (e) => {
+      e.stopPropagation();
       essences[essenceIndex] = p;
       container.classList.remove('open');
-      renderEssences();
+
+      // Update this row in place (no full re-render)
+      input.value = p.nom_latin;
+      row.classList.add('validated');
+
+      // Remove old meta if any
+      const oldMeta = row.querySelector('.essence-meta');
+      if (oldMeta) oldMeta.remove();
+
+      // Add meta
+      const meta = document.createElement('div');
+      meta.className = 'essence-meta';
+      meta.textContent = formatStrate(p.strate) + ' · ' + p.famille;
+      input.parentNode.insertBefore(meta, input.nextSibling);
+
+      // Hide not-found
+      const nf = row.querySelector('.essence-not-found');
+      if (nf) nf.classList.remove('visible');
+
+      updateEssenceCounter();
+      renderAdvancedFields();
       recalc();
     });
     container.appendChild(item);
@@ -1277,25 +1396,62 @@ function toggleAdvanced() {
   advancedMode = !advancedMode;
   document.getElementById('advanced-content').classList.toggle('open', advancedMode);
   document.getElementById('advanced-results').style.display = advancedMode ? 'block' : 'none';
+  renderAdvancedFields();
   recalc();
 }
 
-function renderDensityFields() {
+function renderAdvancedFields() {
   const container = document.getElementById('density-fields');
   container.innerHTML = '';
   const selected = essences.filter(e => e);
   if (selected.length === 0) return;
 
-  selected.forEach((p, i) => {
+  selected.forEach((p) => {
     const row = document.createElement('div');
     row.className = 'density-row';
     row.innerHTML = `
       <span class="density-name">${p.nom_latin}</span>
-      <input type="number" placeholder="plants/m²" min="0" step="0.5"
-             data-density-id="${p.id}" oninput="recalc()" />
+      <div class="pct-input-wrap">
+        <input type="number" placeholder="ex : 25" min="0" max="100" step="1"
+               data-pct-id="${p.id}" oninput="updatePctTotal(); recalc()" />
+        <span class="pct-suffix">%</span>
+      </div>
     `;
     container.appendChild(row);
   });
+
+  // Total indicator
+  let totalDiv = document.getElementById('pct-total-indicator');
+  if (!totalDiv) {
+    totalDiv = document.createElement('div');
+    totalDiv.id = 'pct-total-indicator';
+    totalDiv.className = 'pct-total';
+  }
+  container.appendChild(totalDiv);
+  updatePctTotal();
+}
+
+function updatePctTotal() {
+  const inputs = document.querySelectorAll('[data-pct-id]');
+  let total = 0;
+  inputs.forEach(inp => { total += parseFloat(inp.value) || 0; });
+
+  const div = document.getElementById('pct-total-indicator');
+  if (!div) return;
+
+  if (total === 0) {
+    div.textContent = 'Saisissez les % de chaque essence (parts égales par défaut)';
+    div.style.color = 'var(--text-light)';
+  } else if (total === 100) {
+    div.innerHTML = '✓ Total : <strong>100%</strong>';
+    div.style.color = 'var(--sylve)';
+  } else if (total > 100) {
+    div.innerHTML = '⚠ Total : <strong>' + total + '%</strong> / 100% — supérieur à 100%';
+    div.style.color = 'var(--ocre)';
+  } else {
+    div.innerHTML = 'Total : <strong>' + total + '%</strong> / 100%';
+    div.style.color = 'var(--text-muted)';
+  }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1775,35 +1931,44 @@ function renderAdvancedResults(plants) {
   const advCard = document.getElementById('advanced-results');
   advCard.style.display = advancedMode ? 'block' : 'none';
 
+  const globalDensity = parseFloat(document.getElementById('global-density').value) || 0;
   const surface = parseFloat(document.getElementById('surface-total').value) || 0;
   const n = plants.length;
-  const pctEach = n > 0 ? (100 / n) : 0;
+  const defaultPct = n > 0 ? (100 / n) : 0;
+
+  // Check if any % is filled
+  let anyPctFilled = false;
+  let totalPctInput = 0;
+  plants.forEach(p => {
+    const pctInput = document.querySelector(`[data-pct-id="${p.id}"]`);
+    const pct = pctInput ? (parseFloat(pctInput.value) || 0) : 0;
+    if (pct > 0) anyPctFilled = true;
+    totalPctInput += pct;
+  });
 
   const tbody = document.getElementById('quant-body');
   tbody.innerHTML = '';
 
   let totalPlants = 0;
-  let totalDensity = 0;
   let melliWeighted = 0;
   let indigWeighted = 0;
 
   plants.forEach(p => {
-    const densityInput = document.querySelector(`[data-density-id="${p.id}"]`);
-    const density = densityInput ? (parseFloat(densityInput.value) || 0) : 0;
-    const qty = surface > 0 ? Math.round(density * surface * (pctEach / 100)) : 0;
+    const pctInput = document.querySelector(`[data-pct-id="${p.id}"]`);
+    const pct = anyPctFilled ? (pctInput ? (parseFloat(pctInput.value) || 0) : 0) : defaultPct;
+    const qty = (globalDensity > 0 && surface > 0) ? Math.round(globalDensity * surface * (pct / 100)) : 0;
+    const effDensity = globalDensity > 0 ? (globalDensity * pct / 100).toFixed(1) : '—';
 
     totalPlants += qty;
-    totalDensity += density * (pctEach / 100);
-
     if (p.mellifere) melliWeighted += qty;
     if (currentBioregion && p.indigenat && p.indigenat[currentBioregion]) indigWeighted += qty;
 
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${p.nom_latin}</td>
-      <td>${density || '—'}</td>
+      <td>${pct > 0 ? pct.toFixed(0) + '%' : '—'}</td>
       <td>${qty || '—'}</td>
-      <td>${pctEach.toFixed(0)}%</td>
+      <td>${effDensity !== '—' ? effDensity + ' pl/m²' : '—'}</td>
     `;
     tbody.appendChild(tr);
   });
@@ -1813,8 +1978,8 @@ function renderAdvancedResults(plants) {
   const pctIndig = totalPlants > 0 ? Math.round((indigWeighted / totalPlants) * 100) : 0;
 
   summary.innerHTML = `
-    <div class="quant-stat">Densité globale : <strong>${totalDensity.toFixed(1)} plants/m²</strong></div>
-    <div class="quant-stat">Nombre total : <strong>${totalPlants} plants</strong></div>
+    <div class="quant-stat">Densité globale : <strong>${globalDensity || '—'} plants/m²</strong></div>
+    <div class="quant-stat">Nombre total : <strong>${totalPlants || '—'} plants</strong></div>
     <div class="quant-stat">% mellifères (pondéré) : <strong>${pctMelli}%</strong></div>
     <div class="quant-stat">% indigènes (pondéré) : <strong>${pctIndig}%</strong>${currentBioregion ? ' (' + BIOREGION_LABELS[currentBioregion] + ')' : ''}</div>
   `;
