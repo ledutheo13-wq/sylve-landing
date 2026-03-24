@@ -871,6 +871,7 @@
       <!-- Section 2 — Essences -->
       <div class="section-card">
         <div class="section-title">Essences du mélange</div>
+        <div id="db-status" style="font-size: 12px; color: #7A7672; margin-bottom: 12px;">Chargement de la base végétale…</div>
         <div id="essences-list"></div>
         <button class="btn-add-essence" id="btn-add" onclick="addEssenceRow()">+ Ajouter une essence</button>
         <div class="essence-counter" id="essence-counter">0 / 12 essences</div>
@@ -1035,8 +1036,27 @@ checkAuth();
 let PLANTES = [];
 
 fetch('plantes-v1.json')
-  .then(r => r.json())
-  .then(data => { PLANTES = data; });
+  .then(r => {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  })
+  .then(data => {
+    PLANTES = data;
+    console.log('Base végétale chargée :', PLANTES.length, 'essences');
+    const el = document.getElementById('db-status');
+    if (el) {
+      el.textContent = '✓ Base végétale : ' + PLANTES.length + ' essences';
+      el.style.color = '#5E8B8F';
+    }
+  })
+  .catch(err => {
+    console.error('ERREUR chargement base végétale :', err);
+    const el = document.getElementById('db-status');
+    if (el) {
+      el.textContent = '✗ Erreur de chargement de la base végétale';
+      el.style.color = '#C44040';
+    }
+  });
 
 // ═══════════════════════════════════════════════════════════
 //  BIORÉGIONS
@@ -1340,13 +1360,15 @@ function normalize(str) {
 }
 
 function searchPlantes(query) {
-  if (query.length < 3) return [];
+  if (!query || query.length < 3 || PLANTES.length === 0) return [];
   const q = normalize(query);
   const selected = essences.filter(e => e).map(e => e.id);
-  return PLANTES
-    .filter(p => !selected.includes(p.id))
-    .filter(p => normalize(p.nom_latin).includes(q) || normalize(p.nom_commun).includes(q))
-    .slice(0, 8);
+  return PLANTES.filter(p => {
+    if (selected.includes(p.id)) return false;
+    const latin = normalize(p.nom_latin || '');
+    const commun = normalize(p.nom_commun || '');
+    return latin.includes(q) || commun.includes(q);
+  }).slice(0, 8);
 }
 
 function renderAutocomplete(container, results, essenceIndex, input, row) {
