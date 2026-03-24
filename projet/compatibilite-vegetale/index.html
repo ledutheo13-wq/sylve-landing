@@ -1,0 +1,1831 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Compatibilité végétale — SYLVE Projet</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --sylve: #5E8B8F;
+      --sylve-light: #E8F0F1;
+      --sylve-dark: #3d6366;
+      --projet: #8A8279;
+      --projet-light: #F0EDEA;
+      --bg: #F7F6F4;
+      --surface: #FFFFFF;
+      --border: #E2DED9;
+      --text: #2A2826;
+      --text-muted: #7A7672;
+      --text-light: #A09C98;
+      --ocre: #C4973B;
+      --terre: #A67C5B;
+      --radius: 6px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 52px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-brand {
+      display: flex;
+      align-items: baseline;
+      gap: 0.6rem;
+      text-decoration: none;
+      color: var(--text);
+    }
+
+    .header-brand .logo {
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      font-size: 1.1rem;
+      letter-spacing: 0.18em;
+      color: var(--sylve);
+    }
+
+    .header-brand .sub {
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      color: var(--projet);
+      text-transform: uppercase;
+    }
+
+    .header-tag {
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      background: var(--sylve-light);
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+
+    /* ── PAGE TITLE ── */
+    .page-title-bar {
+      padding: 2rem 2rem 1.5rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .page-title-bar h1 {
+      font-family: Helvetica, 'Helvetica Neue', Arial, sans-serif;
+      font-size: 1.7rem;
+      font-weight: 300;
+      color: var(--sylve);
+      line-height: 1.2;
+      letter-spacing: 6px;
+      text-transform: lowercase;
+    }
+
+    .page-title-bar p {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-top: 0.4rem;
+    }
+
+    /* ── SPLIT LAYOUT ── */
+    .app {
+      display: grid;
+      grid-template-columns: 40% 60%;
+      gap: 0;
+      max-width: 1400px;
+      margin: 0 auto;
+      min-height: calc(100vh - 52px - 95px);
+    }
+
+    /* ── PANEL LEFT ── */
+    .panel-left {
+      padding: 0 1rem 2rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .section-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    .section-title {
+      font-family: Helvetica, 'Helvetica Neue', Arial, sans-serif;
+      font-size: 0.68rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-weight: 500;
+      margin-bottom: 1rem;
+    }
+
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      margin-bottom: 0.8rem;
+    }
+
+    .field-group:last-child { margin-bottom: 0; }
+
+    .field-label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    select {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 300;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 8px 10px;
+      background: white;
+      color: var(--text);
+      width: 100%;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--sylve);
+      box-shadow: 0 0 0 2px var(--sylve-light);
+    }
+
+    .bioregion-hint {
+      font-size: 0.72rem;
+      color: var(--sylve);
+      margin-top: 0.2rem;
+      font-weight: 400;
+    }
+
+    /* ── ESSENCES LIST ── */
+    .essence-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      margin-bottom: 0.6rem;
+      position: relative;
+    }
+
+    .essence-search-wrap {
+      flex: 1;
+      position: relative;
+    }
+
+    .essence-input {
+      width: 100%;
+    }
+
+    .essence-meta {
+      font-size: 0.68rem;
+      color: var(--text-light);
+      margin-top: 0.15rem;
+    }
+
+    .btn-delete-essence {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border);
+      background: white;
+      cursor: pointer;
+      color: var(--text-light);
+      border-radius: var(--radius);
+      transition: all 0.15s;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+      margin-top: 4px;
+    }
+
+    .btn-delete-essence:hover {
+      color: #C25C3A;
+      border-color: #C25C3A;
+      background: #FDF0EC;
+    }
+
+    .btn-add-essence {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 400;
+      color: var(--sylve);
+      background: var(--sylve-light);
+      border: none;
+      border-radius: var(--radius);
+      padding: 7px 14px;
+      cursor: pointer;
+      transition: background 0.15s;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .btn-add-essence:hover { background: #d0e3e5; }
+    .btn-add-essence:disabled { opacity: 0.4; cursor: default; }
+
+    .essence-counter {
+      font-size: 0.7rem;
+      color: var(--text-light);
+      text-align: right;
+      margin-top: 0.3rem;
+    }
+
+    /* ── AUTOCOMPLETE ── */
+    .autocomplete-list {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+      z-index: 50;
+      max-height: 260px;
+      overflow-y: auto;
+      display: none;
+    }
+
+    .autocomplete-list.open { display: block; }
+
+    .autocomplete-item {
+      padding: 8px 10px;
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: background 0.1s;
+      border-bottom: 1px solid #f0efed;
+    }
+
+    .autocomplete-item:last-child { border-bottom: none; }
+    .autocomplete-item:hover,
+    .autocomplete-item.active { background: var(--sylve-light); }
+
+    .autocomplete-item .ac-latin {
+      font-style: italic;
+      color: var(--text);
+    }
+
+    .autocomplete-item .ac-commun {
+      color: var(--text-muted);
+      margin-left: 0.3rem;
+    }
+
+    .autocomplete-item .ac-strate {
+      font-size: 0.65rem;
+      color: var(--text-light);
+      display: block;
+      margin-top: 0.1rem;
+    }
+
+    /* ── MODE AVANCÉ ── */
+    .advanced-toggle {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .advanced-toggle:hover { color: var(--sylve); }
+
+    .advanced-content {
+      display: none;
+      margin-top: 1rem;
+    }
+
+    .advanced-content.open { display: block; }
+
+    .advanced-hint {
+      font-size: 0.68rem;
+      color: var(--text-light);
+      font-style: italic;
+      margin-top: 0.5rem;
+      line-height: 1.5;
+    }
+
+    .density-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.78rem;
+    }
+
+    .density-row .density-name {
+      flex: 1;
+      font-style: italic;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .density-row input[type="number"] {
+      width: 80px;
+      flex-shrink: 0;
+    }
+
+    /* ── PANEL RIGHT ── */
+    .panel-right {
+      padding: 0 2rem 2rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .result-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      transition: opacity 0.3s ease;
+    }
+
+    .result-card-title {
+      font-family: Helvetica, 'Helvetica Neue', Arial, sans-serif;
+      font-size: 0.68rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-weight: 500;
+      margin-bottom: 1rem;
+    }
+
+    /* ── SCORE CIRCULAIRE ── */
+    .score-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .score-circle-wrap {
+      position: relative;
+      width: 140px;
+      height: 140px;
+    }
+
+    .score-circle-wrap svg {
+      width: 140px;
+      height: 140px;
+      transform: rotate(-90deg);
+    }
+
+    .score-circle-bg {
+      fill: none;
+      stroke: var(--border);
+      stroke-width: 8;
+    }
+
+    .score-circle-fg {
+      fill: none;
+      stroke-width: 8;
+      stroke-linecap: round;
+      transition: stroke-dasharray 0.6s ease, stroke 0.3s ease;
+    }
+
+    .score-number {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'DM Mono', monospace;
+      font-size: 2.2rem;
+      font-weight: 400;
+      color: var(--text);
+    }
+
+    .score-number span {
+      font-size: 1rem;
+      color: var(--text-muted);
+      margin-left: 2px;
+    }
+
+    .score-verdict {
+      font-size: 0.82rem;
+      font-weight: 400;
+      text-align: center;
+    }
+
+    /* ── BARRES DE CRITÈRE ── */
+    .criteria-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+
+    .criteria-row {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .criteria-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      width: 120px;
+      flex-shrink: 0;
+    }
+
+    .criteria-bar-wrap {
+      flex: 1;
+      height: 8px;
+      background: #ECEAE7;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .criteria-bar {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.5s ease, background-color 0.3s ease;
+    }
+
+    .criteria-score {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+      width: 50px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    /* ── ALERTES ── */
+    .alert-item {
+      display: flex;
+      gap: 0.5rem;
+      padding: 10px 12px;
+      background: rgba(196, 151, 59, 0.08);
+      border-radius: var(--radius);
+      border-left: 3px solid var(--ocre);
+      margin-bottom: 0.5rem;
+      font-size: 0.78rem;
+      line-height: 1.5;
+      color: var(--text);
+    }
+
+    .alert-item:last-child { margin-bottom: 0; }
+
+    .alert-icon { flex-shrink: 0; }
+
+    /* ── RUSTICITÉ ── */
+    .rusticite-value {
+      font-family: 'DM Mono', monospace;
+      font-size: 1.6rem;
+      font-weight: 400;
+      color: var(--text);
+    }
+
+    .rusticite-detail {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 0.3rem;
+    }
+
+    .rusticite-alert {
+      margin-top: 0.6rem;
+      font-size: 0.78rem;
+      color: var(--ocre);
+      font-weight: 400;
+    }
+
+    /* ── TABLEAU ESSENCES ── */
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    .recap-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.75rem;
+    }
+
+    .recap-table th {
+      font-family: Helvetica, 'Helvetica Neue', Arial, sans-serif;
+      font-size: 0.62rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-light);
+      font-weight: 400;
+      text-align: left;
+      padding: 6px 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .recap-table td {
+      padding: 8px;
+      border-bottom: 1px solid #f0efed;
+      vertical-align: middle;
+    }
+
+    .recap-table tr.problematic {
+      background: rgba(196, 151, 59, 0.1);
+    }
+
+    .recap-table .latin { font-style: italic; }
+
+    .recap-stats {
+      display: flex;
+      gap: 1.5rem;
+      margin-top: 0.8rem;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    .recap-stats strong {
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    /* ── CALENDRIER PHÉNOLOGIQUE ── */
+    .pheno-table {
+      width: 100%;
+    }
+
+    .pheno-row {
+      display: grid;
+      grid-template-columns: 140px repeat(12, 1fr);
+      gap: 0;
+      align-items: center;
+      margin-bottom: 2px;
+    }
+
+    .pheno-name {
+      font-size: 0.7rem;
+      font-style: italic;
+      color: var(--text-muted);
+      padding-right: 8px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .pheno-header .pheno-month {
+      font-family: Helvetica, 'Helvetica Neue', Arial, sans-serif;
+      font-size: 0.58rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--text-light);
+      text-align: center;
+    }
+
+    .pheno-cell {
+      height: 18px;
+      position: relative;
+    }
+
+    .pheno-bar {
+      position: absolute;
+      inset: 2px 0;
+      border-radius: 3px;
+    }
+
+    /* ── MODE AVANCÉ RÉSULTATS ── */
+    .quant-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.75rem;
+    }
+
+    .quant-table th {
+      font-family: Helvetica, 'Helvetica Neue', Arial, sans-serif;
+      font-size: 0.62rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-light);
+      font-weight: 400;
+      text-align: left;
+      padding: 6px 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .quant-table td {
+      padding: 8px;
+      border-bottom: 1px solid #f0efed;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+    }
+
+    .quant-table td:first-child {
+      font-family: 'DM Sans', sans-serif;
+      font-style: italic;
+    }
+
+    .quant-summary {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+      margin-top: 1rem;
+    }
+
+    .quant-stat {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    .quant-stat strong {
+      font-family: 'DM Mono', monospace;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    /* ── ÉTAT VIDE ── */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 4rem 2rem;
+      text-align: center;
+    }
+
+    .empty-state svg {
+      width: 64px;
+      height: 64px;
+      color: var(--border);
+      margin-bottom: 1.5rem;
+    }
+
+    .empty-state .empty-title {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      margin-bottom: 0.3rem;
+    }
+
+    .empty-state .empty-sub {
+      font-size: 0.75rem;
+      color: var(--text-light);
+    }
+
+    /* ── AUTH GATE ── */
+    .auth-gate {
+      position: absolute;
+      inset: 0;
+      background: rgba(247, 246, 244, 0.92);
+      backdrop-filter: blur(4px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      border-radius: 8px;
+      text-align: center;
+      padding: 2rem;
+    }
+
+    .auth-gate .gate-title {
+      font-family: Helvetica, 'Helvetica Neue', Arial, sans-serif;
+      font-size: 1rem;
+      font-weight: 300;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+    }
+
+    .auth-gate .gate-sub {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-bottom: 1.2rem;
+    }
+
+    .btn-gate {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 400;
+      color: white;
+      background: var(--sylve);
+      border: none;
+      border-radius: var(--radius);
+      padding: 10px 24px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+
+    .btn-gate:hover { background: var(--sylve-dark); }
+
+    .panel-right-wrap {
+      position: relative;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 1024px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+      .panel-left {
+        padding: 0 1.5rem 1.5rem;
+      }
+      .panel-right {
+        padding: 0 1.5rem 2rem;
+      }
+      .page-title-bar {
+        padding: 1.5rem 1.5rem 1rem;
+      }
+      .pheno-row {
+        grid-template-columns: 100px repeat(12, 1fr);
+      }
+      .criteria-label { width: 90px; }
+    }
+
+    @media (max-width: 640px) {
+      header { padding: 0 1rem; }
+      .page-title-bar { padding: 1rem; }
+      .panel-left, .panel-right { padding: 0 1rem 1.5rem; }
+      .pheno-row { grid-template-columns: 80px repeat(12, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <a href="/projet" class="header-brand">
+      <span class="logo">sylve</span>
+      <span class="sub">projet</span>
+    </a>
+    <span class="header-tag">beta</span>
+  </header>
+
+  <!-- PAGE TITLE -->
+  <div class="page-title-bar">
+    <h1>compatibilité végétale</h1>
+    <p>Analysez la compatibilité botanique et écologique de vos mélanges végétaux.</p>
+  </div>
+
+  <!-- APP -->
+  <div class="app">
+
+    <!-- ════ PANNEAU GAUCHE ════ -->
+    <div class="panel-left">
+
+      <!-- Section 1 — Infos mélange -->
+      <div class="section-card">
+        <div class="section-title">Informations du mélange</div>
+        <div class="field-group">
+          <label class="field-label">Nom du mélange</label>
+          <input type="text" id="mix-name" placeholder="ex : Massif ombre — Résidence Alma" />
+        </div>
+        <div class="field-group">
+          <label class="field-label">Code postal du projet</label>
+          <input type="text" id="postal-code" placeholder="ex : 75012" maxlength="5" />
+          <div id="bioregion-auto" class="bioregion-hint" style="display:none"></div>
+          <select id="bioregion-choice" style="display:none; margin-top:0.3rem">
+            <option value="">Choisissez la biorégion…</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Ou choisir directement la biorégion</label>
+          <select id="bioregion-manual">
+            <option value="">— Aucune —</option>
+            <option value="atlantique">Atlantique</option>
+            <option value="continental">Continental</option>
+            <option value="mediterraneen">Méditerranéen</option>
+            <option value="alpin">Alpin</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Section 2 — Essences -->
+      <div class="section-card">
+        <div class="section-title">Essences du mélange</div>
+        <div id="essences-list"></div>
+        <button class="btn-add-essence" id="btn-add" onclick="addEssenceRow()">+ Ajouter une essence</button>
+        <div class="essence-counter" id="essence-counter">0 / 12 essences</div>
+      </div>
+
+      <!-- Section 3 — Mode avancé -->
+      <div class="section-card">
+        <button class="advanced-toggle" onclick="toggleAdvanced()">Mode avancé — Quantitatif ▾</button>
+        <div class="advanced-content" id="advanced-content">
+          <div class="field-group">
+            <label class="field-label">Surface totale du mélange (m²)</label>
+            <input type="number" id="surface-total" placeholder="ex : 120" min="0" step="1" oninput="recalc()" />
+          </div>
+          <div id="density-fields"></div>
+          <p class="advanced-hint">Le mode avancé calcule les quantités, la densité globale et les pourcentages pondérés d'indigénat et de mellifère.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ PANNEAU DROIT ════ -->
+    <div class="panel-right panel-right-wrap">
+
+      <!-- Auth gate (hidden if logged in) -->
+      <div class="auth-gate" id="auth-gate" style="display:none">
+        <div class="gate-title">Connectez-vous pour accéder aux résultats</div>
+        <div class="gate-sub">Saisissez vos essences librement, les résultats s'affichent après connexion.</div>
+        <a href="/login?redirect=/projet/compatibilite-vegetale" class="btn-gate">Se connecter</a>
+      </div>
+
+      <!-- État vide -->
+      <div class="result-card" id="empty-state">
+        <div class="empty-state">
+          <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M32 56 C32 56 12 42 12 26 C12 16 20 8 32 8 C44 8 52 16 52 26 C52 42 32 56 32 56Z"/>
+            <path d="M32 20 L32 40"/>
+            <path d="M24 28 C28 24 32 28 32 28 C32 28 36 24 40 28"/>
+          </svg>
+          <div class="empty-title">Ajoutez au moins 2 essences pour analyser la compatibilité</div>
+          <div class="empty-sub">L'analyse se met à jour en temps réel</div>
+        </div>
+      </div>
+
+      <!-- Dashboard (hidden until ≥2 essences) -->
+      <div id="dashboard" style="display:none">
+
+        <!-- En-tête dashboard -->
+        <div class="result-card" style="padding: 16px 20px">
+          <div style="font-size: 0.88rem; font-weight: 400; color: var(--text)" id="dash-title">Mélange sans nom</div>
+          <div style="font-size: 0.72rem; color: var(--text-light); margin-top:2px" id="dash-bioregion"></div>
+        </div>
+
+        <!-- Bloc 1 — Score global -->
+        <div class="result-card">
+          <div class="score-block">
+            <div class="score-circle-wrap">
+              <svg viewBox="0 0 140 140">
+                <circle class="score-circle-bg" cx="70" cy="70" r="58" />
+                <circle class="score-circle-fg" id="score-arc" cx="70" cy="70" r="58" stroke-dasharray="0 365" />
+              </svg>
+              <div class="score-number" id="score-number">—<span></span></div>
+            </div>
+            <div class="score-verdict" id="score-verdict"></div>
+          </div>
+        </div>
+
+        <!-- Bloc 2 — Détail par critère -->
+        <div class="result-card">
+          <div class="result-card-title">Détail par critère</div>
+          <div class="criteria-list" id="criteria-list"></div>
+        </div>
+
+        <!-- Bloc 3 — Alertes -->
+        <div class="result-card" id="alerts-card" style="display:none">
+          <div class="result-card-title">Alertes</div>
+          <div id="alerts-list"></div>
+        </div>
+
+        <!-- Bloc 4 — Rusticité -->
+        <div class="result-card">
+          <div class="result-card-title">Limite de rusticité du mélange</div>
+          <div class="rusticite-value" id="rusticite-value">—</div>
+          <div class="rusticite-detail" id="rusticite-detail"></div>
+          <div class="rusticite-alert" id="rusticite-alert" style="display:none"></div>
+        </div>
+
+        <!-- Bloc 5 — Tableau récapitulatif -->
+        <div class="result-card">
+          <div class="result-card-title">Récapitulatif des essences</div>
+          <div class="table-wrap">
+            <table class="recap-table" id="recap-table">
+              <thead>
+                <tr>
+                  <th>Nom latin</th>
+                  <th>Famille</th>
+                  <th>Strate</th>
+                  <th>Persistance</th>
+                  <th>Mellifère</th>
+                  <th>Indigénat</th>
+                </tr>
+              </thead>
+              <tbody id="recap-body"></tbody>
+            </table>
+          </div>
+          <div class="recap-stats" id="recap-stats"></div>
+        </div>
+
+        <!-- Bloc 6 — Calendrier phénologique -->
+        <div class="result-card">
+          <div class="result-card-title">Calendrier phénologique</div>
+          <div id="pheno-calendar"></div>
+        </div>
+
+        <!-- Bloc 7 — Mode avancé résultats -->
+        <div class="result-card" id="advanced-results" style="display:none">
+          <div class="result-card-title">Mode avancé — Quantitatif</div>
+          <div class="table-wrap">
+            <table class="quant-table" id="quant-table">
+              <thead>
+                <tr>
+                  <th>Essence</th>
+                  <th>Densité/m²</th>
+                  <th>Quantité totale</th>
+                  <th>% du mélange</th>
+                </tr>
+              </thead>
+              <tbody id="quant-body"></tbody>
+            </table>
+          </div>
+          <div class="quant-summary" id="quant-summary"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  CONFIG SUPABASE
+// ═══════════════════════════════════════════════════════════
+const SUPABASE_URL  = 'https://jbqgyfbjyulezaclvmwc.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpicWd5ZmJqeXVsZXphY2x2bXdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzQyMDIsImV4cCI6MjA4ODcxMDIwMn0.dNibq1JOBz3UnqdLwENmS113TGKpw_UGWKR0cE8LgMI';
+
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+let isAuthenticated = false;
+
+async function checkAuth() {
+  const { data: { session } } = await sb.auth.getSession();
+  isAuthenticated = !!session;
+  document.getElementById('auth-gate').style.display = isAuthenticated ? 'none' : 'flex';
+}
+
+checkAuth();
+
+// ═══════════════════════════════════════════════════════════
+//  BASE VÉGÉTALE
+// ═══════════════════════════════════════════════════════════
+let PLANTES = [];
+
+fetch('plantes-v1.json')
+  .then(r => r.json())
+  .then(data => { PLANTES = data; });
+
+// ═══════════════════════════════════════════════════════════
+//  BIORÉGIONS
+// ═══════════════════════════════════════════════════════════
+const BIOREGIONS = {
+  atlantique: [
+    '14','22','29','35','44','50','56',
+    '16','17','24','33','40','47','64','79','85','86',
+    '49','53','72',
+    '76','27',
+    '59','62',
+    '80'
+  ],
+  continental: [
+    '02','08','10','21','25','39','51','52','54','55','57','58','67','68','70','71','88','89','90',
+    '60',
+    '75','77','78','91','92','93','94','95',
+    '18','28','36','37','41','45',
+    '01','03','42','69',
+    '23','87','19','15','43','63',
+    '46','12','48',
+    '82','81','31','32','09','65',
+    '61'
+  ],
+  mediterraneen: [
+    '04','05','06','11','13','30','34','66','83','84',
+    '07','26',
+    '2A','2B',
+    '971','972','973','974','976'
+  ],
+  alpin: ['73','74','38']
+};
+
+const DEPARTEMENTS_MIXTES = {
+  '05': ['mediterraneen', 'alpin'],
+  '26': ['continental', 'mediterraneen'],
+  '07': ['continental', 'mediterraneen'],
+  '38': ['continental', 'alpin'],
+  '01': ['continental', 'alpin'],
+  '06': ['mediterraneen', 'alpin'],
+  '04': ['mediterraneen', 'alpin']
+};
+
+const BIOREGION_LABELS = {
+  atlantique: 'Atlantique',
+  continental: 'Continental',
+  mediterraneen: 'Méditerranéen',
+  alpin: 'Alpin'
+};
+
+const BIOREGION_RUSTICITE = {
+  atlantique: -10,
+  continental: -20,
+  mediterraneen: -5,
+  alpin: -25
+};
+
+let currentBioregion = '';
+
+function getBioregionFromDept(dept) {
+  if (DEPARTEMENTS_MIXTES[dept]) return DEPARTEMENTS_MIXTES[dept];
+  for (const [bio, depts] of Object.entries(BIOREGIONS)) {
+    if (depts.includes(dept)) return [bio];
+  }
+  return [];
+}
+
+document.getElementById('postal-code').addEventListener('input', function() {
+  const val = this.value.trim();
+  const autoHint = document.getElementById('bioregion-auto');
+  const choiceSel = document.getElementById('bioregion-choice');
+
+  if (val.length >= 2) {
+    let dept = val.substring(0, 2);
+    if (val.startsWith('97') && val.length >= 3) dept = val.substring(0, 3);
+    if (val.toUpperCase().startsWith('2A') || val.toUpperCase().startsWith('2B')) dept = val.substring(0, 2).toUpperCase();
+
+    const bios = getBioregionFromDept(dept);
+
+    if (bios.length === 1) {
+      currentBioregion = bios[0];
+      autoHint.textContent = 'Biorégion : ' + BIOREGION_LABELS[bios[0]];
+      autoHint.style.display = 'block';
+      choiceSel.style.display = 'none';
+      document.getElementById('bioregion-manual').value = '';
+      recalc();
+    } else if (bios.length > 1) {
+      autoHint.textContent = 'Département à cheval sur 2 biorégions :';
+      autoHint.style.display = 'block';
+      choiceSel.innerHTML = '<option value="">Choisissez…</option>';
+      bios.forEach(b => {
+        const opt = document.createElement('option');
+        opt.value = b;
+        opt.textContent = BIOREGION_LABELS[b];
+        choiceSel.appendChild(opt);
+      });
+      choiceSel.style.display = 'block';
+      document.getElementById('bioregion-manual').value = '';
+    } else {
+      autoHint.style.display = 'none';
+      choiceSel.style.display = 'none';
+    }
+  } else {
+    autoHint.style.display = 'none';
+    choiceSel.style.display = 'none';
+  }
+});
+
+document.getElementById('bioregion-choice').addEventListener('change', function() {
+  currentBioregion = this.value;
+  recalc();
+});
+
+document.getElementById('bioregion-manual').addEventListener('change', function() {
+  currentBioregion = this.value;
+  document.getElementById('bioregion-auto').style.display = 'none';
+  document.getElementById('bioregion-choice').style.display = 'none';
+  document.getElementById('postal-code').value = '';
+  recalc();
+});
+
+document.getElementById('mix-name').addEventListener('input', function() {
+  recalc();
+});
+
+// ═══════════════════════════════════════════════════════════
+//  ESSENCES STATE
+// ═══════════════════════════════════════════════════════════
+let essences = []; // array of plant objects
+let advancedMode = false;
+
+function addEssenceRow() {
+  if (essences.length >= 12) return;
+  essences.push(null);
+  renderEssences();
+}
+
+function removeEssence(index) {
+  essences.splice(index, 1);
+  renderEssences();
+  recalc();
+}
+
+function renderEssences() {
+  const container = document.getElementById('essences-list');
+  container.innerHTML = '';
+
+  essences.forEach((plant, i) => {
+    const row = document.createElement('div');
+    row.className = 'essence-row';
+
+    const wrap = document.createElement('div');
+    wrap.className = 'essence-search-wrap';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'essence-input';
+    input.placeholder = 'Rechercher une essence…';
+    input.value = plant ? plant.nom_latin : '';
+    input.dataset.index = i;
+    if (plant) input.style.fontStyle = 'italic';
+
+    const acList = document.createElement('div');
+    acList.className = 'autocomplete-list';
+
+    input.addEventListener('input', function() {
+      const q = this.value.trim();
+      if (q.length < 2) { acList.classList.remove('open'); return; }
+      const results = searchPlantes(q);
+      renderAutocomplete(acList, results, i, input);
+    });
+
+    input.addEventListener('focus', function() {
+      if (!plant && this.value.length >= 2) {
+        const results = searchPlantes(this.value.trim());
+        renderAutocomplete(acList, results, i, input);
+      }
+    });
+
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') acList.classList.remove('open');
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        const items = acList.querySelectorAll('.autocomplete-item');
+        const cur = acList.querySelector('.autocomplete-item.active');
+        let idx = -1;
+        if (cur) { idx = Array.from(items).indexOf(cur); cur.classList.remove('active'); }
+        if (e.key === 'ArrowDown') idx = Math.min(idx + 1, items.length - 1);
+        else idx = Math.max(idx - 1, 0);
+        if (items[idx]) items[idx].classList.add('active');
+      }
+      if (e.key === 'Enter') {
+        const active = acList.querySelector('.autocomplete-item.active');
+        if (active) active.click();
+      }
+    });
+
+    wrap.appendChild(input);
+
+    if (plant) {
+      const meta = document.createElement('div');
+      meta.className = 'essence-meta';
+      meta.textContent = formatStrate(plant.strate) + ' · ' + plant.famille;
+      wrap.appendChild(meta);
+    }
+
+    wrap.appendChild(acList);
+
+    const btnDel = document.createElement('button');
+    btnDel.className = 'btn-delete-essence';
+    btnDel.innerHTML = '×';
+    btnDel.onclick = () => removeEssence(i);
+
+    row.appendChild(wrap);
+    row.appendChild(btnDel);
+    container.appendChild(row);
+  });
+
+  // Close autocomplete on click outside
+  document.addEventListener('click', function handler(e) {
+    if (!e.target.closest('.essence-search-wrap')) {
+      document.querySelectorAll('.autocomplete-list').forEach(l => l.classList.remove('open'));
+    }
+  });
+
+  const btn = document.getElementById('btn-add');
+  btn.disabled = essences.length >= 12;
+  document.getElementById('essence-counter').textContent = essences.length + ' / 12 essences';
+
+  renderDensityFields();
+}
+
+function formatStrate(s) {
+  const map = {
+    'arbre_grand': 'Arbre (grand)',
+    'arbre_moyen': 'Arbre (moyen)',
+    'arbre_petit': 'Arbre (petit)',
+    'arbuste': 'Arbuste',
+    'sous_arbuste': 'Sous-arbuste',
+    'vivace': 'Vivace',
+    'graminee': 'Graminée',
+    'couvre_sol': 'Couvre-sol',
+    'grimpante': 'Grimpante',
+    'bulbe': 'Bulbe',
+    'fougere': 'Fougère',
+    'bambou': 'Bambou',
+    'palmier': 'Palmier',
+    'aquatique': 'Aquatique'
+  };
+  return map[s] || s;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  RECHERCHE / AUTOCOMPLÉTION
+// ═══════════════════════════════════════════════════════════
+function normalize(str) {
+  return str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+function searchPlantes(query) {
+  const q = normalize(query);
+  const selected = essences.filter(e => e).map(e => e.id);
+  return PLANTES
+    .filter(p => !selected.includes(p.id))
+    .filter(p => normalize(p.nom_latin).includes(q) || normalize(p.nom_commun).includes(q))
+    .slice(0, 8);
+}
+
+function renderAutocomplete(container, results, essenceIndex, input) {
+  container.innerHTML = '';
+  if (results.length === 0) { container.classList.remove('open'); return; }
+  container.classList.add('open');
+
+  results.forEach(p => {
+    const item = document.createElement('div');
+    item.className = 'autocomplete-item';
+    item.innerHTML = `<span class="ac-latin">${p.nom_latin}</span><span class="ac-commun">— ${p.nom_commun}</span><span class="ac-strate">${formatStrate(p.strate)}</span>`;
+    item.addEventListener('click', () => {
+      essences[essenceIndex] = p;
+      container.classList.remove('open');
+      renderEssences();
+      recalc();
+    });
+    container.appendChild(item);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  MODE AVANCÉ
+// ═══════════════════════════════════════════════════════════
+function toggleAdvanced() {
+  advancedMode = !advancedMode;
+  document.getElementById('advanced-content').classList.toggle('open', advancedMode);
+  document.getElementById('advanced-results').style.display = advancedMode ? 'block' : 'none';
+  recalc();
+}
+
+function renderDensityFields() {
+  const container = document.getElementById('density-fields');
+  container.innerHTML = '';
+  const selected = essences.filter(e => e);
+  if (selected.length === 0) return;
+
+  selected.forEach((p, i) => {
+    const row = document.createElement('div');
+    row.className = 'density-row';
+    row.innerHTML = `
+      <span class="density-name">${p.nom_latin}</span>
+      <input type="number" placeholder="plants/m²" min="0" step="0.5"
+             data-density-id="${p.id}" oninput="recalc()" />
+    `;
+    container.appendChild(row);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ALGORITHME DE SCORING
+// ═══════════════════════════════════════════════════════════
+const GRADIENTS = {
+  exposition: { 'ombre': 0, 'mi-ombre': 1, 'soleil': 2 },
+  besoins_hydriques: { 'faible': 0, 'moyen': 1, 'fort': 2 },
+  type_sol: { 'sableux': 0, 'calcaire': 1, 'limoneux': 2, 'humifere': 3, 'humifère': 3, 'argileux': 4 },
+  ph_sol: { 'acide': 0, 'neutre': 1, 'calcaire': 2 },
+  humidite_sol: { 'sec': 0, 'frais': 1, 'humide': 2, 'détrempe': 3, 'détrempé': 3, 'detrempe': 3 }
+};
+
+const MAX_DIST = {
+  exposition: 2,
+  besoins_hydriques: 2,
+  type_sol: 4,
+  ph_sol: 2,
+  humidite_sol: 3
+};
+
+const COEFFICIENTS = {
+  exposition: 1.0,
+  besoins_hydriques: 1.5,
+  type_sol: 1.2,
+  ph_sol: 1.3,
+  humidite_sol: 1.5
+};
+
+const SOMME_COEFFICIENTS = 6.5;
+
+const CRITERIA_LABELS = {
+  exposition: 'Exposition',
+  besoins_hydriques: 'Besoins hydriques',
+  type_sol: 'Type de sol',
+  ph_sol: 'pH du sol',
+  humidite_sol: 'Humidité du sol'
+};
+
+function getPositions(plant, criterion) {
+  const val = plant[criterion];
+  const grad = GRADIENTS[criterion];
+  if (Array.isArray(val)) {
+    return val.map(v => grad[normalize(v)] ?? grad[v]).filter(v => v !== undefined);
+  }
+  const pos = grad[normalize(val)] ?? grad[val];
+  return pos !== undefined ? [pos] : [];
+}
+
+function pairScore(plantA, plantB, criterion) {
+  const posA = getPositions(plantA, criterion);
+  const posB = getPositions(plantB, criterion);
+  if (posA.length === 0 || posB.length === 0) return 1; // no data = compatible
+  let minDist = Infinity;
+  for (const a of posA) {
+    for (const b of posB) {
+      minDist = Math.min(minDist, Math.abs(a - b));
+    }
+  }
+  return 1 - (minDist / MAX_DIST[criterion]);
+}
+
+function computeScoring(plants) {
+  const n = plants.length;
+  if (n < 2) return null;
+
+  // Generate all pairs
+  const pairs = [];
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      pairs.push([i, j]);
+    }
+  }
+
+  const criteriaScores = {};
+  const pairScoresByCriterion = {};
+
+  for (const criterion of Object.keys(COEFFICIENTS)) {
+    const scores = pairs.map(([i, j]) => pairScore(plants[i], plants[j], criterion));
+    pairScoresByCriterion[criterion] = scores;
+    criteriaScores[criterion] = scores.reduce((a, b) => a + b, 0) / scores.length;
+  }
+
+  // Score global
+  let weightedSum = 0;
+  for (const [c, score] of Object.entries(criteriaScores)) {
+    weightedSum += score * COEFFICIENTS[c];
+  }
+  const globalScore = Math.round((weightedSum / SOMME_COEFFICIENTS) * 100);
+
+  // Détection essences problématiques
+  const alerts = [];
+  for (const criterion of Object.keys(COEFFICIENTS)) {
+    const allPairScores = pairScoresByCriterion[criterion];
+    const avgAll = allPairScores.reduce((a, b) => a + b, 0) / allPairScores.length;
+
+    for (let e = 0; e < n; e++) {
+      // Paires impliquant E
+      const withE = [];
+      const withoutE = [];
+      pairs.forEach(([i, j], idx) => {
+        if (i === e || j === e) withE.push(allPairScores[idx]);
+        else withoutE.push(allPairScores[idx]);
+      });
+
+      if (withoutE.length === 0) continue; // seulement 2 plantes
+
+      const avgWithE = withE.reduce((a, b) => a + b, 0) / withE.length;
+      const avgWithoutE = withoutE.reduce((a, b) => a + b, 0) / withoutE.length;
+
+      if ((avgWithoutE - avgWithE) * 100 > 25) {
+        // Générer le message d'alerte
+        const plant = plants[e];
+        const plantVals = Array.isArray(plant[criterion]) ? plant[criterion].join('/') : plant[criterion];
+        const otherVals = plants
+          .filter((_, idx) => idx !== e)
+          .map(p => Array.isArray(p[criterion]) ? p[criterion].join('/') : p[criterion]);
+        const uniqueOther = [...new Set(otherVals.flat())].join(', ');
+
+        alerts.push({
+          plantIndex: e,
+          plantName: plant.nom_latin,
+          criterion: criterion,
+          criterionLabel: CRITERIA_LABELS[criterion],
+          message: `${plant.nom_latin} — ${CRITERIA_LABELS[criterion].toLowerCase()} (${plantVals}) en décalage avec le reste du mélange (${uniqueOther})`
+        });
+      }
+    }
+  }
+
+  return {
+    globalScore,
+    criteriaScores: Object.fromEntries(
+      Object.entries(criteriaScores).map(([k, v]) => [k, Math.round(v * 100)])
+    ),
+    alerts
+  };
+}
+
+// ═══════════════════════════════════════════════════════════
+//  COULEURS DE SCORING
+// ═══════════════════════════════════════════════════════════
+function scoreColor(score) {
+  if (score >= 80) return 'var(--sylve)';
+  if (score >= 60) return 'var(--projet)';
+  if (score >= 40) return 'var(--ocre)';
+  return 'var(--terre)';
+}
+
+function scoreVerdict(score) {
+  if (score >= 80) return 'Mélange cohérent';
+  if (score >= 60) return 'Points d\'attention';
+  if (score >= 40) return 'Incompatibilités à corriger';
+  return 'Mélange problématique';
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PARSING COULEUR FLORAISON
+// ═══════════════════════════════════════════════════════════
+const BASE_COLORS = {
+  'blanc':'#F5F0EB','crème':'#FDF5E6','creme':'#FDF5E6','ivoire':'#FFFFF0',
+  'jaune':'#F0D060','citron':'#F5E050','or':'#DAA520','doré':'#C5A55A',
+  'orange':'#E8863A','abricot':'#FBCEB1','apricot':'#FBCEB1','pêche':'#FFDAB9',
+  'saumon':'#FA8072','rouge':'#C44040','écarlate':'#FF2400','magenta':'#C71585','carminé':'#960018',
+  'rose':'#E8A0B0','mauve':'#B08CB0','violet':'#7B5EA7','indigo':'#4B0082','pourpre':'#800080',
+  'lilas':'#C8A2C8','lavande':'#B57EDC','améthyste':'#9966CC',
+  'bleu':'#6A8EB0','cobalt':'#0047AB',
+  'vert':'#6B8E6B','brun':'#8B6F47','marron':'#6B4226','bronze':'#CD7F32','rouille':'#B7410E',
+  'beige':'#D4C5A9','gris':'#A0A0A0','argenté':'#C0C0C0','argent':'#C0C0C0','noir':'#3D3D3D',
+  'multiple':'#B08CB0'
+};
+
+const MODIFIERS = {
+  'pâle':0.30,'pale':0.30,'clair':0.25,'tendre':0.20,'rosé':0.15,
+  'vif':0.00,'foncé':-0.30,'fonce':-0.30,'sombre':-0.25,'profond':-0.20
+};
+
+function adjustBrightness(hex, factor) {
+  const r = parseInt(hex.slice(1,3), 16);
+  const g = parseInt(hex.slice(3,5), 16);
+  const b = parseInt(hex.slice(5,7), 16);
+  const adj = c => factor > 0 ? Math.round(c + (255 - c) * factor) : Math.round(c * (1 + factor));
+  const cl = c => Math.min(255, Math.max(0, c));
+  return '#' + [cl(adj(r)), cl(adj(g)), cl(adj(b))].map(c => c.toString(16).padStart(2, '0')).join('');
+}
+
+function parseCouleurFloraison(couleurTexte) {
+  if (!couleurTexte) return '#5E8B8F';
+  if (Array.isArray(couleurTexte)) couleurTexte = couleurTexte[0];
+  if (!couleurTexte) return '#5E8B8F';
+
+  let norm = couleurTexte.toLowerCase().replace(/[-_,]/g, ' ').replace(/\s+/g, ' ').trim();
+
+  let modifier = 0;
+  for (const [mod, val] of Object.entries(MODIFIERS)) {
+    if (norm.includes(mod)) { modifier = val; break; }
+  }
+
+  let foundColor = null;
+  for (const word of norm.split(' ')) {
+    const clean = word.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    for (const [key, hex] of Object.entries(BASE_COLORS)) {
+      const keyClean = key.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      if (clean === keyClean || word === key) { foundColor = hex; break; }
+    }
+    if (foundColor) break;
+  }
+
+  if (!foundColor) return '#5E8B8F';
+  if (modifier !== 0) return adjustBrightness(foundColor, modifier);
+  return foundColor;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  MOIS FLORAISON → NUMÉRO
+// ═══════════════════════════════════════════════════════════
+const MOIS_MAP = {
+  'janvier':1,'février':2,'fevrier':2,'mars':3,'avril':4,'mai':5,'juin':6,
+  'juillet':7,'août':8,'aout':8,'septembre':9,'octobre':10,'novembre':11,'décembre':12,'decembre':12
+};
+
+function moisToNum(m) {
+  if (!m) return null;
+  if (typeof m === 'number') return m;
+  const n = MOIS_MAP[m.toLowerCase().trim()];
+  return n || null;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  RECALC — MISE À JOUR DU DASHBOARD
+// ═══════════════════════════════════════════════════════════
+function recalc() {
+  const selected = essences.filter(e => e);
+  const emptyState = document.getElementById('empty-state');
+  const dashboard = document.getElementById('dashboard');
+
+  if (selected.length < 2) {
+    emptyState.style.display = 'block';
+    dashboard.style.display = 'none';
+    return;
+  }
+
+  emptyState.style.display = 'none';
+  dashboard.style.display = 'flex';
+  dashboard.style.flexDirection = 'column';
+  dashboard.style.gap = '24px';
+
+  if (!isAuthenticated) {
+    document.getElementById('auth-gate').style.display = 'flex';
+  }
+
+  // En-tête
+  const mixName = document.getElementById('mix-name').value.trim();
+  document.getElementById('dash-title').textContent = mixName || 'Mélange sans nom';
+  document.getElementById('dash-bioregion').textContent = currentBioregion ? 'Biorégion : ' + BIOREGION_LABELS[currentBioregion] : '';
+
+  // Scoring
+  const result = computeScoring(selected);
+
+  // Score global
+  const arc = document.getElementById('score-arc');
+  const circumference = 2 * Math.PI * 58; // ~364.42
+  const filled = (result.globalScore / 100) * circumference;
+  arc.setAttribute('stroke-dasharray', filled + ' ' + circumference);
+  arc.setAttribute('stroke', scoreColor(result.globalScore));
+
+  document.getElementById('score-number').innerHTML = result.globalScore + '<span> / 100</span>';
+  const verdict = document.getElementById('score-verdict');
+  verdict.textContent = scoreVerdict(result.globalScore);
+  verdict.style.color = scoreColor(result.globalScore);
+
+  // Détail par critère
+  const criteriaList = document.getElementById('criteria-list');
+  criteriaList.innerHTML = '';
+  for (const [c, label] of Object.entries(CRITERIA_LABELS)) {
+    const score = result.criteriaScores[c];
+    const row = document.createElement('div');
+    row.className = 'criteria-row';
+    row.innerHTML = `
+      <div class="criteria-label">${label}</div>
+      <div class="criteria-bar-wrap">
+        <div class="criteria-bar" style="width:${score}%; background:${scoreColor(score)}"></div>
+      </div>
+      <div class="criteria-score" style="color:${scoreColor(score)}">${score}/100</div>
+    `;
+    criteriaList.appendChild(row);
+  }
+
+  // Alertes
+  const alertsCard = document.getElementById('alerts-card');
+  const alertsList = document.getElementById('alerts-list');
+  alertsList.innerHTML = '';
+
+  // Set de noms d'essences problématiques
+  const problematicNames = new Set();
+
+  if (result.alerts.length > 0) {
+    alertsCard.style.display = 'block';
+    result.alerts.forEach(a => {
+      problematicNames.add(a.plantName);
+      const div = document.createElement('div');
+      div.className = 'alert-item';
+      div.innerHTML = `<span class="alert-icon">⚠</span><span>${a.message}</span>`;
+      alertsList.appendChild(div);
+    });
+  } else {
+    alertsCard.style.display = 'none';
+  }
+
+  // Rusticité
+  let minRust = Infinity;
+  let minRustPlant = '';
+  selected.forEach(p => {
+    if (p.rusticite_celsius !== null && p.rusticite_celsius < minRust) {
+      minRust = p.rusticite_celsius;
+      minRustPlant = p.nom_latin;
+    }
+  });
+
+  if (minRust !== Infinity) {
+    document.getElementById('rusticite-value').textContent = minRust + '°C';
+    document.getElementById('rusticite-detail').textContent = '(' + minRustPlant + ' — l\'essence la moins rustique)';
+  } else {
+    document.getElementById('rusticite-value').textContent = '—';
+    document.getElementById('rusticite-detail').textContent = '';
+  }
+
+  const rustAlert = document.getElementById('rusticite-alert');
+  if (currentBioregion && minRust !== Infinity) {
+    const threshold = BIOREGION_RUSTICITE[currentBioregion];
+    if (minRust > threshold) {
+      rustAlert.textContent = '⚠ Rusticité insuffisante pour la biorégion ' + BIOREGION_LABELS[currentBioregion] + ' (seuil recommandé : ' + threshold + '°C)';
+      rustAlert.style.display = 'block';
+    } else {
+      rustAlert.style.display = 'none';
+    }
+  } else {
+    rustAlert.style.display = 'none';
+  }
+
+  // Tableau récapitulatif
+  const recapBody = document.getElementById('recap-body');
+  recapBody.innerHTML = '';
+
+  let nbPersist = 0, nbMelli = 0, nbIndig = 0;
+
+  selected.forEach(p => {
+    const tr = document.createElement('tr');
+    if (problematicNames.has(p.nom_latin)) tr.className = 'problematic';
+
+    let indigenatCell = '';
+    if (currentBioregion) {
+      const isIndig = p.indigenat && p.indigenat[currentBioregion];
+      indigenatCell = isIndig ? '✓ Indigène' : '✗ Exotique';
+      if (isIndig) nbIndig++;
+    } else {
+      const parts = [];
+      for (const [bio, label] of Object.entries(BIOREGION_LABELS)) {
+        if (p.indigenat && p.indigenat[bio]) parts.push(label.substring(0, 3) + '.');
+      }
+      indigenatCell = parts.length > 0 ? parts.join(' ') : '✗';
+    }
+
+    if (p.persistance === 'persistant') nbPersist++;
+    if (p.mellifere) nbMelli++;
+
+    tr.innerHTML = `
+      <td class="latin">${p.nom_latin}</td>
+      <td>${p.famille}</td>
+      <td>${formatStrate(p.strate)}</td>
+      <td>${p.persistance === 'persistant' ? 'Persistant' : 'Caduc'}</td>
+      <td>${p.mellifere ? '✓' : '✗'}</td>
+      <td>${indigenatCell}</td>
+    `;
+    recapBody.appendChild(tr);
+  });
+
+  const stats = document.getElementById('recap-stats');
+  const pctP = Math.round((nbPersist / selected.length) * 100);
+  const pctM = Math.round((nbMelli / selected.length) * 100);
+  let statsHtml = `<span>% persistantes : <strong>${pctP}%</strong></span><span>% mellifères : <strong>${pctM}%</strong></span>`;
+  if (currentBioregion) {
+    const pctI = Math.round((nbIndig / selected.length) * 100);
+    statsHtml += `<span>% indigènes : <strong>${pctI}%</strong> (${BIOREGION_LABELS[currentBioregion]})</span>`;
+  }
+  stats.innerHTML = statsHtml;
+
+  // Calendrier phénologique
+  renderPhenoCalendar(selected);
+
+  // Mode avancé
+  if (advancedMode) {
+    renderAdvancedResults(selected);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CALENDRIER PHÉNOLOGIQUE
+// ═══════════════════════════════════════════════════════════
+function renderPhenoCalendar(plants) {
+  const container = document.getElementById('pheno-calendar');
+  const months = ['J','F','M','A','M','J','J','A','S','O','N','D'];
+
+  let html = '<div class="pheno-row pheno-header"><div class="pheno-name"></div>';
+  months.forEach(m => { html += `<div class="pheno-month">${m}</div>`; });
+  html += '</div>';
+
+  plants.forEach(p => {
+    const color = parseCouleurFloraison(p.couleur_floraison);
+    const debut = moisToNum(p.floraison_debut);
+    const fin = moisToNum(p.floraison_fin);
+    const isPersist = p.persistance === 'persistant';
+
+    html += `<div class="pheno-row"><div class="pheno-name">${p.nom_latin}</div>`;
+
+    for (let m = 1; m <= 12; m++) {
+      let bg = 'transparent';
+
+      const inFlower = debut && fin && isInRange(m, debut, fin);
+
+      if (inFlower) {
+        bg = color;
+      } else if (isPersist) {
+        bg = 'rgba(94, 139, 143, 0.15)';
+      }
+
+      // Gradients at flower boundaries
+      let style = `background: ${bg};`;
+
+      if (debut && fin) {
+        // Entry gradient (half month before start)
+        if (isMonthBefore(m, debut)) {
+          if (isPersist) {
+            style = `background: linear-gradient(to right, rgba(94,139,143,0.15) 50%, ${color}40 100%);`;
+          } else {
+            style = `background: linear-gradient(to right, transparent 50%, ${color}40 100%);`;
+          }
+        }
+        // Exit gradient (at the end month)
+        if (isMonthAfter(m, fin)) {
+          if (isPersist) {
+            style = `background: linear-gradient(to right, ${color}40 0%, rgba(94,139,143,0.15) 50%);`;
+          } else {
+            style = `background: linear-gradient(to right, ${color}40 0%, transparent 50%);`;
+          }
+        }
+      }
+
+      html += `<div class="pheno-cell"><div class="pheno-bar" style="${style}"></div></div>`;
+    }
+
+    html += '</div>';
+  });
+
+  container.innerHTML = html;
+}
+
+function isInRange(month, debut, fin) {
+  if (debut <= fin) return month >= debut && month <= fin;
+  return month >= debut || month <= fin; // wrap around (e.g., Nov-Feb)
+}
+
+function isMonthBefore(month, debut) {
+  const prev = debut === 1 ? 12 : debut - 1;
+  return month === prev;
+}
+
+function isMonthAfter(month, fin) {
+  const next = fin === 12 ? 1 : fin + 1;
+  return month === next;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  MODE AVANCÉ — RÉSULTATS
+// ═══════════════════════════════════════════════════════════
+function renderAdvancedResults(plants) {
+  const advCard = document.getElementById('advanced-results');
+  advCard.style.display = advancedMode ? 'block' : 'none';
+
+  const surface = parseFloat(document.getElementById('surface-total').value) || 0;
+  const n = plants.length;
+  const pctEach = n > 0 ? (100 / n) : 0;
+
+  const tbody = document.getElementById('quant-body');
+  tbody.innerHTML = '';
+
+  let totalPlants = 0;
+  let totalDensity = 0;
+  let melliWeighted = 0;
+  let indigWeighted = 0;
+
+  plants.forEach(p => {
+    const densityInput = document.querySelector(`[data-density-id="${p.id}"]`);
+    const density = densityInput ? (parseFloat(densityInput.value) || 0) : 0;
+    const qty = surface > 0 ? Math.round(density * surface * (pctEach / 100)) : 0;
+
+    totalPlants += qty;
+    totalDensity += density * (pctEach / 100);
+
+    if (p.mellifere) melliWeighted += qty;
+    if (currentBioregion && p.indigenat && p.indigenat[currentBioregion]) indigWeighted += qty;
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${p.nom_latin}</td>
+      <td>${density || '—'}</td>
+      <td>${qty || '—'}</td>
+      <td>${pctEach.toFixed(0)}%</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  const summary = document.getElementById('quant-summary');
+  const pctMelli = totalPlants > 0 ? Math.round((melliWeighted / totalPlants) * 100) : 0;
+  const pctIndig = totalPlants > 0 ? Math.round((indigWeighted / totalPlants) * 100) : 0;
+
+  summary.innerHTML = `
+    <div class="quant-stat">Densité globale : <strong>${totalDensity.toFixed(1)} plants/m²</strong></div>
+    <div class="quant-stat">Nombre total : <strong>${totalPlants} plants</strong></div>
+    <div class="quant-stat">% mellifères (pondéré) : <strong>${pctMelli}%</strong></div>
+    <div class="quant-stat">% indigènes (pondéré) : <strong>${pctIndig}%</strong>${currentBioregion ? ' (' + BIOREGION_LABELS[currentBioregion] + ')' : ''}</div>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  INIT — Ajouter 2 lignes vides par défaut
+// ═══════════════════════════════════════════════════════════
+addEssenceRow();
+addEssenceRow();
+</script>
+
+</body>
+</html>
