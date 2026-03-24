@@ -1477,33 +1477,40 @@ function updatePctTotal() {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  ALGORITHME DE SCORING
+//  ALGORITHME DE SCORING — Centroïdes + pénalité intersection
 // ═══════════════════════════════════════════════════════════
-const GRADIENTS = {
-  exposition: { 'ombre': 0, 'mi-ombre': 1, 'soleil': 2 },
-  besoins_hydriques: { 'faible': 0, 'moyen': 1, 'fort': 2 },
-  type_sol: { 'sableux': 0, 'calcaire': 1, 'limoneux': 2, 'humifere': 3, 'humifère': 3, 'argileux': 4 },
-  ph_sol: { 'acide': 0, 'neutre': 1, 'calcaire': 2 },
-  humidite_sol: { 'sec': 0, 'frais': 1, 'humide': 2, 'détrempe': 3, 'détrempé': 3, 'detrempe': 3 }
-};
 
-const MAX_DIST = {
-  exposition: 2,
-  besoins_hydriques: 2,
-  type_sol: 4,
-  ph_sol: 2,
-  humidite_sol: 3
+// Gradients ordinaux
+const GRADIENT_EXPOSITION = { 'ombre': 0, 'mi-ombre': 1, 'soleil': 2, 'plein soleil': 2, 'plein_soleil': 2 };
+const MAX_EXPOSITION = 2;
+
+const GRADIENT_HYDRIQUES = { 'faible': 0, 'faibles': 0, 'sec': 0, 'moyen': 1, 'modere': 1, 'moderes': 1, 'fort': 2, 'abondant': 2, 'importants': 2, 'humide': 2, 'eleve': 2 };
+const MAX_HYDRIQUES = 2;
+
+const GRADIENT_SOL = {
+  'sableux': 0, 'caillouteux': 0, 'rocheux': 0, 'drainant': 0, 'draine': 0, 'bien draine': 0, 'pauvre': 0, 'siliceux': 0, 'meuble': 0,
+  'calcaire': 1, 'crayeux': 1,
+  'limoneux': 2, 'fertile': 2, 'riche': 2, 'terreau': 2,
+  'humifere': 3, 'humide': 3, 'acide': 0,
+  'argileux': 4
 };
+const MAX_SOL = 4;
+
+const GRADIENT_PH = { 'acide': 0, 'neutre': 1, 'calcaire': 2, 'alcalin': 2, 'basique': 2 };
+const MAX_PH = 2;
+
+const GRADIENT_HUMIDITE = { 'sec': 0, 'bien_draine': 0, 'frais': 1, 'modere': 1, 'normal': 1, 'humide_bien_draine': 1, 'humide': 2, 'detrempe': 3 };
+const MAX_HUMIDITE = 3;
 
 const COEFFICIENTS = {
-  exposition: 1.0,
+  exposition: 1.3,
   besoins_hydriques: 1.5,
-  type_sol: 1.2,
-  ph_sol: 1.3,
+  type_sol: 1.0,
+  ph_sol: 0.5,
   humidite_sol: 1.5
 };
 
-const SOMME_COEFFICIENTS = 6.5;
+const SOMME_COEFFICIENTS = 5.8;
 
 const CRITERIA_LABELS = {
   exposition: 'Exposition',
@@ -1513,34 +1520,107 @@ const CRITERIA_LABELS = {
   humidite_sol: 'Humidité du sol'
 };
 
-function getPositions(plant, criterion) {
-  const val = plant[criterion];
-  const grad = GRADIENTS[criterion];
-  if (Array.isArray(val)) {
-    return val.map(v => grad[normalize(v)] ?? grad[v]).filter(v => v !== undefined);
+// Résoudre une valeur vers sa position dans un gradient (gère accents, underscores, etc.)
+function resolveGrad(val, gradient) {
+  if (val == null) return undefined;
+  const n = normalize(val).replace(/[-_]/g, ' ').trim();
+  // Essai direct
+  if (gradient[n] !== undefined) return gradient[n];
+  // Essai sans accents sur les clés
+  for (const [k, v] of Object.entries(gradient)) {
+    if (normalize(k).replace(/[-_]/g, ' ') === n) return v;
   }
-  const pos = grad[normalize(val)] ?? grad[val];
-  return pos !== undefined ? [pos] : [];
+  return undefined;
 }
 
-function pairScore(plantA, plantB, criterion) {
-  const posA = getPositions(plantA, criterion);
-  const posB = getPositions(plantB, criterion);
-  if (posA.length === 0 || posB.length === 0) return 1; // no data = compatible
-  let minDist = Infinity;
-  for (const a of posA) {
-    for (const b of posB) {
-      minDist = Math.min(minDist, Math.abs(a - b));
-    }
-  }
-  return 1 - (minDist / MAX_DIST[criterion]);
+// Parse pH numérique (ex: "5.0-6.5") vers position 0/1/2
+function parsePHNumeric(val) {
+  const m = val.match(/([\d.]+)\s*-\s*([\d.]+)/);
+  if (!m) return undefined;
+  const center = (parseFloat(m[1]) + parseFloat(m[2])) / 2;
+  if (center < 6.5) return 0; // acide
+  if (center <= 7.5) return 1; // neutre
+  return 2; // calcaire/alcalin
 }
+
+// Extraire les positions d'une plante pour un critère array
+function getArrayPositions(plant, field, gradient) {
+  const vals = plant[field];
+  if (!vals) return [];
+  const arr = Array.isArray(vals) ? vals : [vals];
+  const positions = [];
+  for (const v of arr) {
+    let pos = resolveGrad(v, gradient);
+    // Cas spécial pH numérique
+    if (pos === undefined && field === 'ph_sol') pos = parsePHNumeric(v);
+    if (pos !== undefined) positions.push(pos);
+  }
+  return positions;
+}
+
+// Score paire — critère array (centroïde + pénalité intersection vide)
+function scorePaireArray(valsA, valsB, gradient, maxDist) {
+  const posA = [];
+  const posB = [];
+  const rawA = [];
+  const rawB = [];
+
+  for (const v of valsA) {
+    let p = resolveGrad(v, gradient);
+    if (p === undefined && gradient === GRADIENT_PH) p = parsePHNumeric(v);
+    if (p !== undefined) { posA.push(p); rawA.push(normalize(v)); }
+  }
+  for (const v of valsB) {
+    let p = resolveGrad(v, gradient);
+    if (p === undefined && gradient === GRADIENT_PH) p = parsePHNumeric(v);
+    if (p !== undefined) { posB.push(p); rawB.push(normalize(v)); }
+  }
+
+  if (posA.length === 0 || posB.length === 0) return 1; // données manquantes = neutre
+
+  const centA = posA.reduce((a, b) => a + b, 0) / posA.length;
+  const centB = posB.reduce((a, b) => a + b, 0) / posB.length;
+  const distance = Math.abs(centA - centB) / maxDist;
+  let score = 1 - distance;
+
+  // Pénalité intersection vide
+  const hasCommon = rawA.some(a => rawB.includes(a));
+  if (!hasCommon) score *= 0.5;
+
+  return score;
+}
+
+// Score paire — critère string (valeur unique)
+function scorePaireString(valA, valB, gradient, maxDist) {
+  const posA = resolveGrad(valA, gradient);
+  const posB = resolveGrad(valB, gradient);
+  if (posA === undefined || posB === undefined) return 1; // données manquantes = neutre
+
+  const distance = Math.abs(posA - posB) / maxDist;
+  let score = 1 - distance;
+
+  // Pénalité si aux extrêmes
+  if (normalize(valA) !== normalize(valB) && Math.abs(posA - posB) === maxDist) {
+    score *= 0.5;
+  }
+
+  return score;
+}
+
+// Critères config
+const CRITERIA_CONFIG = [
+  { key: 'exposition', gradient: GRADIENT_EXPOSITION, max: MAX_EXPOSITION, type: 'array' },
+  { key: 'besoins_hydriques', gradient: GRADIENT_HYDRIQUES, max: MAX_HYDRIQUES, type: 'string' },
+  { key: 'type_sol', gradient: GRADIENT_SOL, max: MAX_SOL, type: 'array' },
+  { key: 'ph_sol', gradient: GRADIENT_PH, max: MAX_PH, type: 'array' },
+  { key: 'humidite_sol', gradient: GRADIENT_HUMIDITE, max: MAX_HUMIDITE, type: 'array' }
+];
 
 function computeScoring(plants) {
   const n = plants.length;
   if (n < 2) return null;
 
-  // Generate all pairs
+  // Générer toutes les paires (indices)
   const pairs = [];
   for (let i = 0; i < n; i++) {
     for (let j = i + 1; j < n; j++) {
@@ -1551,13 +1631,23 @@ function computeScoring(plants) {
   const criteriaScores = {};
   const pairScoresByCriterion = {};
 
-  for (const criterion of Object.keys(COEFFICIENTS)) {
-    const scores = pairs.map(([i, j]) => pairScore(plants[i], plants[j], criterion));
-    pairScoresByCriterion[criterion] = scores;
-    criteriaScores[criterion] = scores.reduce((a, b) => a + b, 0) / scores.length;
+  for (const cfg of CRITERIA_CONFIG) {
+    const scores = pairs.map(([i, j]) => {
+      const a = plants[i];
+      const b = plants[j];
+      if (cfg.type === 'string') {
+        return scorePaireString(a[cfg.key], b[cfg.key], cfg.gradient, cfg.max);
+      } else {
+        const vA = Array.isArray(a[cfg.key]) ? a[cfg.key] : (a[cfg.key] ? [a[cfg.key]] : []);
+        const vB = Array.isArray(b[cfg.key]) ? b[cfg.key] : (b[cfg.key] ? [b[cfg.key]] : []);
+        return scorePaireArray(vA, vB, cfg.gradient, cfg.max);
+      }
+    });
+    pairScoresByCriterion[cfg.key] = scores;
+    criteriaScores[cfg.key] = scores.reduce((a, b) => a + b, 0) / scores.length;
   }
 
-  // Score global
+  // Score global pondéré
   let weightedSum = 0;
   for (const [c, score] of Object.entries(criteriaScores)) {
     weightedSum += score * COEFFICIENTS[c];
@@ -1566,12 +1656,10 @@ function computeScoring(plants) {
 
   // Détection essences problématiques
   const alerts = [];
-  for (const criterion of Object.keys(COEFFICIENTS)) {
-    const allPairScores = pairScoresByCriterion[criterion];
-    const avgAll = allPairScores.reduce((a, b) => a + b, 0) / allPairScores.length;
+  for (const cfg of CRITERIA_CONFIG) {
+    const allPairScores = pairScoresByCriterion[cfg.key];
 
     for (let e = 0; e < n; e++) {
-      // Paires impliquant E
       const withE = [];
       const withoutE = [];
       pairs.forEach(([i, j], idx) => {
@@ -1579,26 +1667,25 @@ function computeScoring(plants) {
         else withoutE.push(allPairScores[idx]);
       });
 
-      if (withoutE.length === 0) continue; // seulement 2 plantes
+      if (withoutE.length === 0) continue;
 
       const avgWithE = withE.reduce((a, b) => a + b, 0) / withE.length;
       const avgWithoutE = withoutE.reduce((a, b) => a + b, 0) / withoutE.length;
 
       if ((avgWithoutE - avgWithE) * 100 > 25) {
-        // Générer le message d'alerte
         const plant = plants[e];
-        const plantVals = Array.isArray(plant[criterion]) ? plant[criterion].join('/') : plant[criterion];
+        const plantVals = Array.isArray(plant[cfg.key]) ? plant[cfg.key].join('/') : plant[cfg.key];
         const otherVals = plants
           .filter((_, idx) => idx !== e)
-          .map(p => Array.isArray(p[criterion]) ? p[criterion].join('/') : p[criterion]);
+          .map(p => Array.isArray(p[cfg.key]) ? p[cfg.key].join('/') : p[cfg.key]);
         const uniqueOther = [...new Set(otherVals.flat())].join(', ');
 
         alerts.push({
           plantIndex: e,
           plantName: plant.nom_latin,
-          criterion: criterion,
-          criterionLabel: CRITERIA_LABELS[criterion],
-          message: `${plant.nom_latin} — ${CRITERIA_LABELS[criterion].toLowerCase()} (${plantVals}) en décalage avec le reste du mélange (${uniqueOther})`
+          criterion: cfg.key,
+          criterionLabel: CRITERIA_LABELS[cfg.key],
+          message: `${plant.nom_latin} — ${CRITERIA_LABELS[cfg.key].toLowerCase()} (${plantVals}) en décalage avec le reste du mélange (${uniqueOther})`
         });
       }
     }
