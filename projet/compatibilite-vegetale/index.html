@@ -1035,7 +1035,7 @@ checkAuth();
 // ═══════════════════════════════════════════════════════════
 let PLANTES = [];
 
-fetch('plantes-v1.json')
+fetch('/projet/compatibilite-vegetale/plantes-v1.json')
   .then(r => {
     if (!r.ok) throw new Error('HTTP ' + r.status);
     return r.json();
