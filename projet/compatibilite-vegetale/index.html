@@ -948,8 +948,8 @@
         </div>
 
         <!-- Bloc 3 — Alertes -->
-        <div class="result-card" id="alerts-card" style="display:none">
-          <div class="result-card-title">Alertes</div>
+        <div class="result-card" id="alerts-card">
+          <div class="result-card-title" id="alerts-title">Alertes</div>
           <div id="alerts-list"></div>
         </div>
 
@@ -972,6 +972,7 @@
                   <th>Famille</th>
                   <th>Strate</th>
                   <th>Persistance</th>
+                  <th>Exposition</th>
                   <th>Mellifère</th>
                   <th>Indigénat</th>
                 </tr>
@@ -1350,6 +1351,13 @@ function formatStrate(s) {
     'aquatique': 'Aquatique'
   };
   return map[s] || s;
+}
+
+function formatExposition(expo) {
+  if (!expo) return '—';
+  const arr = Array.isArray(expo) ? expo : [expo];
+  const labels = { 'ombre': 'Ombre', 'mi-ombre': 'Mi-ombre', 'soleil': 'Soleil', 'plein soleil': 'Soleil', 'plein_soleil': 'Soleil' };
+  return arr.map(v => labels[v.toLowerCase()] || v).join(', ');
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1849,25 +1857,54 @@ function recalc() {
     criteriaList.appendChild(row);
   }
 
-  // Alertes
+  // Alertes — adaptatives selon le score global
   const alertsCard = document.getElementById('alerts-card');
+  const alertsTitle = document.getElementById('alerts-title');
   const alertsList = document.getElementById('alerts-list');
   alertsList.innerHTML = '';
+  alertsCard.style.display = 'block';
 
-  // Set de noms d'essences problématiques
   const problematicNames = new Set();
 
+  // Style adaptatif
+  let alertColor, alertBg, alertIcon, alertTitleText;
+  if (result.globalScore >= 80) {
+    alertColor = '#5E8B8F'; alertBg = 'rgba(94,139,143,0.05)'; alertIcon = '•'; alertTitleText = 'Mélange cohérent';
+  } else if (result.globalScore >= 60) {
+    alertColor = '#C4973B'; alertBg = 'rgba(196,151,59,0.05)'; alertIcon = '⚠'; alertTitleText = 'Points d\'attention';
+  } else if (result.globalScore >= 40) {
+    alertColor = '#C4973B'; alertBg = 'rgba(196,151,59,0.08)'; alertIcon = '⚠'; alertTitleText = 'Risque identifié';
+  } else {
+    alertColor = '#A67C5B'; alertBg = 'rgba(166,124,91,0.08)'; alertIcon = '⚠'; alertTitleText = 'Risque élevé d\'incompatibilité';
+  }
+
+  alertsTitle.textContent = alertTitleText;
+  alertsTitle.style.color = alertColor;
+
   if (result.alerts.length > 0) {
-    alertsCard.style.display = 'block';
     result.alerts.forEach(a => {
       problematicNames.add(a.plantName);
       const div = document.createElement('div');
       div.className = 'alert-item';
-      div.innerHTML = `<span class="alert-icon">⚠</span><span>${a.message}</span>`;
+      div.style.background = alertBg;
+      div.style.borderLeftColor = alertColor;
+      div.innerHTML = `<span class="alert-icon">${alertIcon}</span><span>${a.message}</span>`;
       alertsList.appendChild(div);
     });
+  } else if (result.globalScore >= 80) {
+    const div = document.createElement('div');
+    div.className = 'alert-item';
+    div.style.background = alertBg;
+    div.style.borderLeftColor = alertColor;
+    div.innerHTML = `<span class="alert-icon">•</span><span>Aucune incompatibilité détectée dans ce mélange</span>`;
+    alertsList.appendChild(div);
   } else {
-    alertsCard.style.display = 'none';
+    const div = document.createElement('div');
+    div.className = 'alert-item';
+    div.style.background = alertBg;
+    div.style.borderLeftColor = alertColor;
+    div.innerHTML = `<span class="alert-icon">${alertIcon}</span><span>Des écarts sont détectés entre les essences — consultez le détail par critère ci-dessus</span>`;
+    alertsList.appendChild(div);
   }
 
   // Rusticité
@@ -1932,6 +1969,7 @@ function recalc() {
       <td>${p.famille}</td>
       <td>${formatStrate(p.strate)}</td>
       <td>${p.persistance === 'persistant' ? 'Persistant' : 'Caduc'}</td>
+      <td>${formatExposition(p.exposition)}</td>
       <td>${p.mellifere ? '✓' : '✗'}</td>
       <td>${indigenatCell}</td>
     `;
