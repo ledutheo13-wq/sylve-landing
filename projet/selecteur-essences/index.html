@@ -1,0 +1,1864 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sélecteur d'essences — SYLVE projet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --sylve: #5E8B8F;
+  --sylve-light: #E8F0F1;
+  --sylve-dark: #3d6366;
+  --projet: #8A8279;
+  --projet-light: #F0EDEA;
+  --bg: #F7F6F4;
+  --surface: #FFFFFF;
+  --border: #E2DED9;
+  --text: #2A2826;
+  --text-muted: #7A7672;
+  --text-light: #A09C98;
+  --ocre: #C4973B;
+  --terre: #A67C5B;
+  --radius: 6px;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 300;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.5;
+}
+
+/* ─── HEADER ─── */
+header {
+  position: sticky; top: 0; z-index: 100;
+  display: flex; align-items: center; gap: 12px;
+  height: 52px; padding: 0 2rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.header-brand { display: flex; align-items: baseline; gap: 6px; text-decoration: none; }
+.logo { font-size: 1.1rem; letter-spacing: 0.18em; color: var(--sylve); font-weight: 500; }
+.sub { font-size: 0.72rem; letter-spacing: 0.14em; color: var(--projet); text-transform: uppercase; font-weight: 400; }
+.header-tag {
+  font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--text-muted); background: var(--sylve-light);
+  padding: 3px 10px; border-radius: 20px;
+}
+
+/* ─── MAIN LAYOUT ─── */
+main {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 24px 2rem 120px;
+}
+
+.page-title {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 1.25rem; font-weight: 400; color: var(--text);
+  margin-bottom: 4px;
+}
+.page-subtitle {
+  font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;
+}
+#db-status {
+  font-size: 0.75rem; color: var(--text-light); margin-bottom: 16px;
+  font-family: 'DM Mono', monospace;
+}
+
+/* ─── ZONE 1 — FILTRES ─── */
+.filters-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.search-bar {
+  position: relative; margin-bottom: 16px;
+}
+.search-bar input {
+  width: 100%; padding: 10px 14px; font-size: 14px;
+  font-family: 'DM Sans', sans-serif; font-weight: 300;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface); color: var(--text);
+  outline: none; transition: border-color 200ms;
+}
+.search-bar input:focus { border-color: var(--sylve); }
+.search-bar input::placeholder { color: var(--text-light); }
+.autocomplete-list {
+  position: absolute; top: 100%; left: 0; right: 0; z-index: 50;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); margin-top: 2px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08); display: none;
+  max-height: 320px; overflow-y: auto;
+}
+.autocomplete-list .ac-item {
+  padding: 8px 14px; cursor: pointer; font-size: 13px;
+  border-bottom: 1px solid #F0EFED; transition: background 150ms;
+}
+.autocomplete-list .ac-item:last-child { border-bottom: none; }
+.autocomplete-list .ac-item:hover, .autocomplete-list .ac-item.active { background: var(--bg); }
+.ac-item .ac-latin { font-style: italic; color: var(--text); }
+.ac-item .ac-common { color: var(--text-muted); margin-left: 6px; }
+.ac-item .ac-strate { color: var(--text-light); font-size: 11px; margin-left: 6px; }
+
+/* Filters grid */
+.filters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+.filter-group label {
+  display: block; font-size: 12px; color: var(--text-muted);
+  margin-bottom: 6px; font-weight: 400;
+}
+.pills { display: flex; flex-wrap: wrap; gap: 4px; }
+.pill {
+  display: inline-flex; align-items: center;
+  padding: 4px 12px; font-size: 12px;
+  border: 1px solid var(--border); border-radius: 16px;
+  background: transparent; color: var(--text-muted);
+  cursor: pointer; transition: all 200ms; user-select: none;
+  font-family: 'DM Sans', sans-serif; font-weight: 300;
+}
+.pill:hover { border-color: rgba(94,139,143,0.5); }
+.pill.active {
+  background: rgba(94,139,143,0.1);
+  border-color: var(--sylve); color: var(--sylve);
+}
+
+/* Sliders */
+.slider-group { display: flex; flex-direction: column; }
+.slider-value {
+  font-family: 'DM Mono', monospace; font-size: 12px;
+  color: var(--text); margin-bottom: 4px;
+}
+input[type="range"] {
+  -webkit-appearance: none; width: 100%; height: 6px;
+  background: var(--border); border-radius: 3px; outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 16px; height: 16px;
+  background: var(--sylve); border-radius: 50%; cursor: pointer;
+}
+input[type="range"]::-moz-range-thumb {
+  width: 16px; height: 16px; background: var(--sylve);
+  border-radius: 50%; cursor: pointer; border: none;
+}
+
+/* Double range container */
+.double-range { position: relative; height: 6px; margin: 12px 0 4px; }
+.double-range input[type="range"] {
+  position: absolute; top: 0; left: 0; width: 100%;
+  pointer-events: none; background: transparent; height: 6px;
+}
+.double-range input[type="range"]::-webkit-slider-thumb { pointer-events: auto; }
+.double-range input[type="range"]::-moz-range-thumb { pointer-events: auto; }
+.double-range .range-track {
+  position: absolute; top: 0; height: 6px;
+  background: var(--border); border-radius: 3px; width: 100%;
+}
+.double-range .range-fill {
+  position: absolute; top: 0; height: 6px;
+  background: var(--sylve); border-radius: 3px; opacity: 0.4;
+}
+
+/* Dropdown-like select */
+.filter-select {
+  padding: 6px 10px; font-size: 12px; border: 1px solid var(--border);
+  border-radius: var(--radius); background: var(--surface); color: var(--text);
+  font-family: 'DM Sans', sans-serif; outline: none; cursor: pointer;
+}
+.filter-select:focus { border-color: var(--sylve); }
+
+.filter-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+/* Filter footer */
+.filters-footer {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 16px; padding-top: 12px; border-top: 1px solid #F0EFED;
+}
+.results-count { font-size: 13px; color: var(--text); }
+.btn-reset {
+  font-size: 12px; color: var(--text-muted); background: none;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 6px 14px; cursor: pointer; font-family: 'DM Sans', sans-serif;
+  transition: all 200ms;
+}
+.btn-reset:hover { border-color: var(--text-muted); color: var(--text); }
+
+/* Family autocomplete */
+.family-input-wrap { position: relative; }
+.family-input {
+  width: 100%; padding: 6px 10px; font-size: 12px;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface); color: var(--text);
+  font-family: 'DM Sans', sans-serif; outline: none;
+}
+.family-input:focus { border-color: var(--sylve); }
+.family-dropdown {
+  position: absolute; top: 100%; left: 0; right: 0; z-index: 40;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); margin-top: 2px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08); display: none;
+  max-height: 200px; overflow-y: auto;
+}
+.family-dropdown .fam-item {
+  padding: 6px 10px; cursor: pointer; font-size: 12px;
+  transition: background 150ms;
+}
+.family-dropdown .fam-item:hover { background: var(--bg); }
+
+/* ─── ZONE 2 — RESULTS ─── */
+.results-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px;
+}
+.results-header .count { font-size: 13px; color: var(--text); }
+.sort-select {
+  padding: 6px 10px; font-size: 12px; border: 1px solid var(--border);
+  border-radius: var(--radius); background: var(--surface); color: var(--text);
+  font-family: 'DM Sans', sans-serif; outline: none; cursor: pointer;
+}
+
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+@media (max-width: 1024px) { .results-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 768px) { .results-grid { grid-template-columns: 1fr; } }
+
+/* Essence card */
+.essence-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  transition: border-color 200ms;
+  cursor: default;
+}
+.essence-card:hover { border-color: rgba(94,139,143,0.4); }
+.essence-card.selected {
+  border-color: var(--sylve);
+  background: rgba(94,139,143,0.03);
+}
+
+.card-top { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 4px; }
+.card-cb {
+  width: 16px; height: 16px; border: 1.5px solid var(--border);
+  border-radius: 3px; cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 200ms; margin-top: 2px; background: var(--surface);
+}
+.card-cb:hover { border-color: var(--sylve); }
+.card-cb.checked {
+  background: var(--sylve); border-color: var(--sylve);
+}
+.card-cb.checked::after {
+  content: ''; display: block; width: 5px; height: 9px;
+  border: solid white; border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg); margin-top: -1px;
+}
+.card-cb.disabled {
+  opacity: 0.4; cursor: not-allowed;
+}
+.card-nom-latin {
+  font-size: 14px; font-style: italic; color: var(--text); font-weight: 400;
+}
+.card-nom-commun {
+  font-size: 12px; color: var(--text-muted); margin-bottom: 8px; padding-left: 24px;
+}
+.card-sep { border: none; border-top: 1px solid var(--border); margin-bottom: 8px; }
+.card-meta { font-size: 11px; color: var(--text-muted); padding-left: 0; }
+.card-meta .meta-row { margin-bottom: 3px; display: flex; flex-wrap: wrap; gap: 4px; }
+.card-meta .meta-row:last-child { margin-bottom: 0; }
+.card-height, .card-rusticite {
+  font-family: 'DM Mono', monospace; font-size: 12px;
+}
+.card-floraison-dot {
+  display: inline-block; width: 10px; height: 10px;
+  border-radius: 50%; vertical-align: middle; margin-left: 4px;
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center; padding: 60px 20px; color: var(--text-muted);
+}
+.empty-state svg { margin-bottom: 16px; }
+.empty-state .empty-title { font-size: 14px; color: var(--text); margin-bottom: 6px; }
+.empty-state .empty-sub { font-size: 12px; color: var(--text-muted); }
+
+/* Loading more */
+.load-more {
+  text-align: center; padding: 20px; color: var(--text-light); font-size: 13px;
+}
+
+/* ─── STICKY BAR ─── */
+.selection-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  z-index: 90;
+  display: flex; align-items: center; justify-content: center; gap: 16px;
+  padding: 12px 24px; height: 56px;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.04);
+  transform: translateY(100%);
+  transition: transform 300ms ease;
+}
+.selection-bar.visible { transform: translateY(0); }
+.selection-bar .sel-count { font-size: 13px; color: var(--text); white-space: nowrap; }
+
+.btn-secondary {
+  font-size: 12px; padding: 8px 16px;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface); color: var(--text); cursor: pointer;
+  font-family: 'DM Sans', sans-serif; transition: all 200ms;
+}
+.btn-secondary:hover { border-color: var(--sylve); color: var(--sylve); }
+
+.btn-primary {
+  font-size: 12px; padding: 8px 16px;
+  border: none; border-radius: var(--radius);
+  background: var(--sylve); color: white; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; transition: all 200ms;
+}
+.btn-primary:hover { background: var(--sylve-dark); }
+
+/* ─── ZONE 3 — COMPOSITION ─── */
+.composition-panel { display: none; }
+.composition-panel.visible { display: block; }
+.results-zone { display: block; }
+.results-zone.hidden { display: none; }
+
+.compo-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px; flex-wrap: wrap; gap: 8px;
+}
+.compo-title { font-size: 1.1rem; font-weight: 400; color: var(--text); }
+.compo-count { font-size: 13px; color: var(--text-muted); margin-left: 8px; }
+.compo-back {
+  font-size: 12px; color: var(--text-muted); background: none;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 6px 14px; cursor: pointer; font-family: 'DM Sans', sans-serif;
+  transition: all 200ms;
+}
+.compo-back:hover { border-color: var(--sylve); color: var(--sylve); }
+
+.project-name-input {
+  width: 100%; max-width: 400px; padding: 8px 12px; font-size: 13px;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface); color: var(--text);
+  font-family: 'DM Sans', sans-serif; outline: none; margin-bottom: 16px;
+}
+.project-name-input:focus { border-color: var(--sylve); }
+
+.drag-hint {
+  font-size: 12px; color: var(--text-muted); margin-bottom: 16px;
+  font-style: italic;
+}
+
+/* Melange block */
+.melange-block {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+.melange-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+.melange-name-input {
+  flex: 1; padding: 4px 8px; font-size: 13px;
+  border: 1px solid transparent; border-radius: 4px;
+  background: transparent; color: var(--text);
+  font-family: 'DM Sans', sans-serif; outline: none;
+}
+.melange-name-input:hover { border-color: var(--border); }
+.melange-name-input:focus { border-color: var(--sylve); background: var(--surface); }
+.melange-count { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+.melange-delete {
+  width: 24px; height: 24px; border: none; background: none;
+  color: var(--text-light); cursor: pointer; font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 4px; transition: all 200ms;
+}
+.melange-delete:hover { background: rgba(196,64,64,0.08); color: #C44040; }
+
+.melange-dropzone {
+  min-height: 40px; padding: 4px 0;
+  transition: all 200ms;
+}
+.melange-dropzone.drop-active {
+  border: 2px dashed var(--sylve);
+  background: rgba(94,139,143,0.03);
+  border-radius: 4px; margin: 4px 8px;
+  min-height: 48px;
+}
+.melange-dropzone.drop-hover {
+  border: 2px solid var(--sylve);
+  background: rgba(94,139,143,0.08);
+}
+.melange-dropzone-empty {
+  padding: 12px 16px; font-size: 12px; color: var(--text-light);
+  text-align: center;
+}
+
+/* Condensed essence row */
+.essence-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px;
+  font-size: 12px; color: var(--text);
+  border-bottom: 1px solid #F0EFED;
+  cursor: grab;
+  transition: background 200ms;
+  min-height: 36px;
+}
+.essence-row:hover { background: var(--bg); }
+.essence-row.dragging { opacity: 0.4; }
+.essence-row .row-latin { font-style: italic; min-width: 160px; flex-shrink: 0; }
+.essence-row .row-badge {
+  font-size: 10px; color: var(--text-muted); background: var(--bg);
+  padding: 2px 8px; border-radius: 10px; white-space: nowrap;
+}
+.essence-row .row-info { color: var(--text-muted); white-space: nowrap; font-size: 11px; }
+.essence-row .row-mono { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+.essence-row .row-dot {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  vertical-align: middle; margin-right: 2px;
+}
+.essence-row .row-spacer { flex: 1; }
+.row-menu-btn {
+  background: none; border: none; cursor: pointer; color: var(--text-light);
+  font-size: 16px; padding: 2px 6px; border-radius: 4px; position: relative;
+  transition: all 150ms; line-height: 1;
+}
+.row-menu-btn:hover { background: var(--bg); color: var(--text-muted); }
+.row-menu {
+  position: absolute; right: 0; top: 100%; z-index: 60;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  min-width: 180px; display: none; padding: 4px 0;
+}
+.row-menu.open { display: block; }
+.row-menu-item {
+  padding: 6px 14px; font-size: 12px; cursor: pointer;
+  color: var(--text); transition: background 150ms;
+  font-family: 'DM Sans', sans-serif; white-space: nowrap;
+}
+.row-menu-item:hover { background: var(--bg); }
+.row-menu-item.danger { color: #C44040; }
+
+/* Melange indicators */
+.melange-indicators {
+  padding: 8px 16px; font-size: 11px; color: var(--text-muted);
+  border-top: 1px solid #F0EFED; background: var(--bg);
+}
+
+/* Composition actions */
+.compo-actions {
+  display: flex; align-items: center; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+}
+
+/* ─── EXPORT CONTAINER (hidden) ─── */
+#export-container {
+  position: absolute; left: -9999px; top: 0;
+  background: #FFFFFF; padding: 32px;
+  font-family: 'DM Sans', sans-serif;
+}
+#export-container .export-title {
+  font-size: 16px; color: var(--text); font-weight: 400; margin-bottom: 20px;
+}
+#export-container .export-melange-title {
+  font-size: 13px; color: var(--sylve); font-weight: 400;
+  padding-bottom: 6px; border-bottom: 1px solid var(--border);
+  margin-bottom: 0; margin-top: 16px;
+}
+#export-container table {
+  width: 100%; border-collapse: collapse; margin-bottom: 12px;
+}
+#export-container th {
+  font-size: 11px; font-weight: 500; color: var(--text-muted);
+  background: var(--bg); padding: 6px 10px; text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+#export-container td {
+  font-size: 11px; color: var(--text); padding: 5px 10px;
+  border-bottom: 1px solid #F0EFED;
+}
+#export-container tr:nth-child(even) td { background: #FAFAF9; }
+#export-container td.latin { font-style: italic; }
+#export-container .export-footer {
+  text-align: right; font-size: 10px; color: var(--border);
+  margin-top: 20px; padding-top: 8px; border-top: 1px solid #F0EFED;
+}
+#export-container .export-dot {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  vertical-align: middle; margin-right: 3px;
+}
+
+/* ─── OVERLAY GATE ─── */
+.gate-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(42,40,38,0.5);
+  display: none; align-items: center; justify-content: center;
+}
+.gate-overlay.open { display: flex; }
+.gate-box {
+  background: var(--surface); border-radius: 8px;
+  padding: 32px; max-width: 380px; width: 90%; text-align: center;
+}
+.gate-box p { font-size: 14px; color: var(--text); margin-bottom: 16px; }
+.gate-box a {
+  display: inline-block; padding: 10px 24px;
+  background: var(--sylve); color: white; border-radius: var(--radius);
+  text-decoration: none; font-size: 13px; transition: background 200ms;
+}
+.gate-box a:hover { background: var(--sylve-dark); }
+.gate-close {
+  position: absolute; top: 12px; right: 16px;
+  background: none; border: none; font-size: 20px; color: var(--text-muted);
+  cursor: pointer;
+}
+
+/* ─── CONFIRM DIALOG ─── */
+.confirm-overlay {
+  position: fixed; inset: 0; z-index: 210;
+  background: rgba(42,40,38,0.4);
+  display: none; align-items: center; justify-content: center;
+}
+.confirm-overlay.open { display: flex; }
+.confirm-box {
+  background: var(--surface); border-radius: 8px;
+  padding: 24px; max-width: 360px; width: 90%; text-align: center;
+}
+.confirm-box p { font-size: 13px; color: var(--text); margin-bottom: 16px; }
+.confirm-btns { display: flex; gap: 8px; justify-content: center; }
+
+/* Responsive tweaks */
+@media (max-width: 768px) {
+  main { padding: 16px 1rem 120px; }
+  .filters-grid { grid-template-columns: 1fr; }
+  .compo-header { flex-direction: column; align-items: flex-start; }
+  .essence-row { flex-wrap: wrap; }
+  .essence-row .row-latin { min-width: auto; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <a href="/projet" class="header-brand">
+    <span class="logo">sylve</span>
+    <span class="sub">projet</span>
+  </a>
+  <span class="header-tag">beta</span>
+</header>
+
+<main>
+  <h1 class="page-title">Selecteur d'essences</h1>
+  <p class="page-subtitle">Recherche multicritere et composition de palettes vegetales</p>
+  <div id="db-status">Chargement de la base vegetale...</div>
+
+  <!-- ═══ ZONE 1 — FILTRES ═══ -->
+  <div class="filters-card">
+    <div class="search-bar">
+      <input type="text" id="search-input" placeholder="Rechercher une essence (nom latin ou commun)..." autocomplete="off">
+      <div class="autocomplete-list" id="ac-list"></div>
+    </div>
+
+    <div class="filters-grid">
+      <!-- Strate -->
+      <div class="filter-group">
+        <label>Strate</label>
+        <div class="pills" data-filter="strate">
+          <span class="pill" data-value="arbre_grand">arbre_grand</span>
+          <span class="pill" data-value="arbre_moyen">arbre_moyen</span>
+          <span class="pill" data-value="arbre_petit">arbre_petit</span>
+          <span class="pill" data-value="arbuste">arbuste</span>
+          <span class="pill" data-value="grimpante">grimpante</span>
+          <span class="pill" data-value="vivace">vivace</span>
+          <span class="pill" data-value="graminée">graminee</span>
+          <span class="pill" data-value="fougère">fougere</span>
+          <span class="pill" data-value="couvre-sol">couvre-sol</span>
+          <span class="pill" data-value="bulbe">bulbe</span>
+          <span class="pill" data-value="aquatique">aquatique</span>
+        </div>
+      </div>
+
+      <!-- Exposition -->
+      <div class="filter-group">
+        <label>Exposition</label>
+        <div class="pills" data-filter="exposition">
+          <span class="pill" data-value="soleil">Soleil</span>
+          <span class="pill" data-value="mi-ombre">Mi-ombre</span>
+          <span class="pill" data-value="ombre">Ombre</span>
+        </div>
+      </div>
+
+      <!-- Besoins hydriques -->
+      <div class="filter-group">
+        <label>Besoins hydriques</label>
+        <div class="pills" data-filter="besoins_hydriques">
+          <span class="pill" data-value="faible">Faible</span>
+          <span class="pill" data-value="moyen">Moyen</span>
+          <span class="pill" data-value="fort">Fort</span>
+        </div>
+      </div>
+
+      <!-- Type de sol -->
+      <div class="filter-group">
+        <label>Type de sol</label>
+        <div class="pills" data-filter="type_sol">
+          <span class="pill" data-value="sableux">Sableux</span>
+          <span class="pill" data-value="limoneux">Limoneux</span>
+          <span class="pill" data-value="argileux">Argileux</span>
+          <span class="pill" data-value="calcaire">Calcaire</span>
+          <span class="pill" data-value="humifère">Humifere</span>
+        </div>
+      </div>
+
+      <!-- pH -->
+      <div class="filter-group">
+        <label>pH du sol</label>
+        <div class="pills" data-filter="ph_sol">
+          <span class="pill" data-value="acide">Acide</span>
+          <span class="pill" data-value="neutre">Neutre</span>
+          <span class="pill" data-value="calcaire">Calcaire</span>
+        </div>
+      </div>
+
+      <!-- Humidite sol -->
+      <div class="filter-group">
+        <label>Humidite du sol</label>
+        <div class="pills" data-filter="humidite_sol">
+          <span class="pill" data-value="sec">Sec</span>
+          <span class="pill" data-value="frais">Frais</span>
+          <span class="pill" data-value="humide">Humide</span>
+          <span class="pill" data-value="détrempe">Detrempe</span>
+        </div>
+      </div>
+
+      <!-- Rusticite -->
+      <div class="filter-group">
+        <label>Rusticite</label>
+        <div class="slider-group">
+          <span class="slider-value" id="rust-value">0 °C (pas de filtre)</span>
+          <input type="range" id="rust-slider" min="-40" max="0" value="0" step="1">
+        </div>
+      </div>
+
+      <!-- Hauteur -->
+      <div class="filter-group">
+        <label>Hauteur</label>
+        <div class="slider-group">
+          <span class="slider-value" id="height-value">0 cm — 50 m</span>
+          <div class="double-range">
+            <div class="range-track"></div>
+            <div class="range-fill" id="height-fill"></div>
+            <input type="range" id="height-min" min="0" max="5000" value="0" step="10">
+            <input type="range" id="height-max" min="0" max="5000" value="5000" step="10">
+          </div>
+        </div>
+      </div>
+
+      <!-- Persistance -->
+      <div class="filter-group">
+        <label>Persistance</label>
+        <div class="pills" data-filter="persistance">
+          <span class="pill" data-value="persistant">Persistant</span>
+          <span class="pill" data-value="caduc">Caduc</span>
+          <span class="pill" data-value="semi-persistant">Semi-persistant</span>
+        </div>
+      </div>
+
+      <!-- Mellifere -->
+      <div class="filter-group">
+        <label>Mellifere</label>
+        <div class="pills" data-filter="mellifere">
+          <span class="pill" data-value="true">Mellifere uniquement</span>
+        </div>
+      </div>
+
+      <!-- Indigenat -->
+      <div class="filter-group">
+        <label>Indigenat</label>
+        <div class="filter-row">
+          <span class="pill" data-filter-single="indigenat" data-value="true">Indigene en</span>
+          <select class="filter-select" id="bioregion-select" disabled>
+            <option value="atlantique">Atlantique</option>
+            <option value="continental">Continental</option>
+            <option value="mediterraneen">Mediterraneen</option>
+            <option value="alpin">Alpin</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Floraison periode -->
+      <div class="filter-group">
+        <label>Periode de floraison</label>
+        <div class="filter-row">
+          <select class="filter-select" id="flora-debut">
+            <option value="">Debut</option>
+            <option value="1">Janvier</option><option value="2">Fevrier</option>
+            <option value="3">Mars</option><option value="4">Avril</option>
+            <option value="5">Mai</option><option value="6">Juin</option>
+            <option value="7">Juillet</option><option value="8">Aout</option>
+            <option value="9">Septembre</option><option value="10">Octobre</option>
+            <option value="11">Novembre</option><option value="12">Decembre</option>
+          </select>
+          <select class="filter-select" id="flora-fin">
+            <option value="">Fin</option>
+            <option value="1">Janvier</option><option value="2">Fevrier</option>
+            <option value="3">Mars</option><option value="4">Avril</option>
+            <option value="5">Mai</option><option value="6">Juin</option>
+            <option value="7">Juillet</option><option value="8">Aout</option>
+            <option value="9">Septembre</option><option value="10">Octobre</option>
+            <option value="11">Novembre</option><option value="12">Decembre</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Couleur floraison -->
+      <div class="filter-group">
+        <label>Couleur de floraison</label>
+        <div class="pills" data-filter="couleur_floraison">
+          <span class="pill" data-value="blanc">Blanc</span>
+          <span class="pill" data-value="jaune">Jaune</span>
+          <span class="pill" data-value="orange">Orange</span>
+          <span class="pill" data-value="rose">Rose</span>
+          <span class="pill" data-value="rouge">Rouge</span>
+          <span class="pill" data-value="bleu">Bleu</span>
+          <span class="pill" data-value="violet">Violet</span>
+          <span class="pill" data-value="mauve">Mauve</span>
+          <span class="pill" data-value="vert">Vert</span>
+        </div>
+      </div>
+
+      <!-- Famille -->
+      <div class="filter-group">
+        <label>Famille</label>
+        <div class="family-input-wrap">
+          <input type="text" class="family-input" id="family-input" placeholder="ex : Poaceae, Rosaceae..." autocomplete="off">
+          <div class="family-dropdown" id="family-dropdown"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="filters-footer">
+      <span class="results-count" id="results-count">0 essences correspondent a vos criteres</span>
+      <button class="btn-reset" id="btn-reset">Reinitialiser les filtres</button>
+    </div>
+  </div>
+
+  <!-- ═══ ZONE 2 — RESULTATS ═══ -->
+  <div class="results-zone" id="results-zone">
+    <div class="results-header">
+      <span class="count" id="results-count2"></span>
+      <select class="sort-select" id="sort-select">
+        <option value="strate">Trier par : Strate</option>
+        <option value="alpha">Trier par : Alphabetique</option>
+        <option value="rusticite">Trier par : Rusticite</option>
+        <option value="floraison">Trier par : Floraison</option>
+      </select>
+    </div>
+    <div class="results-grid" id="results-grid"></div>
+    <div class="load-more" id="load-more" style="display:none;">Chargement...</div>
+    <div class="empty-state" id="empty-state" style="display:none;">
+      <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="#E2DED9" stroke-width="1.5">
+        <circle cx="20" cy="20" r="14"/><line x1="30" y1="30" x2="42" y2="42"/>
+      </svg>
+      <div class="empty-title">Aucune essence ne correspond a ces criteres</div>
+      <div class="empty-sub">Essayez d'elargir vos filtres</div>
+    </div>
+  </div>
+
+  <!-- ═══ ZONE 3 — COMPOSITION ═══ -->
+  <div class="composition-panel" id="composition-panel">
+    <div class="compo-header">
+      <div>
+        <span class="compo-title">Ma palette</span>
+        <span class="compo-count" id="compo-count"></span>
+      </div>
+      <button class="compo-back" id="btn-back">&#8592; Retour aux resultats</button>
+    </div>
+    <input type="text" class="project-name-input" id="nom-projet" placeholder="ex : Residence Alma — Phase 2">
+    <div class="drag-hint" id="drag-hint">Glissez les essences dans vos melanges pour organiser votre palette.</div>
+    <div id="melanges-container"></div>
+    <div class="compo-actions">
+      <button class="btn-secondary" id="btn-add-melange">+ Ajouter un melange</button>
+      <button class="btn-secondary" id="btn-sort-strate">Trier par strate</button>
+      <button class="btn-secondary btn-danger-text" id="btn-clear-all" style="color:#C44040;">Vider la selection</button>
+      <button class="btn-primary" id="btn-export-compo">Exporter en PNG</button>
+    </div>
+  </div>
+</main>
+
+<!-- Selection bar -->
+<div class="selection-bar" id="selection-bar">
+  <span class="sel-count" id="sel-count">0 / 50 essences selectionnees</span>
+  <button class="btn-secondary" id="btn-open-compo">Ma selection &#8593;</button>
+  <button class="btn-primary" id="btn-export">Exporter en PNG</button>
+</div>
+
+<!-- Gate overlay -->
+<div class="gate-overlay" id="gate-overlay">
+  <div class="gate-box" style="position:relative;">
+    <button class="gate-close" id="gate-close">&times;</button>
+    <p>Connectez-vous pour exporter votre selection</p>
+    <a href="/login?redirect=/projet/selecteur-essences">Se connecter</a>
+  </div>
+</div>
+
+<!-- Confirm overlay -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <p id="confirm-msg"></p>
+    <div class="confirm-btns">
+      <button class="btn-secondary" id="confirm-cancel">Annuler</button>
+      <button class="btn-primary" id="confirm-ok" style="background:#C44040;">Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden export container -->
+<div id="export-container"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   SYLVE — Selecteur d'essences
+   ═══════════════════════════════════════════════════ */
+
+// ─── Supabase ───
+const SUPABASE_URL  = 'https://jbqgyfbjyulezaclvmwc.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpicWd5ZmJqeXVsZXphY2x2bXdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzQyMDIsImV4cCI6MjA4ODcxMDIwMn0.dNibq1JOBz3UnqdLwENmS113TGKpw_UGWKR0cE8LgMI';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+let currentUser = null;
+
+sb.auth.getSession().then(({ data }) => {
+  currentUser = data?.session?.user || null;
+});
+
+// ─── Data ───
+let PLANTES = [];
+let filtered = [];
+let displayCount = 0;
+const BATCH = 30;
+const MAX_SEL = 50;
+
+// Selection: Set of ids
+const selection = new Set();
+
+// Melanges: array of { id, name, essenceIds: [] }
+let melanges = [];
+let melangeCounter = 0;
+let firstDragDone = false;
+
+// Active filters state
+const filters = {
+  strate: [],
+  exposition: [],
+  besoins_hydriques: [],
+  type_sol: [],
+  ph_sol: [],
+  humidite_sol: [],
+  persistance: [],
+  mellifere: false,
+  indigenat: false,
+  bioregion: 'atlantique',
+  rusticite: 0,
+  heightMin: 0,
+  heightMax: 5000,
+  floraDebut: '',
+  floraFin: '',
+  couleur_floraison: [],
+  famille: ''
+};
+
+// ─── Month names ───
+const MOIS = ['', 'janvier', 'fevrier', 'mars', 'avril', 'mai', 'juin',
+  'juillet', 'aout', 'septembre', 'octobre', 'novembre', 'decembre'];
+
+// ─── Strate order ───
+const STRATE_ORDER = [
+  'arbre_grand', 'arbre_moyen', 'arbre_petit', 'arbuste', 'grimpante',
+  'vivace', 'graminée', 'fougère', 'couvre-sol', 'bulbe', 'aquatique'
+];
+
+// ─── Color parsing ───
+const BASE_COLORS = {
+  'blanc':'#F5F0EB','crème':'#FDF5E6','creme':'#FDF5E6','ivoire':'#FFFFF0',
+  'jaune':'#F0D060','citron':'#F5E050','or':'#DAA520','doré':'#C5A55A',
+  'orange':'#E8863A','abricot':'#FBCEB1','apricot':'#FBCEB1','pêche':'#FFDAB9','saumon':'#FA8072',
+  'rouge':'#C44040','écarlate':'#FF2400','magenta':'#C71585','carminé':'#960018',
+  'rose':'#E8A0B0','mauve':'#B08CB0','violet':'#7B5EA7','indigo':'#4B0082',
+  'pourpre':'#800080','lilas':'#C8A2C8','lavande':'#B57EDC','améthyste':'#9966CC',
+  'bleu':'#6A8EB0','cobalt':'#0047AB','vert':'#6B8E6B',
+  'brun':'#8B6F47','marron':'#6B4226','bronze':'#CD7F32','rouille':'#B7410E',
+  'beige':'#D4C5A9','gris':'#A0A0A0','argenté':'#C0C0C0','argent':'#C0C0C0',
+  'noir':'#3D3D3D','multiple':'#B08CB0'
+};
+const MODIFIERS = {
+  'pâle':0.30,'pale':0.30,'clair':0.25,'tendre':0.20,'rosé':0.15,
+  'vif':0.00,'foncé':-0.30,'fonce':-0.30,'sombre':-0.25,'profond':-0.20
+};
+
+function adjustBrightness(hex, factor) {
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  const adj = c => factor > 0 ? Math.round(c + (255 - c) * factor) : Math.round(c * (1 + factor));
+  return '#' + [adj(r), adj(g), adj(b)].map(c => Math.min(255, Math.max(0, c)).toString(16).padStart(2,'0')).join('');
+}
+
+function parseCouleurFloraison(couleurTexte) {
+  if (!couleurTexte) return null;
+  if (Array.isArray(couleurTexte)) couleurTexte = couleurTexte[0];
+  if (!couleurTexte) return null;
+  let normalized = couleurTexte.toLowerCase().replace(/[-_,]/g, ' ').replace(/\s+/g, ' ').trim();
+  let foundColor = null, modifier = 0;
+  for (const [mod, value] of Object.entries(MODIFIERS)) {
+    if (normalized.includes(mod)) { modifier = value; break; }
+  }
+  for (const word of normalized.split(' ')) {
+    const clean = word.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    for (const [key, hex] of Object.entries(BASE_COLORS)) {
+      const keyClean = key.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      if (clean === keyClean || word === key) { foundColor = hex; break; }
+    }
+    if (foundColor) break;
+  }
+  if (!foundColor) return '#5E8B8F';
+  return modifier !== 0 ? adjustBrightness(foundColor, modifier) : foundColor;
+}
+
+// Color categories for filtering
+const CATEGORIES_COULEUR = {
+  'blanc': ['blanc','crème','creme','ivoire','argenté','argent'],
+  'jaune': ['jaune','citron','or','doré'],
+  'orange': ['orange','abricot','apricot','pêche','saumon','bronze','rouille'],
+  'rose': ['rose','magenta','carminé'],
+  'rouge': ['rouge','écarlate'],
+  'bleu': ['bleu','cobalt'],
+  'violet': ['violet','indigo','pourpre','lilas','lavande','améthyste'],
+  'mauve': ['mauve'],
+  'vert': ['vert']
+};
+
+function getCategoriesCouleur(couleurTexte) {
+  if (!couleurTexte) return [];
+  if (Array.isArray(couleurTexte)) couleurTexte = couleurTexte[0];
+  if (!couleurTexte) return [];
+  const normalized = couleurTexte.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[-_,]/g, ' ');
+  const categories = [];
+  for (const [cat, mots] of Object.entries(CATEGORIES_COULEUR)) {
+    for (const mot of mots) {
+      const motClean = mot.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      if (normalized.includes(motClean)) { categories.push(cat); break; }
+    }
+  }
+  return categories.length > 0 ? categories : ['autre'];
+}
+
+// Pre-computed color categories per essence (filled after load)
+let colorCatCache = {};
+
+// ─── Normalize for search ───
+function norm(s) {
+  return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+// ─── Format height ───
+function fmtHeight(cm) {
+  if (cm == null) return '?';
+  if (cm >= 100) return (cm / 100).toLocaleString('fr-FR', { maximumFractionDigits: 1 }) + ' m';
+  return cm + ' cm';
+}
+
+// ─── Floraison overlap ───
+function floraisonChevauche(essDebut, essFin, filtreDebut, filtreFin) {
+  if (!essDebut || !essFin) return false;
+  function moisDansPlage(d, f) {
+    const m = [];
+    if (d <= f) { for (let i = d; i <= f; i++) m.push(i); }
+    else { for (let i = d; i <= 12; i++) m.push(i); for (let i = 1; i <= f; i++) m.push(i); }
+    return m;
+  }
+  return moisDansPlage(essDebut, essFin).some(m => moisDansPlage(filtreDebut, filtreFin).includes(m));
+}
+
+// ═══ LOAD DATA ═══
+fetch('plantes-v1.json')
+  .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+  .then(data => {
+    PLANTES = data;
+    document.getElementById('db-status').textContent = '\u2713 Base vegetale : ' + PLANTES.length + ' essences';
+    document.getElementById('db-status').style.color = '#5E8B8F';
+    // Pre-compute color categories
+    PLANTES.forEach(p => { colorCatCache[p.id] = getCategoriesCouleur(p.couleur_floraison); });
+    // Collect families
+    buildFamilyList();
+    applyFilters();
+  })
+  .catch(err => {
+    console.error('Erreur chargement base vegetale', err);
+    document.getElementById('db-status').textContent = '\u2717 Erreur de chargement de la base vegetale';
+    document.getElementById('db-status').style.color = '#C44040';
+  });
+
+// ─── Family list ───
+let allFamilies = [];
+function buildFamilyList() {
+  const s = new Set();
+  PLANTES.forEach(p => { if (p.famille) s.add(p.famille); });
+  allFamilies = [...s].sort();
+}
+
+// ═══ PILL CLICK HANDLERS ═══
+document.querySelectorAll('.pills[data-filter]').forEach(container => {
+  const filterKey = container.dataset.filter;
+  container.querySelectorAll('.pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      pill.classList.toggle('active');
+      if (filterKey === 'mellifere') {
+        filters.mellifere = pill.classList.contains('active');
+      } else if (filterKey === 'couleur_floraison') {
+        filters.couleur_floraison = [...container.querySelectorAll('.pill.active')].map(p => p.dataset.value);
+      } else {
+        filters[filterKey] = [...container.querySelectorAll('.pill.active')].map(p => p.dataset.value);
+      }
+      applyFilters();
+    });
+  });
+});
+
+// Indigenat pill
+const indPill = document.querySelector('[data-filter-single="indigenat"]');
+const bioSelect = document.getElementById('bioregion-select');
+indPill.addEventListener('click', () => {
+  indPill.classList.toggle('active');
+  filters.indigenat = indPill.classList.contains('active');
+  bioSelect.disabled = !filters.indigenat;
+  applyFilters();
+});
+bioSelect.addEventListener('change', () => {
+  filters.bioregion = bioSelect.value;
+  if (filters.indigenat) applyFilters();
+});
+
+// Rusticite slider
+const rustSlider = document.getElementById('rust-slider');
+const rustValue = document.getElementById('rust-value');
+rustSlider.addEventListener('input', () => {
+  const v = parseInt(rustSlider.value);
+  filters.rusticite = v;
+  rustValue.textContent = v === 0 ? '0 °C (pas de filtre)' : v + ' °C';
+  applyFilters();
+});
+
+// Height double slider
+const hMin = document.getElementById('height-min');
+const hMax = document.getElementById('height-max');
+const hValue = document.getElementById('height-value');
+const hFill = document.getElementById('height-fill');
+
+function updateHeight() {
+  let lo = parseInt(hMin.value), hi = parseInt(hMax.value);
+  if (lo > hi) { const t = lo; lo = hi; hi = t; }
+  filters.heightMin = lo;
+  filters.heightMax = hi;
+  hValue.textContent = fmtHeight(lo) + ' — ' + fmtHeight(hi);
+  const pct1 = (lo / 5000) * 100, pct2 = (hi / 5000) * 100;
+  hFill.style.left = pct1 + '%';
+  hFill.style.width = (pct2 - pct1) + '%';
+  applyFilters();
+}
+hMin.addEventListener('input', updateHeight);
+hMax.addEventListener('input', updateHeight);
+updateHeight();
+
+// Flora period
+const floraDebut = document.getElementById('flora-debut');
+const floraFin = document.getElementById('flora-fin');
+floraDebut.addEventListener('change', () => { filters.floraDebut = floraDebut.value; applyFilters(); });
+floraFin.addEventListener('change', () => { filters.floraFin = floraFin.value; applyFilters(); });
+
+// Family input
+const familyInput = document.getElementById('family-input');
+const familyDD = document.getElementById('family-dropdown');
+familyInput.addEventListener('input', () => {
+  const v = norm(familyInput.value);
+  filters.famille = familyInput.value.trim();
+  if (v.length < 2) { familyDD.style.display = 'none'; applyFilters(); return; }
+  const matches = allFamilies.filter(f => norm(f).includes(v)).slice(0, 10);
+  if (matches.length === 0) { familyDD.style.display = 'none'; applyFilters(); return; }
+  familyDD.innerHTML = matches.map(f => '<div class="fam-item">' + f + '</div>').join('');
+  familyDD.style.display = 'block';
+  familyDD.querySelectorAll('.fam-item').forEach(item => {
+    item.addEventListener('click', () => {
+      familyInput.value = item.textContent;
+      filters.famille = item.textContent;
+      familyDD.style.display = 'none';
+      applyFilters();
+    });
+  });
+  applyFilters();
+});
+familyInput.addEventListener('blur', () => { setTimeout(() => familyDD.style.display = 'none', 200); });
+
+// Sort select
+const sortSelect = document.getElementById('sort-select');
+sortSelect.addEventListener('change', () => { sortFiltered(); renderResults(); });
+
+// Reset button
+document.getElementById('btn-reset').addEventListener('click', resetFilters);
+
+function resetFilters() {
+  document.querySelectorAll('.pill.active').forEach(p => p.classList.remove('active'));
+  indPill.classList.remove('active');
+  bioSelect.disabled = true;
+  rustSlider.value = 0; rustValue.textContent = '0 °C (pas de filtre)';
+  hMin.value = 0; hMax.value = 5000;
+  floraDebut.value = ''; floraFin.value = '';
+  familyInput.value = '';
+  Object.assign(filters, {
+    strate: [], exposition: [], besoins_hydriques: [], type_sol: [], ph_sol: [],
+    humidite_sol: [], persistance: [], mellifere: false, indigenat: false,
+    bioregion: 'atlantique', rusticite: 0, heightMin: 0, heightMax: 5000,
+    floraDebut: '', floraFin: '', couleur_floraison: [], famille: ''
+  });
+  updateHeight();
+  applyFilters();
+}
+
+// ═══ FILTERING ═══
+function applyFilters() {
+  filtered = PLANTES.filter(p => {
+    // Strate
+    if (filters.strate.length && !filters.strate.includes(p.strate)) return false;
+    // Exposition (array field, OR within filter)
+    if (filters.exposition.length) {
+      const pExp = (p.exposition || []).map(e => norm(e));
+      if (!filters.exposition.some(f => pExp.includes(norm(f)))) return false;
+    }
+    // Besoins hydriques (string)
+    if (filters.besoins_hydriques.length) {
+      if (!filters.besoins_hydriques.includes(norm(p.besoins_hydriques || ''))) return false;
+    }
+    // Type sol (array)
+    if (filters.type_sol.length) {
+      const pSol = (p.type_sol || []).map(s => norm(s));
+      if (!filters.type_sol.some(f => pSol.includes(norm(f)))) return false;
+    }
+    // pH (array)
+    if (filters.ph_sol.length) {
+      const pPh = (p.ph_sol || []).map(s => norm(s));
+      if (!filters.ph_sol.some(f => pPh.includes(norm(f)))) return false;
+    }
+    // Humidite (array)
+    if (filters.humidite_sol.length) {
+      const pH = (p.humidite_sol || []).map(s => norm(s));
+      if (!filters.humidite_sol.some(f => pH.includes(norm(f)))) return false;
+    }
+    // Rusticite
+    if (filters.rusticite < 0) {
+      if ((p.rusticite_celsius == null) || p.rusticite_celsius > filters.rusticite) return false;
+    }
+    // Hauteur overlap
+    if (filters.heightMin > 0 || filters.heightMax < 5000) {
+      if (p.hauteur_max_cm == null || p.hauteur_min_cm == null) return false;
+      if (!(p.hauteur_max_cm >= filters.heightMin && p.hauteur_min_cm <= filters.heightMax)) return false;
+    }
+    // Persistance
+    if (filters.persistance.length) {
+      if (!filters.persistance.includes(norm(p.persistance || ''))) return false;
+    }
+    // Mellifere
+    if (filters.mellifere && !p.mellifere) return false;
+    // Indigenat
+    if (filters.indigenat) {
+      if (!p.indigenat || !p.indigenat[filters.bioregion]) return false;
+    }
+    // Floraison period
+    if (filters.floraDebut && filters.floraFin) {
+      if (!floraisonChevauche(p.floraison_debut, p.floraison_fin, parseInt(filters.floraDebut), parseInt(filters.floraFin))) return false;
+    }
+    // Couleur floraison
+    if (filters.couleur_floraison.length) {
+      const cats = colorCatCache[p.id] || [];
+      if (!filters.couleur_floraison.some(f => cats.includes(f))) return false;
+    }
+    // Famille
+    if (filters.famille) {
+      if (!norm(p.famille || '').includes(norm(filters.famille))) return false;
+    }
+    return true;
+  });
+
+  sortFiltered();
+  displayCount = 0;
+  renderResults();
+  updateCounts();
+}
+
+function sortFiltered() {
+  const mode = sortSelect.value;
+  filtered.sort((a, b) => {
+    if (mode === 'strate') {
+      const ia = STRATE_ORDER.indexOf(a.strate), ib = STRATE_ORDER.indexOf(b.strate);
+      const sa = ia === -1 ? 999 : ia, sb2 = ib === -1 ? 999 : ib;
+      if (sa !== sb2) return sa - sb2;
+      return (a.nom_latin || '').localeCompare(b.nom_latin || '');
+    }
+    if (mode === 'alpha') return (a.nom_latin || '').localeCompare(b.nom_latin || '');
+    if (mode === 'rusticite') return (a.rusticite_celsius || 0) - (b.rusticite_celsius || 0);
+    if (mode === 'floraison') return (a.floraison_debut || 13) - (b.floraison_debut || 13);
+    return 0;
+  });
+}
+
+function updateCounts() {
+  const txt = filtered.length + ' essences correspondent a vos criteres';
+  document.getElementById('results-count').textContent = txt;
+  document.getElementById('results-count2').textContent = txt;
+}
+
+// ═══ RENDER RESULTS ═══
+const grid = document.getElementById('results-grid');
+const emptyState = document.getElementById('empty-state');
+const loadMore = document.getElementById('load-more');
+
+function renderResults() {
+  grid.innerHTML = '';
+  if (filtered.length === 0) {
+    emptyState.style.display = 'block';
+    loadMore.style.display = 'none';
+    return;
+  }
+  emptyState.style.display = 'none';
+  displayCount = Math.min(BATCH, filtered.length);
+  for (let i = 0; i < displayCount; i++) appendCard(filtered[i]);
+  loadMore.style.display = displayCount < filtered.length ? 'block' : 'none';
+}
+
+function appendCard(p) {
+  const card = document.createElement('div');
+  card.className = 'essence-card' + (selection.has(p.id) ? ' selected' : '');
+  card.dataset.id = p.id;
+
+  const isSel = selection.has(p.id);
+  const isDisabled = !isSel && selection.size >= MAX_SEL;
+
+  // Exposition icons
+  const expo = (p.exposition || []).map(e => {
+    const n = norm(e);
+    if (n === 'soleil') return '\u2600';
+    if (n === 'mi-ombre') return '\u25D0';
+    if (n === 'ombre') return '\u25CF';
+    return '';
+  }).join(' ');
+
+  // Floraison
+  let floraHTML = '';
+  if (p.floraison_debut && p.floraison_fin) {
+    const color = parseCouleurFloraison(p.couleur_floraison);
+    floraHTML = (MOIS[p.floraison_debut] || '?') + ' — ' + (MOIS[p.floraison_fin] || '?') +
+      ' <span class="card-floraison-dot" style="background:' + color + '"></span>';
+  } else {
+    floraHTML = '<span style="color:var(--text-light)">Pas de floraison significative</span>';
+  }
+
+  // Indigenat
+  let indHTML = '';
+  if (filters.indigenat) {
+    if (p.indigenat && p.indigenat[filters.bioregion]) indHTML = 'Indigene';
+  } else if (p.indigenat) {
+    const bios = [];
+    if (p.indigenat.atlantique) bios.push('Atlantique');
+    if (p.indigenat.continental) bios.push('Continental');
+    if (p.indigenat.mediterraneen) bios.push('Mediterraneen');
+    if (p.indigenat.alpin) bios.push('Alpin');
+    if (bios.length) indHTML = 'Indigene (' + bios.join(', ') + ')';
+  }
+
+  card.innerHTML =
+    '<div class="card-top">' +
+      '<div class="card-cb' + (isSel ? ' checked' : '') + (isDisabled ? ' disabled' : '') + '" data-id="' + p.id + '"' +
+        (isDisabled ? ' title="Limite de 50 essences atteinte"' : '') + '></div>' +
+      '<span class="card-nom-latin">' + (p.nom_latin || '') + '</span>' +
+    '</div>' +
+    '<div class="card-nom-commun">' + (p.nom_commun || '') + '</div>' +
+    '<hr class="card-sep">' +
+    '<div class="card-meta">' +
+      '<div class="meta-row">' + (p.strate || '') + ' &middot; ' + (p.famille || '') + '</div>' +
+      '<div class="meta-row">' + expo + '&nbsp;&nbsp;' + (p.besoins_hydriques || '') + '&nbsp;&nbsp;' + (p.persistance || '') + '</div>' +
+      '<div class="meta-row"><span class="card-height">' + fmtHeight(p.hauteur_min_cm) + ' — ' + fmtHeight(p.hauteur_max_cm) + '</span>&nbsp;&nbsp;<span class="card-rusticite">Rusticite : ' + (p.rusticite_celsius != null ? p.rusticite_celsius + ' °C' : '?') + '</span></div>' +
+      '<div class="meta-row">Floraison : ' + floraHTML + '</div>' +
+      (indHTML ? '<div class="meta-row">' + indHTML + '</div>' : '') +
+      (p.mellifere ? '<div class="meta-row">Mellifere</div>' : '') +
+    '</div>';
+
+  // Click handler on checkbox
+  card.querySelector('.card-cb').addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleSelection(p.id);
+  });
+
+  grid.appendChild(card);
+}
+
+// ─── Infinite scroll ───
+const observer = new IntersectionObserver(entries => {
+  if (entries[0].isIntersecting && displayCount < filtered.length) {
+    const next = Math.min(displayCount + BATCH, filtered.length);
+    for (let i = displayCount; i < next; i++) appendCard(filtered[i]);
+    displayCount = next;
+    loadMore.style.display = displayCount < filtered.length ? 'block' : 'none';
+  }
+}, { rootMargin: '200px' });
+observer.observe(loadMore);
+
+// ═══ SELECTION ═══
+function toggleSelection(id) {
+  if (selection.has(id)) {
+    selection.delete(id);
+    // Remove from melanges
+    melanges.forEach(m => {
+      const idx = m.essenceIds.indexOf(id);
+      if (idx !== -1) m.essenceIds.splice(idx, 1);
+    });
+  } else {
+    if (selection.size >= MAX_SEL) return;
+    selection.add(id);
+  }
+  updateSelectionUI();
+}
+
+function updateSelectionUI() {
+  // Update cards
+  document.querySelectorAll('.essence-card').forEach(card => {
+    const id = card.dataset.id;
+    const isSel = selection.has(id);
+    card.classList.toggle('selected', isSel);
+    const cb = card.querySelector('.card-cb');
+    cb.classList.toggle('checked', isSel);
+    const isDisabled = !isSel && selection.size >= MAX_SEL;
+    cb.classList.toggle('disabled', isDisabled);
+    if (isDisabled) cb.title = 'Limite de 50 essences atteinte';
+    else cb.title = '';
+  });
+  // Sticky bar
+  const bar = document.getElementById('selection-bar');
+  bar.classList.toggle('visible', selection.size > 0);
+  document.getElementById('sel-count').textContent = selection.size + ' / ' + MAX_SEL + ' essences selectionnees';
+  // Composition count
+  document.getElementById('compo-count').textContent = selection.size + ' essences';
+}
+
+// ═══ AUTOCOMPLETE SEARCH ═══
+const searchInput = document.getElementById('search-input');
+const acList = document.getElementById('ac-list');
+let acResults = [];
+let acIndex = -1;
+
+searchInput.addEventListener('input', () => {
+  const q = norm(searchInput.value);
+  if (q.length < 3) { acList.style.display = 'none'; acResults = []; return; }
+  acResults = PLANTES.filter(p =>
+    norm(p.nom_latin).includes(q) || norm(p.nom_commun).includes(q)
+  ).slice(0, 8);
+  if (acResults.length === 0) { acList.style.display = 'none'; return; }
+  acIndex = -1;
+  acList.innerHTML = acResults.map((p, i) =>
+    '<div class="ac-item" data-idx="' + i + '">' +
+      '<span class="ac-latin">' + (p.nom_latin || '') + '</span>' +
+      '<span class="ac-common"> — ' + (p.nom_commun || '') + '</span>' +
+      '<span class="ac-strate">(' + (p.strate || '') + ')</span>' +
+    '</div>'
+  ).join('');
+  acList.style.display = 'block';
+  acList.querySelectorAll('.ac-item').forEach(item => {
+    item.addEventListener('click', () => selectAcItem(parseInt(item.dataset.idx)));
+  });
+});
+
+searchInput.addEventListener('keydown', (e) => {
+  if (acList.style.display === 'none' || acResults.length === 0) return;
+  if (e.key === 'ArrowDown') { e.preventDefault(); acIndex = Math.min(acIndex + 1, acResults.length - 1); highlightAc(); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); acIndex = Math.max(acIndex - 1, 0); highlightAc(); }
+  else if (e.key === 'Enter' && acIndex >= 0) { e.preventDefault(); selectAcItem(acIndex); }
+});
+
+searchInput.addEventListener('blur', () => { setTimeout(() => acList.style.display = 'none', 200); });
+
+function highlightAc() {
+  acList.querySelectorAll('.ac-item').forEach((item, i) => item.classList.toggle('active', i === acIndex));
+}
+
+function selectAcItem(idx) {
+  const p = acResults[idx];
+  if (p && !selection.has(p.id) && selection.size < MAX_SEL) {
+    selection.add(p.id);
+    updateSelectionUI();
+  }
+  searchInput.value = '';
+  acList.style.display = 'none';
+  acResults = [];
+}
+
+// ═══ COMPOSITION PANEL ═══
+const compositionPanel = document.getElementById('composition-panel');
+const resultsZone = document.getElementById('results-zone');
+
+document.getElementById('btn-open-compo').addEventListener('click', openComposition);
+document.getElementById('btn-back').addEventListener('click', closeComposition);
+
+function openComposition() {
+  resultsZone.classList.add('hidden');
+  compositionPanel.classList.add('visible');
+  document.getElementById('compo-count').textContent = selection.size + ' essences';
+  renderMelanges();
+}
+
+function closeComposition() {
+  compositionPanel.classList.remove('visible');
+  resultsZone.classList.remove('hidden');
+}
+
+// ─── Melange management ───
+document.getElementById('btn-add-melange').addEventListener('click', () => {
+  melangeCounter++;
+  melanges.push({ id: 'mel-' + melangeCounter, name: '', essenceIds: [] });
+  renderMelanges();
+});
+
+document.getElementById('btn-sort-strate').addEventListener('click', () => {
+  melanges.forEach(m => {
+    m.essenceIds.sort((a, b) => {
+      const pa = PLANTES.find(p => p.id === a), pb = PLANTES.find(p => p.id === b);
+      const ia = STRATE_ORDER.indexOf(pa?.strate), ib = STRATE_ORDER.indexOf(pb?.strate);
+      const sa = ia === -1 ? 999 : ia, sb2 = ib === -1 ? 999 : ib;
+      if (sa !== sb2) return sa - sb2;
+      return (pa?.nom_latin || '').localeCompare(pb?.nom_latin || '');
+    });
+  });
+  renderMelanges();
+});
+
+document.getElementById('btn-clear-all').addEventListener('click', () => {
+  showConfirm('Vider toute la selection ? Cette action est irreversible.', () => {
+    selection.clear();
+    melanges = [];
+    melangeCounter = 0;
+    updateSelectionUI();
+    closeComposition();
+  });
+});
+
+function getUnclassifiedIds() {
+  const classified = new Set();
+  melanges.forEach(m => m.essenceIds.forEach(id => classified.add(id)));
+  return [...selection].filter(id => !classified.has(id));
+}
+
+function renderMelanges() {
+  const container = document.getElementById('melanges-container');
+  container.innerHTML = '';
+
+  // User-created melanges
+  melanges.forEach(mel => {
+    container.appendChild(buildMelangeBlock(mel));
+  });
+
+  // Non classees
+  const unclassified = getUnclassifiedIds();
+  const ncBlock = document.createElement('div');
+  ncBlock.className = 'melange-block';
+  ncBlock.innerHTML =
+    '<div class="melange-header" style="opacity:0.7;">' +
+      '<span style="font-size:13px;color:var(--text-muted);">Non classees</span>' +
+      '<span class="melange-count">' + unclassified.length + ' essences</span>' +
+    '</div>';
+  const dz = document.createElement('div');
+  dz.className = 'melange-dropzone';
+  dz.dataset.melangeId = '__unclassified';
+  if (unclassified.length === 0) {
+    dz.innerHTML = '<div class="melange-dropzone-empty">Aucune essence non classee</div>';
+  } else {
+    unclassified.forEach(id => dz.appendChild(buildEssenceRow(id, '__unclassified')));
+  }
+  setupDropzone(dz, '__unclassified');
+  ncBlock.appendChild(dz);
+
+  // Indicators for unclassified
+  if (unclassified.length > 0) {
+    ncBlock.appendChild(buildIndicators(unclassified));
+  }
+
+  container.appendChild(ncBlock);
+
+  // Show/hide drag hint
+  document.getElementById('drag-hint').style.display = firstDragDone ? 'none' : 'block';
+}
+
+function buildMelangeBlock(mel) {
+  const block = document.createElement('div');
+  block.className = 'melange-block';
+
+  const header = document.createElement('div');
+  header.className = 'melange-header';
+  const nameInput = document.createElement('input');
+  nameInput.className = 'melange-name-input';
+  nameInput.type = 'text';
+  nameInput.value = mel.name;
+  nameInput.placeholder = 'Melange ' + (melanges.indexOf(mel) + 1);
+  nameInput.addEventListener('change', () => { mel.name = nameInput.value; });
+
+  const count = document.createElement('span');
+  count.className = 'melange-count';
+  count.textContent = mel.essenceIds.length + ' essences';
+
+  const del = document.createElement('button');
+  del.className = 'melange-delete';
+  del.innerHTML = '&times;';
+  del.addEventListener('click', () => {
+    showConfirm('Supprimer ce melange ? Les essences retourneront dans Non classees.', () => {
+      melanges = melanges.filter(m => m.id !== mel.id);
+      renderMelanges();
+    });
+  });
+
+  header.appendChild(nameInput);
+  header.appendChild(count);
+  header.appendChild(del);
+  block.appendChild(header);
+
+  const dz = document.createElement('div');
+  dz.className = 'melange-dropzone';
+  dz.dataset.melangeId = mel.id;
+  if (mel.essenceIds.length === 0) {
+    dz.innerHTML = '<div class="melange-dropzone-empty">Glissez des essences ici</div>';
+  } else {
+    mel.essenceIds.forEach(id => dz.appendChild(buildEssenceRow(id, mel.id)));
+  }
+  setupDropzone(dz, mel.id);
+  block.appendChild(dz);
+
+  // Indicators
+  if (mel.essenceIds.length > 0) {
+    block.appendChild(buildIndicators(mel.essenceIds));
+  }
+
+  return block;
+}
+
+function buildEssenceRow(id, currentMelangeId) {
+  const p = PLANTES.find(pl => pl.id === id);
+  if (!p) return document.createElement('div');
+
+  const row = document.createElement('div');
+  row.className = 'essence-row';
+  row.draggable = true;
+  row.dataset.essenceId = id;
+
+  // Floraison
+  let floraStr = '—';
+  if (p.floraison_debut && p.floraison_fin) {
+    const color = parseCouleurFloraison(p.couleur_floraison);
+    floraStr = '<span class="row-dot" style="background:' + color + '"></span>' +
+      (MOIS[p.floraison_debut] || '?').substring(0, 4) + '–' + (MOIS[p.floraison_fin] || '?').substring(0, 4);
+  }
+
+  row.innerHTML =
+    '<span class="row-latin">' + (p.nom_latin || '') + '</span>' +
+    '<span class="row-badge">' + (p.strate || '') + '</span>' +
+    '<span class="row-info">' + (p.persistance || '') + '</span>' +
+    '<span class="row-mono">' + fmtHeight(p.hauteur_min_cm) + '–' + fmtHeight(p.hauteur_max_cm) + '</span>' +
+    '<span class="row-info">' + floraStr + '</span>' +
+    '<span class="row-mono">' + (p.rusticite_celsius != null ? p.rusticite_celsius + '°C' : '') + '</span>' +
+    '<span class="row-spacer"></span>' +
+    '<button class="row-menu-btn" title="Menu">&#8942;<div class="row-menu"></div></button>';
+
+  // Drag
+  row.addEventListener('dragstart', (e) => {
+    e.dataTransfer.setData('text/plain', id);
+    row.classList.add('dragging');
+    document.querySelectorAll('.melange-dropzone').forEach(z => z.classList.add('drop-active'));
+  });
+  row.addEventListener('dragend', () => {
+    row.classList.remove('dragging');
+    document.querySelectorAll('.melange-dropzone').forEach(z => z.classList.remove('drop-active', 'drop-hover'));
+  });
+
+  // Context menu
+  const menuBtn = row.querySelector('.row-menu-btn');
+  const menu = row.querySelector('.row-menu');
+  menuBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    // Close all other menus
+    document.querySelectorAll('.row-menu.open').forEach(m => m.classList.remove('open'));
+    // Build menu items
+    let items = '';
+    melanges.forEach(m => {
+      if (m.id !== currentMelangeId) {
+        items += '<div class="row-menu-item" data-action="move" data-target="' + m.id + '">Deplacer vers ' + (m.name || 'Melange ' + (melanges.indexOf(m) + 1)) + '</div>';
+      }
+    });
+    if (currentMelangeId !== '__unclassified') {
+      items += '<div class="row-menu-item" data-action="move" data-target="__unclassified">Deplacer vers Non classees</div>';
+    }
+    items += '<div class="row-menu-item danger" data-action="remove">Retirer de la selection</div>';
+    menu.innerHTML = items;
+    menu.classList.toggle('open');
+
+    menu.querySelectorAll('.row-menu-item').forEach(item => {
+      item.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        menu.classList.remove('open');
+        if (item.dataset.action === 'move') {
+          moveEssenceToMelange(id, item.dataset.target);
+        } else if (item.dataset.action === 'remove') {
+          selection.delete(id);
+          melanges.forEach(m => {
+            const idx = m.essenceIds.indexOf(id);
+            if (idx !== -1) m.essenceIds.splice(idx, 1);
+          });
+          updateSelectionUI();
+          renderMelanges();
+        }
+      });
+    });
+  });
+
+  return row;
+}
+
+// Close menus on outside click
+document.addEventListener('click', () => {
+  document.querySelectorAll('.row-menu.open').forEach(m => m.classList.remove('open'));
+});
+
+function setupDropzone(dz, melangeId) {
+  dz.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dz.classList.add('drop-hover');
+  });
+  dz.addEventListener('dragleave', () => {
+    dz.classList.remove('drop-hover');
+  });
+  dz.addEventListener('drop', (e) => {
+    e.preventDefault();
+    const essenceId = e.dataTransfer.getData('text/plain');
+    moveEssenceToMelange(essenceId, melangeId);
+    dz.classList.remove('drop-hover');
+    if (!firstDragDone) {
+      firstDragDone = true;
+      const hint = document.getElementById('drag-hint');
+      if (hint) hint.style.display = 'none';
+    }
+  });
+}
+
+function moveEssenceToMelange(essenceId, targetMelangeId) {
+  // Remove from all melanges
+  melanges.forEach(m => {
+    const idx = m.essenceIds.indexOf(essenceId);
+    if (idx !== -1) m.essenceIds.splice(idx, 1);
+  });
+  // Add to target (unless unclassified)
+  if (targetMelangeId !== '__unclassified') {
+    const target = melanges.find(m => m.id === targetMelangeId);
+    if (target && !target.essenceIds.includes(essenceId)) {
+      target.essenceIds.push(essenceId);
+    }
+  }
+  renderMelanges();
+}
+
+function buildIndicators(ids) {
+  const plants = ids.map(id => PLANTES.find(p => p.id === id)).filter(Boolean);
+  let persistant = 0, caduc = 0, semiP = 0;
+  let floraMinMonth = null, floraMaxMonth = null;
+  const allFloraMonths = new Set();
+
+  plants.forEach(p => {
+    const pers = norm(p.persistance || '');
+    if (pers === 'persistant') persistant++;
+    else if (pers === 'caduc') caduc++;
+    else if (pers.includes('semi')) semiP++;
+
+    if (p.floraison_debut && p.floraison_fin) {
+      let d = p.floraison_debut, f = p.floraison_fin;
+      if (d <= f) { for (let m = d; m <= f; m++) allFloraMonths.add(m); }
+      else { for (let m = d; m <= 12; m++) allFloraMonths.add(m); for (let m = 1; m <= f; m++) allFloraMonths.add(m); }
+    }
+  });
+
+  let floraTxt = 'Pas de floraison';
+  if (allFloraMonths.size > 0) {
+    const sorted = [...allFloraMonths].sort((a, b) => a - b);
+    floraTxt = 'Floraison : ' + (MOIS[sorted[0]] || '?') + ' \u2192 ' + (MOIS[sorted[sorted.length - 1]] || '?');
+  }
+
+  const parts = [plants.length + ' essences'];
+  if (persistant > 0) parts.push(persistant + ' persistante' + (persistant > 1 ? 's' : ''));
+  if (caduc > 0) parts.push(caduc + ' caduc' + (caduc > 1 ? 's' : ''));
+  if (semiP > 0) parts.push(semiP + ' semi-persistant' + (semiP > 1 ? 'es' : 'e'));
+  parts.push(floraTxt);
+
+  const div = document.createElement('div');
+  div.className = 'melange-indicators';
+  div.textContent = parts.join(' \u00B7 ');
+  return div;
+}
+
+// ═══ EXPORT PNG ═══
+document.getElementById('btn-export').addEventListener('click', doExport);
+document.getElementById('btn-export-compo').addEventListener('click', doExport);
+
+function doExport() {
+  // Gate check
+  if (!currentUser) {
+    document.getElementById('gate-overlay').classList.add('open');
+    return;
+  }
+  buildExportAndDownload();
+}
+
+document.getElementById('gate-close').addEventListener('click', () => {
+  document.getElementById('gate-overlay').classList.remove('open');
+});
+document.getElementById('gate-overlay').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) e.currentTarget.classList.remove('open');
+});
+
+function buildExportAndDownload() {
+  const container = document.getElementById('export-container');
+  const projectName = document.getElementById('nom-projet').value || '';
+
+  let html = '<div class="export-title">SELECTION D\'ESSENCES' + (projectName ? ' — ' + projectName : '') + '</div>';
+
+  // Build groups: melanges + unclassified
+  const groups = [];
+  melanges.forEach(m => {
+    if (m.essenceIds.length > 0) {
+      groups.push({ name: m.name || 'Melange ' + (melanges.indexOf(m) + 1), ids: m.essenceIds });
+    }
+  });
+  const unclassified = getUnclassifiedIds();
+  if (unclassified.length > 0) {
+    groups.push({ name: 'Non classees', ids: unclassified });
+  }
+
+  // If no melanges at all, just export everything flat
+  if (groups.length === 0 && selection.size > 0) {
+    groups.push({ name: '', ids: [...selection] });
+  }
+
+  groups.forEach(g => {
+    if (g.name) html += '<div class="export-melange-title">' + g.name + '</div>';
+    html += '<table><thead><tr>' +
+      '<th>Nom latin</th><th>Nom commun</th><th>Famille</th><th>Strate</th>' +
+      '<th>Persistance</th><th>Hauteur</th><th>Floraison</th><th>Rusticite</th><th>Indigenat</th>' +
+      '</tr></thead><tbody>';
+
+    g.ids.forEach(id => {
+      const p = PLANTES.find(pl => pl.id === id);
+      if (!p) return;
+      let floraCell = '—';
+      if (p.floraison_debut && p.floraison_fin) {
+        const color = parseCouleurFloraison(p.couleur_floraison);
+        floraCell = '<span class="export-dot" style="background:' + color + '"></span>' +
+          (MOIS[p.floraison_debut] || '?') + ' — ' + (MOIS[p.floraison_fin] || '?');
+        if (p.couleur_floraison) floraCell += ' (' + p.couleur_floraison + ')';
+      }
+      const bios = [];
+      if (p.indigenat) {
+        if (p.indigenat.atlantique) bios.push('Atl.');
+        if (p.indigenat.continental) bios.push('Cont.');
+        if (p.indigenat.mediterraneen) bios.push('Med.');
+        if (p.indigenat.alpin) bios.push('Alp.');
+      }
+      html += '<tr>' +
+        '<td class="latin">' + (p.nom_latin || '') + '</td>' +
+        '<td>' + (p.nom_commun || '') + '</td>' +
+        '<td>' + (p.famille || '') + '</td>' +
+        '<td>' + (p.strate || '') + '</td>' +
+        '<td>' + (p.persistance || '') + '</td>' +
+        '<td>' + fmtHeight(p.hauteur_min_cm) + ' — ' + fmtHeight(p.hauteur_max_cm) + '</td>' +
+        '<td>' + floraCell + '</td>' +
+        '<td>' + (p.rusticite_celsius != null ? p.rusticite_celsius + ' °C' : '') + '</td>' +
+        '<td>' + bios.join(', ') + '</td>' +
+        '</tr>';
+    });
+
+    html += '</tbody></table>';
+  });
+
+  html += '<div class="export-footer">sylve.eco — Selecteur d\'essences</div>';
+
+  container.innerHTML = html;
+  container.style.left = '0';
+  container.style.position = 'fixed';
+  container.style.top = '0';
+  container.style.zIndex = '-1';
+  container.style.width = '1100px';
+  container.style.opacity = '0';
+
+  setTimeout(() => {
+    html2canvas(container, {
+      scale: 3,
+      backgroundColor: '#FFFFFF',
+      useCORS: true,
+      logging: false
+    }).then(canvas => {
+      const link = document.createElement('a');
+      const nomProjet = document.getElementById('nom-projet').value || 'sylve';
+      link.download = 'selection-essences-' + nomProjet.replace(/\s+/g, '-').toLowerCase() + '.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      // Reset container
+      container.style.left = '-9999px';
+      container.style.position = 'absolute';
+      container.style.zIndex = '';
+      container.style.width = '';
+      container.style.opacity = '';
+    });
+  }, 100);
+}
+
+// ═══ CONFIRM DIALOG ═══
+let confirmCallback = null;
+
+function showConfirm(msg, cb) {
+  document.getElementById('confirm-msg').textContent = msg;
+  document.getElementById('confirm-overlay').classList.add('open');
+  confirmCallback = cb;
+}
+
+document.getElementById('confirm-ok').addEventListener('click', () => {
+  document.getElementById('confirm-overlay').classList.remove('open');
+  if (confirmCallback) confirmCallback();
+  confirmCallback = null;
+});
+document.getElementById('confirm-cancel').addEventListener('click', () => {
+  document.getElementById('confirm-overlay').classList.remove('open');
+  confirmCallback = null;
+});
+
+</script>
+</body>
+</html>
