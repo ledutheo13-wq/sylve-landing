@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SYLVE Projet — Calendrier phénologique</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    :root {
+      --sylve:        #5E8B8F;
+      --sylve-dark:   #3d6366;
+      --sylve-light:  #E8F0F1;
+      --projet:       #8A8279;
+      --projet-light: #F0EDEA;
+      --bg:           #F7F6F4;
+      --surface:      #FFFFFF;
+      --border:       #E2DED9;
+      --text:         #2A2826;
+      --text-muted:   #7A7672;
+      --text-light:   #A09C98;
+      --ocre:         #C4973B;
+      --terre:        #A67C5B;
+      --radius:       8px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 52px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: baseline;
+      gap: 0.6rem;
+    }
+
+    .logo {
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      font-size: 1.1rem;
+      letter-spacing: 0.18em;
+      color: var(--sylve);
+      text-decoration: none;
+    }
+
+    .logo-sub {
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      color: var(--projet);
+      text-transform: uppercase;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .beta-tag {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.58rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 2px 7px;
+      border-radius: 20px;
+      background: var(--sylve-light);
+      color: var(--sylve-dark);
+    }
+
+    /* ── TITLE BAR ── */
+    .title-bar {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem 2rem 0;
+    }
+
+    .title-bar h1 {
+      font-family: Helvetica, 'Helvetica Neue', Arial, sans-serif;
+      font-size: 1.4rem;
+      font-weight: 300;
+      color: var(--sylve);
+      letter-spacing: 4px;
+      text-transform: lowercase;
+      margin-bottom: 0.4rem;
+    }
+
+    .title-bar p {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* ── ZONE DE SAISIE ── */
+    .input-zone {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 1.5rem 2rem 2rem;
+    }
+
+    .section-label {
+      font-family: Helvetica, 'Helvetica Neue', Arial, sans-serif;
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-light);
+      font-weight: 400;
+      margin-bottom: 1rem;
+      padding-bottom: 0.6rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* ── ESSENCE COUNTER ── */
+    .essence-counter {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+    }
+
+    .essence-counter .count { color: var(--sylve); font-weight: 400; }
+    .essence-counter.limit .count { color: var(--ocre); }
+
+    /* ── MELANGE BLOCK ── */
+    .melange-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.2rem;
+      margin-bottom: 1rem;
+    }
+
+    .melange-header {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      margin-bottom: 0.8rem;
+    }
+
+    .melange-name-input {
+      flex: 1;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 400;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 6px 10px;
+      background: var(--bg);
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .melange-name-input:focus {
+      border-color: var(--sylve);
+      box-shadow: 0 0 0 2px rgba(94,139,143,0.12);
+    }
+
+    .melange-name-input::placeholder { color: var(--text-light); }
+
+    .btn-delete-melange {
+      font-size: 1rem;
+      color: var(--text-light);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 4px;
+      transition: all 0.15s;
+      line-height: 1;
+    }
+
+    .btn-delete-melange:hover { color: #C44040; background: rgba(196,64,64,0.08); }
+
+    /* ── ESSENCE ROW ── */
+    .essence-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      margin-bottom: 0.5rem;
+      position: relative;
+    }
+
+    .essence-search-wrap {
+      flex: 1;
+      position: relative;
+    }
+
+    .essence-search {
+      width: 100%;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 7px 10px;
+      background: #fff;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .essence-search:focus {
+      border-color: var(--sylve);
+      box-shadow: 0 0 0 2px rgba(94,139,143,0.12);
+    }
+
+    .essence-search.validated {
+      border-color: rgba(94,139,143,0.4);
+      background: rgba(94,139,143,0.04);
+      font-style: italic;
+    }
+
+    .essence-meta {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .badge-persistance {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.04em;
+      padding: 1px 6px;
+      border-radius: 10px;
+      text-transform: capitalize;
+    }
+
+    .badge-persistance.persistant { background: rgba(94,139,143,0.12); color: var(--sylve-dark); }
+    .badge-persistance.caduc { background: rgba(140,191,140,0.18); color: #4a7a4a; }
+    .badge-persistance.semi-persistant { background: rgba(94,139,143,0.08); color: var(--projet); }
+
+    .btn-delete-essence {
+      font-size: 0.85rem;
+      color: var(--text-light);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 6px 6px;
+      border-radius: 4px;
+      transition: all 0.15s;
+      line-height: 1;
+      margin-top: 1px;
+    }
+
+    .btn-delete-essence:hover { color: #C44040; background: rgba(196,64,64,0.08); }
+
+    /* ── AUTOCOMPLETE ── */
+    .autocomplete-list {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 0 0 6px 6px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+      z-index: 50;
+      max-height: 280px;
+      overflow-y: auto;
+      display: none;
+    }
+
+    .autocomplete-list.open { display: block; }
+
+    .autocomplete-item {
+      padding: 8px 10px;
+      cursor: pointer;
+      border-bottom: 1px solid #F0EFED;
+      transition: background 0.1s;
+    }
+
+    .autocomplete-item:last-child { border-bottom: none; }
+    .autocomplete-item:hover, .autocomplete-item.active { background: var(--sylve-light); }
+
+    .autocomplete-item .ac-latin {
+      font-size: 0.82rem;
+      font-style: italic;
+      color: var(--text);
+    }
+
+    .autocomplete-item .ac-commun {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    .autocomplete-item .ac-strate {
+      font-size: 0.65rem;
+      color: var(--text-light);
+    }
+
+    .autocomplete-noresult {
+      padding: 10px;
+      font-size: 0.78rem;
+      color: var(--text-light);
+      text-align: center;
+    }
+
+    /* ── BUTTONS ── */
+    .btn-add {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.78rem;
+      color: var(--sylve);
+      background: rgba(94,139,143,0.06);
+      border: 1px dashed rgba(94,139,143,0.3);
+      border-radius: 4px;
+      padding: 6px 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-add:hover { background: rgba(94,139,143,0.12); border-color: var(--sylve); }
+
+    .btn-add-melange {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem;
+      color: var(--sylve);
+      background: rgba(94,139,143,0.06);
+      border: 1px dashed rgba(94,139,143,0.3);
+      border-radius: var(--radius);
+      padding: 10px 16px;
+      cursor: pointer;
+      transition: all 0.15s;
+      width: 100%;
+      margin-bottom: 1.5rem;
+    }
+
+    .btn-add-melange:hover { background: rgba(94,139,143,0.12); border-color: var(--sylve); }
+
+    .btn-sort {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 4px 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+      margin-top: 0.4rem;
+    }
+
+    .btn-sort:hover { border-color: var(--text-muted); color: var(--text); }
+
+    /* ── ACTIONS ── */
+    .actions-bar {
+      display: flex;
+      gap: 0.8rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 400;
+      color: #fff;
+      background: var(--sylve);
+      border: none;
+      border-radius: var(--radius);
+      padding: 10px 24px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .btn-primary:hover { background: var(--sylve-dark); }
+
+    .btn-secondary {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 400;
+      color: var(--sylve);
+      background: none;
+      border: 1px solid var(--sylve);
+      border-radius: var(--radius);
+      padding: 9px 20px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-secondary:hover { background: var(--sylve-light); }
+
+    .btn-secondary.hidden { display: none; }
+
+    /* ── CALENDAR ZONE ── */
+    .calendar-zone {
+      padding: 2rem;
+      margin-top: 1rem;
+    }
+
+    .calendar-container {
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 24px;
+      position: relative;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .calendar-container.visible { opacity: 1; }
+
+    /* ── CALENDAR HEADER ── */
+    .cal-header-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .cal-title {
+      font-family: Helvetica, 'Helvetica Neue', Arial, sans-serif;
+      font-size: 0.85rem;
+      font-weight: 400;
+      color: var(--text);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    .cal-months-header {
+      display: flex;
+      margin-left: 180px;
+    }
+
+    .cal-month-label {
+      flex: 1;
+      text-align: center;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 11px;
+      color: var(--text-muted);
+      user-select: none;
+    }
+
+    /* ── MELANGE GROUP ── */
+    .cal-melange-group { margin-bottom: 20px; }
+    .cal-melange-group:last-child { margin-bottom: 0; }
+
+    .cal-melange-title {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* ── ESSENCE LINE ── */
+    .cal-essence-line {
+      display: flex;
+      align-items: center;
+      height: 28px;
+      margin-bottom: 2px;
+      position: relative;
+      cursor: default;
+    }
+
+    .cal-essence-name {
+      width: 180px;
+      min-width: 180px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      font-style: italic;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding-right: 8px;
+    }
+
+    .cal-band-container {
+      flex: 1;
+      height: 28px;
+      position: relative;
+      display: flex;
+    }
+
+    .cal-month-cell {
+      flex: 1;
+      height: 100%;
+      border-left: 1px solid #F0EFED;
+    }
+
+    .cal-month-cell:first-child { border-left: none; }
+
+    .cal-feuillage-band,
+    .cal-floraison-band {
+      position: absolute;
+      top: 0;
+      height: 100%;
+      border-radius: 3px;
+    }
+
+    .cal-feuillage-band { z-index: 1; }
+    .cal-floraison-band { z-index: 2; }
+
+    /* ── TOOLTIP ── */
+    .cal-tooltip {
+      display: none;
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--text);
+      color: #fff;
+      font-size: 0.72rem;
+      line-height: 1.5;
+      padding: 10px 14px;
+      border-radius: 6px;
+      white-space: nowrap;
+      z-index: 60;
+      pointer-events: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      margin-bottom: 4px;
+    }
+
+    .cal-tooltip::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-top-color: var(--text);
+    }
+
+    .cal-essence-line:hover .cal-tooltip { display: block; }
+
+    /* ── LEGEND ── */
+    .cal-legend {
+      display: flex;
+      gap: 1.5rem;
+      margin-top: 20px;
+      padding-top: 12px;
+      border-top: 1px solid #F0EFED;
+    }
+
+    .cal-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .cal-legend-swatch {
+      width: 16px;
+      height: 10px;
+      border-radius: 2px;
+    }
+
+    /* ── FOOTER ── */
+    .cal-footer {
+      text-align: right;
+      margin-top: 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 10px;
+      color: var(--border);
+    }
+
+    /* ── EMPTY STATE ── */
+    .calendar-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 4rem 2rem;
+      text-align: center;
+    }
+
+    .calendar-empty svg {
+      margin-bottom: 1.2rem;
+    }
+
+    .calendar-empty .empty-title {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
+    }
+
+    .calendar-empty .empty-sub {
+      font-size: 0.78rem;
+      color: var(--text-light);
+      max-width: 380px;
+      line-height: 1.5;
+    }
+
+    /* ── AUTH GATE ── */
+    .auth-gate {
+      position: absolute;
+      inset: 0;
+      background: rgba(247,246,244,0.92);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      z-index: 30;
+      text-align: center;
+      padding: 2rem;
+    }
+
+    .auth-gate .gate-title {
+      font-size: 0.92rem;
+      color: var(--text);
+      margin-bottom: 0.6rem;
+    }
+
+    .auth-gate .gate-link {
+      font-size: 0.82rem;
+      color: var(--sylve);
+      text-decoration: none;
+      border: 1px solid var(--sylve);
+      padding: 8px 20px;
+      border-radius: var(--radius);
+      transition: all 0.15s;
+    }
+
+    .auth-gate .gate-link:hover { background: var(--sylve-light); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 1024px) {
+      .input-zone, .title-bar { max-width: 100%; }
+    }
+
+    @media (max-width: 768px) {
+      .cal-essence-name { width: 140px; min-width: 140px; font-size: 11px; }
+      .cal-months-header { margin-left: 140px; }
+      header { padding: 0 1rem; }
+      .input-zone, .title-bar { padding-left: 1rem; padding-right: 1rem; }
+      .calendar-zone { padding: 1rem; }
+      .calendar-container { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-left">
+      <a href="/projet" class="logo">sylve</a>
+      <span class="logo-sub">projet</span>
+    </div>
+    <div class="header-right">
+      <span class="beta-tag">beta</span>
+    </div>
+  </header>
+
+  <!-- TITLE BAR -->
+  <div class="title-bar">
+    <h1>calendrier phenologique</h1>
+    <p>Visualisez les periodes de floraison et de feuillage de votre palette vegetale sur 12 mois</p>
+  </div>
+
+  <!-- ZONE DE SAISIE -->
+  <div class="input-zone">
+
+    <div class="section-label">Melanges et essences</div>
+
+    <div class="essence-counter" id="essence-counter">
+      <span class="count" id="essence-count">0</span> / 25 essences
+    </div>
+
+    <div id="melanges-container"></div>
+
+    <button class="btn-add-melange" onclick="addMelange()">+ Ajouter un melange</button>
+
+    <div class="section-label">Actions</div>
+    <div class="actions-bar">
+      <button class="btn-primary" onclick="generateCalendar()">Generer le calendrier</button>
+      <button class="btn-secondary hidden" id="btn-export" onclick="exportPNG()">Exporter en PNG</button>
+    </div>
+
+  </div>
+
+  <!-- CALENDAR ZONE -->
+  <div class="calendar-zone">
+    <div class="calendar-container" id="calendar-container">
+      <div class="calendar-empty" id="calendar-empty">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="#E2DED9" stroke-width="1.2">
+          <rect x="6" y="10" width="36" height="32" rx="4" />
+          <line x1="6" y1="18" x2="42" y2="18" />
+          <line x1="16" y1="6" x2="16" y2="14" />
+          <line x1="32" y1="6" x2="32" y2="14" />
+          <circle cx="18" cy="28" r="3" />
+          <circle cx="30" cy="28" r="3" />
+          <line x1="20" y1="36" x2="28" y2="36" />
+        </svg>
+        <div class="empty-title">Ajoutez des essences et cliquez sur "Generer le calendrier"</div>
+        <div class="empty-sub">Le calendrier phenologique affiche les periodes de floraison et de feuillage de votre palette vegetale</div>
+      </div>
+      <div id="calendar-content" style="display:none"></div>
+    </div>
+  </div>
+
+  <script>
+  // ═══════════════════════════════════════════════════════════
+  //  CONFIG SUPABASE
+  // ═══════════════════════════════════════════════════════════
+  const SUPABASE_URL  = 'https://jbqgyfbjyulezaclvmwc.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpicWd5ZmJqeXVsZXphY2x2bXdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzQyMDIsImV4cCI6MjA4ODcxMDIwMn0.dNibq1JOBz3UnqdLwENmS113TGKpw_UGWKR0cE8LgMI';
+
+  const { createClient } = supabase;
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+  let isAuthenticated = false;
+
+  async function checkAuth() {
+    const { data: { session } } = await sb.auth.getSession();
+    isAuthenticated = !!session;
+  }
+  checkAuth();
+
+  // ═══════════════════════════════════════════════════════════
+  //  BASE VEGETALE
+  // ═══════════════════════════════════════════════════════════
+  let PLANTES = [];
+
+  fetch('plantes-v1.json')
+    .then(r => r.json())
+    .then(data => {
+      PLANTES = data;
+      console.log(`Base vegetale : ${data.length} essences chargees`);
+    })
+    .catch(err => {
+      console.error('Erreur chargement base vegetale', err);
+    });
+
+  // ═══════════════════════════════════════════════════════════
+  //  ETAT APPLICATION
+  // ═══════════════════════════════════════════════════════════
+  let melanges = [];
+  let melangeCounter = 0;
+
+  const STRATE_ORDER = [
+    'arbre_grand', 'arbre_moyen', 'arbre_petit', 'arbuste',
+    'grimpante', 'vivace', 'graminee', 'fougere',
+    'couvre_sol', 'bulbe', 'aquatique'
+  ];
+
+  const STRATE_LABELS = {
+    arbre_grand: 'Arbre (grand)',
+    arbre_moyen: 'Arbre (moyen)',
+    arbre_petit: 'Arbre (petit)',
+    arbuste: 'Arbuste',
+    sous_arbuste: 'Sous-arbuste',
+    grimpante: 'Grimpante',
+    vivace: 'Vivace',
+    graminee: 'Graminee',
+    fougere: 'Fougere',
+    couvre_sol: 'Couvre-sol',
+    bulbe: 'Bulbe',
+    bambou: 'Bambou',
+    palmier: 'Palmier',
+    aquatique: 'Aquatique'
+  };
+
+  // ═══════════════════════════════════════════════════════════
+  //  MELANGES — GESTION
+  // ═══════════════════════════════════════════════════════════
+
+  function getTotalEssences() {
+    return melanges.reduce((sum, m) => sum + m.essences.filter(e => e.plante).length, 0);
+  }
+
+  function updateCounter() {
+    const count = getTotalEssences();
+    const el = document.getElementById('essence-counter');
+    const countEl = document.getElementById('essence-count');
+    countEl.textContent = count;
+    el.classList.toggle('limit', count >= 25);
+  }
+
+  function addMelange() {
+    melangeCounter++;
+    const melange = {
+      id: melangeCounter,
+      nom: '',
+      essences: []
+    };
+    melanges.push(melange);
+    renderMelanges();
+  }
+
+  function removeMelange(id) {
+    if (!confirm('Supprimer ce melange et toutes ses essences ?')) return;
+    melanges = melanges.filter(m => m.id !== id);
+    renderMelanges();
+    updateCounter();
+  }
+
+  function addEssence(melangeId) {
+    if (getTotalEssences() >= 25) return;
+    const melange = melanges.find(m => m.id === melangeId);
+    if (!melange) return;
+    melange.essences.push({ id: Date.now(), plante: null, searchText: '' });
+    renderMelanges();
+  }
+
+  function removeEssence(melangeId, essenceId) {
+    const melange = melanges.find(m => m.id === melangeId);
+    if (!melange) return;
+    melange.essences = melange.essences.filter(e => e.id !== essenceId);
+    renderMelanges();
+    updateCounter();
+  }
+
+  function sortByStrate(melangeId) {
+    const melange = melanges.find(m => m.id === melangeId);
+    if (!melange) return;
+    melange.essences.sort((a, b) => {
+      const sa = a.plante ? STRATE_ORDER.indexOf(a.plante.strate) : 999;
+      const sb_ = b.plante ? STRATE_ORDER.indexOf(b.plante.strate) : 999;
+      return (sa === -1 ? 998 : sa) - (sb_ === -1 ? 998 : sb_);
+    });
+    renderMelanges();
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  //  RENDU MELANGES
+  // ═══════════════════════════════════════════════════════════
+
+  function renderMelanges() {
+    const container = document.getElementById('melanges-container');
+    container.innerHTML = '';
+
+    melanges.forEach((melange, idx) => {
+      const block = document.createElement('div');
+      block.className = 'melange-block';
+
+      const defaultName = 'Melange ' + (idx + 1);
+
+      let essencesHTML = '';
+      melange.essences.forEach(ess => {
+        let metaHTML = '';
+        if (ess.plante) {
+          const p = ess.plante;
+          const strateLabel = STRATE_LABELS[p.strate] || p.strate || '';
+          const famille = p.famille || '';
+          const persistance = p.persistance || '';
+          let badgeClass = 'persistant';
+          if (persistance === 'caduc') badgeClass = 'caduc';
+          else if (persistance === 'semi-persistant') badgeClass = 'semi-persistant';
+
+          metaHTML = `<div class="essence-meta">
+            <span>${strateLabel}${famille ? ' — ' + famille : ''}</span>
+            <span class="badge-persistance ${badgeClass}">${persistance}</span>
+          </div>`;
+        }
+
+        essencesHTML += `
+          <div class="essence-row">
+            <div class="essence-search-wrap">
+              <input type="text"
+                class="essence-search${ess.plante ? ' validated' : ''}"
+                value="${ess.plante ? ess.plante.nom_latin : escapeHtml(ess.searchText)}"
+                placeholder="Rechercher une essence..."
+                oninput="onEssenceSearch(this, ${melange.id}, ${ess.id})"
+                onfocus="onEssenceSearch(this, ${melange.id}, ${ess.id})"
+                data-melange="${melange.id}"
+                data-essence="${ess.id}"
+                ${ess.plante ? 'readonly' : ''}
+              />
+              <div class="autocomplete-list" id="ac-${melange.id}-${ess.id}"></div>
+              ${metaHTML}
+            </div>
+            <button class="btn-delete-essence" onclick="removeEssence(${melange.id}, ${ess.id})" title="Supprimer">&times;</button>
+          </div>`;
+      });
+
+      block.innerHTML = `
+        <div class="melange-header">
+          <input type="text" class="melange-name-input"
+            value="${escapeHtml(melange.nom)}"
+            placeholder="${defaultName}"
+            oninput="melanges.find(m=>m.id===${melange.id}).nom=this.value"
+          />
+          <button class="btn-delete-melange" onclick="removeMelange(${melange.id})" title="Supprimer le melange">&times;</button>
+        </div>
+        ${essencesHTML}
+        <div style="display:flex;gap:0.5rem;margin-top:0.6rem;flex-wrap:wrap">
+          <button class="btn-add" onclick="addEssence(${melange.id})">+ Ajouter une essence</button>
+          ${melange.essences.length > 1 ? `<button class="btn-sort" onclick="sortByStrate(${melange.id})">Trier par strate</button>` : ''}
+        </div>
+      `;
+
+      container.appendChild(block);
+    });
+
+    updateCounter();
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  //  AUTOCOMPLETION
+  // ═══════════════════════════════════════════════════════════
+
+  function normalize(str) {
+    return str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
+  function getSelectedIds() {
+    const ids = new Set();
+    melanges.forEach(m => m.essences.forEach(e => { if (e.plante) ids.add(e.plante.id); }));
+    return ids;
+  }
+
+  let noResultTimer = null;
+
+  function onEssenceSearch(input, melangeId, essenceId) {
+    const melange = melanges.find(m => m.id === melangeId);
+    if (!melange) return;
+    const ess = melange.essences.find(e => e.id === essenceId);
+    if (!ess) return;
+
+    // If already validated and user tries to type, reset
+    if (ess.plante) {
+      ess.plante = null;
+      ess.searchText = '';
+      input.classList.remove('validated');
+      input.readOnly = false;
+      input.value = '';
+      // Remove meta
+      const meta = input.parentElement.querySelector('.essence-meta');
+      if (meta) meta.remove();
+    }
+
+    const query = input.value.trim();
+    ess.searchText = query;
+    const listEl = document.getElementById(`ac-${melangeId}-${essenceId}`);
+
+    if (query.length < 3) {
+      listEl.classList.remove('open');
+      listEl.innerHTML = '';
+      return;
+    }
+
+    const nq = normalize(query);
+    const selectedIds = getSelectedIds();
+    const results = [];
+
+    for (const p of PLANTES) {
+      if (selectedIds.has(p.id)) continue;
+      const nLatin = normalize(p.nom_latin || '');
+      const nCommun = normalize(p.nom_commun || '');
+      if (nLatin.includes(nq) || nCommun.includes(nq)) {
+        results.push(p);
+        if (results.length >= 8) break;
+      }
+    }
+
+    if (noResultTimer) clearTimeout(noResultTimer);
+
+    if (results.length === 0) {
+      noResultTimer = setTimeout(() => {
+        listEl.innerHTML = '<div class="autocomplete-noresult">Aucune essence trouvee</div>';
+        listEl.classList.add('open');
+      }, 500);
+      return;
+    }
+
+    listEl.innerHTML = results.map((p, i) => `
+      <div class="autocomplete-item${i === 0 ? ' active' : ''}"
+        onmousedown="selectEssence(${melangeId}, ${essenceId}, '${p.id}')">
+        <div class="ac-latin">${escapeHtml(p.nom_latin)}</div>
+        <div class="ac-commun">${escapeHtml(p.nom_commun || '')}</div>
+        <div class="ac-strate">${STRATE_LABELS[p.strate] || p.strate || ''}</div>
+      </div>
+    `).join('');
+    listEl.classList.add('open');
+
+    // Keyboard navigation
+    input.onkeydown = function(e) {
+      const items = listEl.querySelectorAll('.autocomplete-item');
+      let activeIdx = Array.from(items).findIndex(el => el.classList.contains('active'));
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (activeIdx < items.length - 1) {
+          items[activeIdx]?.classList.remove('active');
+          items[activeIdx + 1]?.classList.add('active');
+        }
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (activeIdx > 0) {
+          items[activeIdx]?.classList.remove('active');
+          items[activeIdx - 1]?.classList.add('active');
+        }
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const active = listEl.querySelector('.autocomplete-item.active');
+        if (active) active.dispatchEvent(new Event('mousedown'));
+      } else if (e.key === 'Escape') {
+        listEl.classList.remove('open');
+      }
+    };
+  }
+
+  function selectEssence(melangeId, essenceId, planteId) {
+    const melange = melanges.find(m => m.id === melangeId);
+    if (!melange) return;
+    const ess = melange.essences.find(e => e.id === essenceId);
+    if (!ess) return;
+    const plante = PLANTES.find(p => p.id === planteId);
+    if (!plante) return;
+
+    ess.plante = plante;
+    ess.searchText = plante.nom_latin;
+
+    const listEl = document.getElementById(`ac-${melangeId}-${essenceId}`);
+    listEl.classList.remove('open');
+    listEl.innerHTML = '';
+
+    renderMelanges();
+  }
+
+  // Close dropdowns on outside click
+  document.addEventListener('click', function(e) {
+    if (!e.target.classList.contains('essence-search')) {
+      document.querySelectorAll('.autocomplete-list').forEach(el => {
+        el.classList.remove('open');
+      });
+    }
+  });
+
+  // ═══════════════════════════════════════════════════════════
+  //  PARSER COULEURS FLORAISON
+  // ═══════════════════════════════════════════════════════════
+
+  const BASE_COLORS = {
+    'blanc':    '#F5F0EB',
+    'creme':    '#FDF5E6',
+    'crème':    '#FDF5E6',
+    'ivoire':   '#FFFFF0',
+    'jaune':    '#F0D060',
+    'citron':   '#F5E050',
+    'or':       '#DAA520',
+    'doré':     '#C5A55A',
+    'orange':   '#E8863A',
+    'abricot':  '#FBCEB1',
+    'apricot':  '#FBCEB1',
+    'pêche':    '#FFDAB9',
+    'saumon':   '#FA8072',
+    'rouge':    '#C44040',
+    'écarlate': '#FF2400',
+    'magenta':  '#C71585',
+    'carminé':  '#960018',
+    'rose':     '#E8A0B0',
+    'mauve':    '#B08CB0',
+    'violet':   '#7B5EA7',
+    'indigo':   '#4B0082',
+    'pourpre':  '#800080',
+    'lilas':    '#C8A2C8',
+    'lavande':  '#B57EDC',
+    'améthyste':'#9966CC',
+    'bleu':     '#6A8EB0',
+    'cobalt':   '#0047AB',
+    'vert':     '#6B8E6B',
+    'brun':     '#8B6F47',
+    'marron':   '#6B4226',
+    'bronze':   '#CD7F32',
+    'rouille':  '#B7410E',
+    'beige':    '#D4C5A9',
+    'gris':     '#A0A0A0',
+    'argenté':  '#C0C0C0',
+    'argent':   '#C0C0C0',
+    'noir':     '#3D3D3D',
+    'multiple': '#B08CB0'
+  };
+
+  const MODIFIERS = {
+    'pâle':     0.30,
+    'pale':     0.30,
+    'clair':    0.25,
+    'tendre':   0.20,
+    'rosé':     0.15,
+    'vif':      0.00,
+    'foncé':    -0.30,
+    'fonce':    -0.30,
+    'sombre':   -0.25,
+    'profond':  -0.20
+  };
+
+  function parseCouleurFloraison(couleurTexte) {
+    if (!couleurTexte) return null;
+    if (Array.isArray(couleurTexte)) couleurTexte = couleurTexte[0];
+    if (!couleurTexte) return null;
+
+    let normalized = couleurTexte.toLowerCase()
+      .replace(/[-_,]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    let foundColor = null;
+    let modifier = 0;
+
+    for (const [mod, value] of Object.entries(MODIFIERS)) {
+      if (normalized.includes(mod)) {
+        modifier = value;
+        break;
+      }
+    }
+
+    for (const word of normalized.split(' ')) {
+      const clean = word.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      for (const [key, hex] of Object.entries(BASE_COLORS)) {
+        const keyClean = key.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        if (clean === keyClean || word === key) {
+          foundColor = hex;
+          break;
+        }
+      }
+      if (foundColor) break;
+    }
+
+    if (!foundColor) return '#5E8B8F';
+
+    if (modifier !== 0) {
+      return adjustBrightness(foundColor, modifier);
+    }
+
+    return foundColor;
+  }
+
+  function adjustBrightness(hex, factor) {
+    const r = parseInt(hex.slice(1,3), 16);
+    const g = parseInt(hex.slice(3,5), 16);
+    const b = parseInt(hex.slice(5,7), 16);
+
+    const adjust = (c) => {
+      if (factor > 0) return Math.round(c + (255 - c) * factor);
+      return Math.round(c * (1 + factor));
+    };
+
+    const rr = Math.min(255, Math.max(0, adjust(r)));
+    const gg = Math.min(255, Math.max(0, adjust(g)));
+    const bb = Math.min(255, Math.max(0, adjust(b)));
+
+    return '#' + [rr, gg, bb].map(c => c.toString(16).padStart(2, '0')).join('');
+  }
+
+  function hexToRgb(hex) {
+    const r = parseInt(hex.slice(1,3), 16);
+    const g = parseInt(hex.slice(3,5), 16);
+    const b = parseInt(hex.slice(5,7), 16);
+    return { r, g, b };
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  //  MOIS LABELS
+  // ═══════════════════════════════════════════════════════════
+
+  const MOIS_ABBREV = ['J','F','M','A','M','J','J','A','S','O','N','D'];
+  const MOIS_NOMS = ['Janvier','Fevrier','Mars','Avril','Mai','Juin','Juillet','Aout','Septembre','Octobre','Novembre','Decembre'];
+
+  // ═══════════════════════════════════════════════════════════
+  //  GENERATION DU CALENDRIER
+  // ═══════════════════════════════════════════════════════════
+
+  function generateCalendar() {
+    // Check if there are any essences
+    const allEssences = [];
+    melanges.forEach(m => {
+      m.essences.forEach(e => {
+        if (e.plante) allEssences.push({ melange: m, essence: e });
+      });
+    });
+
+    if (allEssences.length === 0) return;
+
+    // Auth gate
+    if (!isAuthenticated) {
+      const container = document.getElementById('calendar-container');
+      document.getElementById('calendar-empty').style.display = 'none';
+      const content = document.getElementById('calendar-content');
+      content.style.display = 'block';
+      content.innerHTML = '';
+      container.classList.add('visible');
+
+      const gate = document.createElement('div');
+      gate.className = 'auth-gate';
+      gate.innerHTML = `
+        <div class="gate-title">Connectez-vous pour acceder au calendrier</div>
+        <a class="gate-link" href="/login?redirect=/projet/calendrier-phenologique">Se connecter</a>
+      `;
+      container.style.position = 'relative';
+      container.style.minHeight = '300px';
+      container.appendChild(gate);
+      return;
+    }
+
+    // Remove any existing auth gate
+    const existingGate = document.querySelector('.auth-gate');
+    if (existingGate) existingGate.remove();
+
+    // Build calendar
+    const container = document.getElementById('calendar-container');
+    const content = document.getElementById('calendar-content');
+    document.getElementById('calendar-empty').style.display = 'none';
+    content.style.display = 'block';
+
+    let html = '';
+
+    // Title
+    html += `<div class="cal-title">Calendrier phenologique</div>`;
+
+    // Months header
+    html += `<div class="cal-months-header">`;
+    MOIS_ABBREV.forEach(m => {
+      html += `<div class="cal-month-label">${m}</div>`;
+    });
+    html += `</div>`;
+
+    // Melange groups
+    melanges.forEach((melange, idx) => {
+      const validEssences = melange.essences.filter(e => e.plante);
+      if (validEssences.length === 0) return;
+
+      const nomMelange = melange.nom || ('Melange ' + (idx + 1));
+
+      html += `<div class="cal-melange-group">`;
+      html += `<div class="cal-melange-title">${escapeHtml(nomMelange)}</div>`;
+
+      validEssences.forEach(ess => {
+        const p = ess.plante;
+        html += renderEssenceLine(p);
+      });
+
+      html += `</div>`;
+    });
+
+    // Legend
+    const floraisonExampleColor = '#E8A0B0';
+    html += `<div class="cal-legend">`;
+    html += `<div class="cal-legend-item"><div class="cal-legend-swatch" style="background:${floraisonExampleColor};opacity:0.85"></div>Floraison</div>`;
+    html += `<div class="cal-legend-item"><div class="cal-legend-swatch" style="background:rgba(94,139,143,0.20)"></div>Feuillage persistant</div>`;
+    html += `<div class="cal-legend-item"><div class="cal-legend-swatch" style="background:rgba(140,191,140,0.25)"></div>Feuillage caduc</div>`;
+    html += `</div>`;
+
+    // Footer
+    html += `<div class="cal-footer">sylve.eco — Calendrier phenologique</div>`;
+
+    content.innerHTML = html;
+
+    // Fade in
+    container.classList.remove('visible');
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        container.classList.add('visible');
+      });
+    });
+
+    // Show export button
+    document.getElementById('btn-export').classList.remove('hidden');
+  }
+
+  function renderEssenceLine(p) {
+    const isPersistant = p.persistance === 'persistant' || p.persistance === 'semi-persistant';
+    const isCaduc = p.persistance === 'caduc';
+
+    // Feuillage band
+    let feuillageStyle = '';
+    if (isPersistant) {
+      feuillageStyle = `left:0;right:0;background:rgba(94,139,143,0.20);border-radius:3px;`;
+    } else if (isCaduc) {
+      // Mars (month 3) to October (month 10), with gradients
+      // Feb-mid = ~12.5%, March start = 16.67%, Oct end = 83.33%, mid-Nov = ~87.5%
+      feuillageStyle = `left:0;right:0;background:linear-gradient(to right,transparent 12.5%,rgba(140,191,140,0.25) 16.7%,rgba(140,191,140,0.25) 83.3%,transparent 87.5%);border-radius:3px;`;
+    }
+
+    // Floraison band
+    let floraisonStyle = '';
+    let floraisonColor = null;
+    if (p.floraison_debut && p.floraison_fin) {
+      floraisonColor = parseCouleurFloraison(p.couleur_floraison);
+      if (floraisonColor) {
+        const rgb = hexToRgb(floraisonColor);
+        // Position: month 1 = 0%, each month = 8.333%
+        const startPct = ((p.floraison_debut - 1) / 12 * 100);
+        const endPct = (p.floraison_fin / 12 * 100);
+        const fadeIn = startPct + 2;
+        const fadeOut = endPct - 2;
+
+        floraisonStyle = `left:${startPct}%;width:${endPct - startPct}%;background:linear-gradient(to right,transparent 0%,rgba(${rgb.r},${rgb.g},${rgb.b},0.85) 8%,rgba(${rgb.r},${rgb.g},${rgb.b},0.85) 92%,transparent 100%);border-radius:3px;`;
+      }
+    }
+
+    // Tooltip content
+    const strateLabel = STRATE_LABELS[p.strate] || p.strate || '';
+    const persistanceLabel = p.persistance || '';
+    let floraisonInfo = 'Pas de floraison significative';
+    if (p.floraison_debut && p.floraison_fin) {
+      const couleurText = p.couleur_floraison ? (Array.isArray(p.couleur_floraison) ? p.couleur_floraison[0] : p.couleur_floraison) : '';
+      floraisonInfo = `${MOIS_NOMS[p.floraison_debut - 1]} a ${MOIS_NOMS[p.floraison_fin - 1]}`;
+      if (couleurText) floraisonInfo += ` — ${couleurText}`;
+    }
+
+    const rusticite = p.rusticite_celsius != null ? `${p.rusticite_celsius}°C (${p.rusticite_usda || ''})` : '';
+
+    const tooltipHtml = `
+      <strong>${escapeHtml(p.nom_latin)}</strong><br/>
+      ${escapeHtml(p.nom_commun || '')}<br/>
+      Strate : ${strateLabel}<br/>
+      Persistance : ${persistanceLabel}<br/>
+      Floraison : ${floraisonInfo}${rusticite ? '<br/>Rusticite : ' + rusticite : ''}
+    `.trim();
+
+    // Month cells (background grid)
+    let monthCells = '';
+    for (let i = 0; i < 12; i++) {
+      monthCells += `<div class="cal-month-cell"></div>`;
+    }
+
+    return `
+      <div class="cal-essence-line">
+        <div class="cal-essence-name" title="${escapeHtml(p.nom_latin)}">${escapeHtml(p.nom_latin)}</div>
+        <div class="cal-band-container">
+          ${monthCells}
+          ${feuillageStyle ? `<div class="cal-feuillage-band" style="${feuillageStyle}"></div>` : ''}
+          ${floraisonStyle ? `<div class="cal-floraison-band" style="${floraisonStyle}"></div>` : ''}
+        </div>
+        <div class="cal-tooltip">${tooltipHtml}</div>
+      </div>
+    `;
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  //  EXPORT PNG
+  // ═══════════════════════════════════════════════════════════
+
+  function exportPNG() {
+    const calendarEl = document.getElementById('calendar-container');
+
+    // Temporarily add export padding
+    const origPadding = calendarEl.style.padding;
+    calendarEl.style.padding = '32px';
+    calendarEl.style.backgroundColor = '#FFFFFF';
+
+    html2canvas(calendarEl, {
+      scale: 3,
+      backgroundColor: '#FFFFFF',
+      useCORS: true,
+      logging: false
+    }).then(canvas => {
+      calendarEl.style.padding = origPadding || '24px';
+
+      const link = document.createElement('a');
+      link.download = 'calendrier-phenologique-sylve.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }).catch(err => {
+      calendarEl.style.padding = origPadding || '24px';
+      console.error('Export error', err);
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  //  INIT — creer un melange par defaut
+  // ═══════════════════════════════════════════════════════════
+
+  addMelange();
+
+  </script>
+</body>
+</html>
