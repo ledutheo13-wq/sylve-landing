@@ -740,7 +740,7 @@
   // ═══════════════════════════════════════════════════════════
   let PLANTES = [];
 
-  fetch('plantes-v1.json')
+  fetch('/projet/calendrier-phenologique/plantes-v1.json')
     .then(r => r.json())
     .then(data => {
       PLANTES = data;
