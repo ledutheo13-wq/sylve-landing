@@ -862,9 +862,10 @@
           const strateLabel = STRATE_LABELS[p.strate] || p.strate || '';
           const famille = p.famille || '';
           const persistance = p.persistance || '';
+          const persLow = (persistance || '').toLowerCase();
           let badgeClass = 'persistant';
-          if (persistance === 'caduc') badgeClass = 'caduc';
-          else if (persistance === 'semi-persistant') badgeClass = 'semi-persistant';
+          if (persLow.startsWith('caduc') || persLow === 'annuelle') badgeClass = 'caduc';
+          else if (persLow.startsWith('semi-persistant')) badgeClass = 'semi-persistant';
 
           metaHTML = `<div class="essence-meta">
             <span>${strateLabel}${famille ? ' — ' + famille : ''}</span>
@@ -1283,33 +1284,44 @@
   }
 
   function renderEssenceLine(p) {
-    const isPersistant = p.persistance === 'persistant' || p.persistance === 'semi-persistant';
-    const isCaduc = p.persistance === 'caduc';
+    const pers = (p.persistance || '').toLowerCase();
+    const isPersistant = pers.startsWith('persistant') || pers.startsWith('semi-persistant');
+    const isCaduc = !isPersistant; // caduc, caduque, annuelle, null → all get foliage band
 
     // Feuillage band
     let feuillageStyle = '';
     if (isPersistant) {
       feuillageStyle = `left:0;right:0;background:rgba(94,139,143,0.20);border-radius:3px;`;
-    } else if (isCaduc) {
+    } else {
       // Mars (month 3) to October (month 10), with gradients
-      // Feb-mid = ~12.5%, March start = 16.67%, Oct end = 83.33%, mid-Nov = ~87.5%
       feuillageStyle = `left:0;right:0;background:linear-gradient(to right,rgba(140,191,140,0) 12.5%,rgba(140,191,140,0.25) 16.7%,rgba(140,191,140,0.25) 83.3%,rgba(140,191,140,0) 87.5%);border-radius:3px;`;
     }
 
-    // Floraison band
-    let floraisonStyle = '';
-    let floraisonColor = null;
-    if (p.floraison_debut && p.floraison_fin) {
-      floraisonColor = parseCouleurFloraison(p.couleur_floraison);
+    // Floraison band(s)
+    let floraisonBands = [];
+    const debut = typeof p.floraison_debut === 'number' ? p.floraison_debut : parseInt(p.floraison_debut);
+    const fin = typeof p.floraison_fin === 'number' ? p.floraison_fin : parseInt(p.floraison_fin);
+
+    if (debut && fin && !isNaN(debut) && !isNaN(fin)) {
+      const floraisonColor = parseCouleurFloraison(p.couleur_floraison);
       if (floraisonColor) {
         const rgb = hexToRgb(floraisonColor);
-        // Position: month 1 = 0%, each month = 8.333%
-        const startPct = ((p.floraison_debut - 1) / 12 * 100);
-        const endPct = (p.floraison_fin / 12 * 100);
-        const fadeIn = startPct + 2;
-        const fadeOut = endPct - 2;
+        const grad = (s, e) => `left:${s}%;width:${e - s}%;background:linear-gradient(to right,rgba(${rgb.r},${rgb.g},${rgb.b},0) 0%,rgba(${rgb.r},${rgb.g},${rgb.b},0.85) 8%,rgba(${rgb.r},${rgb.g},${rgb.b},0.85) 92%,rgba(${rgb.r},${rgb.g},${rgb.b},0) 100%);border-radius:3px;`;
 
-        floraisonStyle = `left:${startPct}%;width:${endPct - startPct}%;background:linear-gradient(to right,rgba(${rgb.r},${rgb.g},${rgb.b},0) 0%,rgba(${rgb.r},${rgb.g},${rgb.b},0.85) 8%,rgba(${rgb.r},${rgb.g},${rgb.b},0.85) 92%,rgba(${rgb.r},${rgb.g},${rgb.b},0) 100%);border-radius:3px;`;
+        if (debut <= fin) {
+          // Normal case
+          const startPct = ((debut - 1) / 12 * 100);
+          const endPct = (fin / 12 * 100);
+          floraisonBands.push(grad(startPct, endPct));
+        } else {
+          // Wrap-around: debut > fin (e.g. Nov → Feb)
+          // Band 1: debut → December (end of line)
+          const startPct1 = ((debut - 1) / 12 * 100);
+          floraisonBands.push(grad(startPct1, 100));
+          // Band 2: January → fin
+          const endPct2 = (fin / 12 * 100);
+          floraisonBands.push(grad(0, endPct2));
+        }
       }
     }
 
@@ -1345,7 +1357,7 @@
         <div class="cal-band-container">
           ${monthCells}
           ${feuillageStyle ? `<div class="cal-feuillage-band" style="${feuillageStyle}"></div>` : ''}
-          ${floraisonStyle ? `<div class="cal-floraison-band" style="${floraisonStyle}"></div>` : ''}
+          ${floraisonBands.map(s => `<div class="cal-floraison-band" style="${s}"></div>`).join('')}
         </div>
         <div class="cal-tooltip">${tooltipHtml}</div>
       </div>
