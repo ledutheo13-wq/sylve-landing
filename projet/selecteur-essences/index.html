@@ -36,6 +36,7 @@ body {
   color: var(--text);
   min-height: 100vh;
   line-height: 1.5;
+  overflow: hidden;
 }
 
 /* ─── HEADER ─── */
@@ -55,34 +56,35 @@ header {
   padding: 3px 10px; border-radius: 20px;
 }
 
-/* ─── MAIN LAYOUT ─── */
-main {
-  max-width: 1140px;
-  margin: 0 auto;
-  padding: 24px 2rem 120px;
+/* ─── MAIN CONTAINER ─── */
+.main-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 52px);
 }
 
-.page-title {
-  font-family: 'DM Sans', sans-serif;
-  font-size: 1.25rem; font-weight: 400; color: var(--text);
-  margin-bottom: 4px;
-}
-.page-subtitle {
-  font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;
-}
-#db-status {
-  font-size: 0.75rem; color: var(--text-light); margin-bottom: 16px;
-  font-family: 'DM Mono', monospace;
+/* ─── SPLIT PANEL ─── */
+.split-panel {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
 }
 
-/* ─── ZONE 1 — FILTRES ─── */
-.filters-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+/* ─── LEFT PANEL — FILTERS ─── */
+.filters-panel {
+  width: 320px;
+  min-width: 320px;
+  max-width: 320px;
+  height: 100%;
+  overflow-y: auto;
   padding: 20px;
-  margin-bottom: 20px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
 }
+
+.filters-panel::-webkit-scrollbar { width: 6px; }
+.filters-panel::-webkit-scrollbar-track { background: transparent; }
+.filters-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
 .search-bar {
   position: relative; margin-bottom: 16px;
@@ -113,12 +115,8 @@ main {
 .ac-item .ac-common { color: var(--text-muted); margin-left: 6px; }
 .ac-item .ac-strate { color: var(--text-light); font-size: 11px; margin-left: 6px; }
 
-/* Filters grid */
-.filters-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 16px;
-}
+/* Filter groups */
+.filter-group { margin-bottom: 16px; }
 .filter-group label {
   display: block; font-size: 12px; color: var(--text-muted);
   margin-bottom: 6px; font-weight: 400;
@@ -157,7 +155,7 @@ input[type="range"]::-moz-range-thumb {
   border-radius: 50%; cursor: pointer; border: none;
 }
 
-/* Double range container */
+/* Double range */
 .double-range { position: relative; height: 6px; margin: 12px 0 4px; }
 .double-range input[type="range"] {
   position: absolute; top: 0; left: 0; width: 100%;
@@ -174,7 +172,6 @@ input[type="range"]::-moz-range-thumb {
   background: var(--sylve); border-radius: 3px; opacity: 0.4;
 }
 
-/* Dropdown-like select */
 .filter-select {
   padding: 6px 10px; font-size: 12px; border: 1px solid var(--border);
   border-radius: var(--radius); background: var(--surface); color: var(--text);
@@ -183,20 +180,6 @@ input[type="range"]::-moz-range-thumb {
 .filter-select:focus { border-color: var(--sylve); }
 
 .filter-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-
-/* Filter footer */
-.filters-footer {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-top: 16px; padding-top: 12px; border-top: 1px solid #F0EFED;
-}
-.results-count { font-size: 13px; color: var(--text); }
-.btn-reset {
-  font-size: 12px; color: var(--text-muted); background: none;
-  border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 6px 14px; cursor: pointer; font-family: 'DM Sans', sans-serif;
-  transition: all 200ms;
-}
-.btn-reset:hover { border-color: var(--text-muted); color: var(--text); }
 
 /* Family autocomplete */
 .family-input-wrap { position: relative; }
@@ -220,7 +203,37 @@ input[type="range"]::-moz-range-thumb {
 }
 .family-dropdown .fam-item:hover { background: var(--bg); }
 
-/* ─── ZONE 2 — RESULTS ─── */
+/* Filters footer */
+.filters-footer {
+  padding-top: 12px; border-top: 1px solid #F0EFED; margin-top: 8px;
+}
+.results-count { font-size: 13px; color: var(--text); margin-bottom: 8px; }
+.btn-reset {
+  font-size: 12px; color: var(--text-muted); background: none;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 6px 14px; cursor: pointer; font-family: 'DM Sans', sans-serif;
+  transition: all 200ms; width: 100%;
+}
+.btn-reset:hover { border-color: var(--text-muted); color: var(--text); }
+
+#db-status {
+  font-size: 0.7rem; color: var(--text-light);
+  font-family: 'DM Mono', monospace; margin-bottom: 12px;
+}
+
+/* ─── RIGHT PANEL — RESULTS ─── */
+.results-panel {
+  flex: 1;
+  height: 100%;
+  overflow-y: auto;
+  padding: 24px;
+  background: var(--bg);
+}
+
+.results-panel::-webkit-scrollbar { width: 8px; }
+.results-panel::-webkit-scrollbar-track { background: transparent; }
+.results-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
 .results-header {
   display: flex; justify-content: space-between; align-items: center;
   margin-bottom: 12px;
@@ -234,11 +247,9 @@ input[type="range"]::-moz-range-thumb {
 
 .results-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 12px;
 }
-@media (max-width: 1024px) { .results-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 768px) { .results-grid { grid-template-columns: 1fr; } }
 
 /* Essence card */
 .essence-card {
@@ -263,62 +274,68 @@ input[type="range"]::-moz-range-thumb {
   transition: all 200ms; margin-top: 2px; background: var(--surface);
 }
 .card-cb:hover { border-color: var(--sylve); }
-.card-cb.checked {
-  background: var(--sylve); border-color: var(--sylve);
-}
+.card-cb.checked { background: var(--sylve); border-color: var(--sylve); }
 .card-cb.checked::after {
   content: ''; display: block; width: 5px; height: 9px;
   border: solid white; border-width: 0 1.5px 1.5px 0;
   transform: rotate(45deg); margin-top: -1px;
 }
-.card-cb.disabled {
-  opacity: 0.4; cursor: not-allowed;
-}
-.card-nom-latin {
-  font-size: 14px; font-style: italic; color: var(--text); font-weight: 400;
-}
-.card-nom-commun {
-  font-size: 12px; color: var(--text-muted); margin-bottom: 8px; padding-left: 24px;
-}
+.card-cb.disabled { opacity: 0.4; cursor: not-allowed; }
+.card-nom-latin { font-size: 14px; font-style: italic; color: var(--text); font-weight: 400; }
+.card-nom-commun { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; padding-left: 24px; }
 .card-sep { border: none; border-top: 1px solid var(--border); margin-bottom: 8px; }
-.card-meta { font-size: 11px; color: var(--text-muted); padding-left: 0; }
+.card-meta { font-size: 11px; color: var(--text-muted); }
 .card-meta .meta-row { margin-bottom: 3px; display: flex; flex-wrap: wrap; gap: 4px; }
 .card-meta .meta-row:last-child { margin-bottom: 0; }
-.card-height, .card-rusticite {
-  font-family: 'DM Mono', monospace; font-size: 12px;
-}
+.card-height, .card-rusticite { font-family: 'DM Mono', monospace; font-size: 12px; }
 .card-floraison-dot {
   display: inline-block; width: 10px; height: 10px;
   border-radius: 50%; vertical-align: middle; margin-left: 4px;
 }
 
 /* Empty state */
-.empty-state {
-  text-align: center; padding: 60px 20px; color: var(--text-muted);
-}
+.empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
 .empty-state svg { margin-bottom: 16px; }
 .empty-state .empty-title { font-size: 14px; color: var(--text); margin-bottom: 6px; }
 .empty-state .empty-sub { font-size: 12px; color: var(--text-muted); }
 
-/* Loading more */
-.load-more {
-  text-align: center; padding: 20px; color: var(--text-light); font-size: 13px;
+.load-more-sentinel { height: 1px; }
+.load-more { text-align: center; padding: 20px; color: var(--text-light); font-size: 13px; }
+
+/* ─── PALETTE ZONE (bottom) ─── */
+.palette-zone {
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  padding: 24px;
+  display: none;
+  overflow-y: auto;
+  max-height: 45vh;
+}
+.palette-zone.has-selection { display: block; }
+
+.palette-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px; flex-wrap: wrap; gap: 8px;
+}
+.palette-title { font-size: 1rem; font-weight: 400; color: var(--text); }
+.palette-count { font-size: 13px; color: var(--text-muted); margin-left: 8px; }
+
+.project-name-input {
+  width: 100%; max-width: 400px; padding: 8px 12px; font-size: 13px;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface); color: var(--text);
+  font-family: 'DM Sans', sans-serif; outline: none; margin-bottom: 12px;
+}
+.project-name-input:focus { border-color: var(--sylve); }
+
+.drag-hint {
+  font-size: 12px; color: var(--text-muted); margin-bottom: 12px;
+  font-style: italic;
 }
 
-/* ─── STICKY BAR ─── */
-.selection-bar {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  z-index: 90;
-  display: flex; align-items: center; justify-content: center; gap: 16px;
-  padding: 12px 24px; height: 56px;
-  background: var(--bg);
-  border-top: 1px solid var(--border);
-  box-shadow: 0 -2px 8px rgba(0,0,0,0.04);
-  transform: translateY(100%);
-  transition: transform 300ms ease;
+.palette-actions {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;
 }
-.selection-bar.visible { transform: translateY(0); }
-.selection-bar .sel-count { font-size: 13px; color: var(--text); white-space: nowrap; }
 
 .btn-secondary {
   font-size: 12px; padding: 8px 16px;
@@ -336,42 +353,9 @@ input[type="range"]::-moz-range-thumb {
 }
 .btn-primary:hover { background: var(--sylve-dark); }
 
-/* ─── ZONE 3 — COMPOSITION ─── */
-.composition-panel { display: none; }
-.composition-panel.visible { display: block; }
-.results-zone { display: block; }
-.results-zone.hidden { display: none; }
-
-.compo-header {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 16px; flex-wrap: wrap; gap: 8px;
-}
-.compo-title { font-size: 1.1rem; font-weight: 400; color: var(--text); }
-.compo-count { font-size: 13px; color: var(--text-muted); margin-left: 8px; }
-.compo-back {
-  font-size: 12px; color: var(--text-muted); background: none;
-  border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 6px 14px; cursor: pointer; font-family: 'DM Sans', sans-serif;
-  transition: all 200ms;
-}
-.compo-back:hover { border-color: var(--sylve); color: var(--sylve); }
-
-.project-name-input {
-  width: 100%; max-width: 400px; padding: 8px 12px; font-size: 13px;
-  border: 1px solid var(--border); border-radius: var(--radius);
-  background: var(--surface); color: var(--text);
-  font-family: 'DM Sans', sans-serif; outline: none; margin-bottom: 16px;
-}
-.project-name-input:focus { border-color: var(--sylve); }
-
-.drag-hint {
-  font-size: 12px; color: var(--text-muted); margin-bottom: 16px;
-  font-style: italic;
-}
-
-/* Melange block */
+/* Melange blocks */
 .melange-block {
-  background: var(--surface);
+  background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 8px;
   margin-bottom: 12px;
@@ -379,7 +363,7 @@ input[type="range"]::-moz-range-thumb {
 }
 .melange-header {
   display: flex; align-items: center; gap: 8px;
-  padding: 12px 16px;
+  padding: 10px 16px;
   background: var(--bg);
   border-bottom: 1px solid var(--border);
 }
@@ -401,33 +385,29 @@ input[type="range"]::-moz-range-thumb {
 .melange-delete:hover { background: rgba(196,64,64,0.08); color: #C44040; }
 
 .melange-dropzone {
-  min-height: 40px; padding: 4px 0;
-  transition: all 200ms;
+  min-height: 36px; padding: 4px 0; transition: all 200ms;
 }
 .melange-dropzone.drop-active {
   border: 2px dashed var(--sylve);
   background: rgba(94,139,143,0.03);
-  border-radius: 4px; margin: 4px 8px;
-  min-height: 48px;
+  border-radius: 4px; margin: 4px 8px; min-height: 44px;
 }
 .melange-dropzone.drop-hover {
   border: 2px solid var(--sylve);
   background: rgba(94,139,143,0.08);
 }
 .melange-dropzone-empty {
-  padding: 12px 16px; font-size: 12px; color: var(--text-light);
-  text-align: center;
+  padding: 10px 16px; font-size: 12px; color: var(--text-light); text-align: center;
 }
 
-/* Condensed essence row */
+/* Essence row (condensed) */
 .essence-row {
   display: flex; align-items: center; gap: 8px;
   padding: 8px 12px;
   font-size: 12px; color: var(--text);
   border-bottom: 1px solid #F0EFED;
-  cursor: grab;
-  transition: background 200ms;
-  min-height: 36px;
+  cursor: grab; transition: background 200ms;
+  min-height: 36px; background: var(--surface);
 }
 .essence-row:hover { background: var(--bg); }
 .essence-row.dragging { opacity: 0.4; }
@@ -464,15 +444,9 @@ input[type="range"]::-moz-range-thumb {
 .row-menu-item:hover { background: var(--bg); }
 .row-menu-item.danger { color: #C44040; }
 
-/* Melange indicators */
 .melange-indicators {
   padding: 8px 16px; font-size: 11px; color: var(--text-muted);
   border-top: 1px solid #F0EFED; background: var(--bg);
-}
-
-/* Composition actions */
-.compo-actions {
-  display: flex; align-items: center; gap: 8px; margin-top: 16px; flex-wrap: wrap;
 }
 
 /* ─── EXPORT CONTAINER (hidden) ─── */
@@ -489,9 +463,7 @@ input[type="range"]::-moz-range-thumb {
   padding-bottom: 6px; border-bottom: 1px solid var(--border);
   margin-bottom: 0; margin-top: 16px;
 }
-#export-container table {
-  width: 100%; border-collapse: collapse; margin-bottom: 12px;
-}
+#export-container table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
 #export-container th {
   font-size: 11px; font-weight: 500; color: var(--text-muted);
   background: var(--bg); padding: 6px 10px; text-align: left;
@@ -512,7 +484,7 @@ input[type="range"]::-moz-range-thumb {
   vertical-align: middle; margin-right: 3px;
 }
 
-/* ─── OVERLAY GATE ─── */
+/* ─── OVERLAYS ─── */
 .gate-overlay {
   position: fixed; inset: 0; z-index: 200;
   background: rgba(42,40,38,0.5);
@@ -532,11 +504,9 @@ input[type="range"]::-moz-range-thumb {
 .gate-box a:hover { background: var(--sylve-dark); }
 .gate-close {
   position: absolute; top: 12px; right: 16px;
-  background: none; border: none; font-size: 20px; color: var(--text-muted);
-  cursor: pointer;
+  background: none; border: none; font-size: 20px; color: var(--text-muted); cursor: pointer;
 }
 
-/* ─── CONFIRM DIALOG ─── */
 .confirm-overlay {
   position: fixed; inset: 0; z-index: 210;
   background: rgba(42,40,38,0.4);
@@ -550,11 +520,37 @@ input[type="range"]::-moz-range-thumb {
 .confirm-box p { font-size: 13px; color: var(--text); margin-bottom: 16px; }
 .confirm-btns { display: flex; gap: 8px; justify-content: center; }
 
-/* Responsive tweaks */
+/* ─── RESPONSIVE ─── */
+@media (max-width: 1024px) {
+  body { overflow: auto; }
+
+  .main-container { height: auto; min-height: calc(100vh - 52px); }
+
+  .split-panel { flex-direction: column; overflow: visible; }
+
+  .filters-panel {
+    width: 100%; min-width: 100%; max-width: 100%;
+    height: auto; max-height: 50vh;
+    overflow-y: auto; position: static;
+    border-right: none; border-bottom: 1px solid var(--border);
+  }
+
+  .results-panel {
+    height: auto; overflow-y: visible;
+  }
+
+  .results-grid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  }
+
+  .palette-zone { max-height: none; }
+}
+
 @media (max-width: 768px) {
-  main { padding: 16px 1rem 120px; }
-  .filters-grid { grid-template-columns: 1fr; }
-  .compo-header { flex-direction: column; align-items: flex-start; }
+  .results-grid { grid-template-columns: 1fr; }
+  .filters-panel { padding: 16px; }
+  .results-panel { padding: 16px; }
+  .palette-zone { padding: 16px; }
   .essence-row { flex-wrap: wrap; }
   .essence-row .row-latin { min-width: auto; }
 }
@@ -570,19 +566,19 @@ input[type="range"]::-moz-range-thumb {
   <span class="header-tag">beta</span>
 </header>
 
-<main>
-  <h1 class="page-title">Selecteur d'essences</h1>
-  <p class="page-subtitle">Recherche multicritere et composition de palettes vegetales</p>
-  <div id="db-status">Chargement de la base vegetale...</div>
+<div class="main-container">
+  <!-- ═══ SPLIT PANEL ═══ -->
+  <div class="split-panel">
 
-  <!-- ═══ ZONE 1 — FILTRES ═══ -->
-  <div class="filters-card">
-    <div class="search-bar">
-      <input type="text" id="search-input" placeholder="Rechercher une essence (nom latin ou commun)..." autocomplete="off">
-      <div class="autocomplete-list" id="ac-list"></div>
-    </div>
+    <!-- ─── LEFT: FILTERS ─── -->
+    <div class="filters-panel">
+      <div id="db-status">Chargement de la base végétale...</div>
 
-    <div class="filters-grid">
+      <div class="search-bar">
+        <input type="text" id="search-input" placeholder="Rechercher une essence (nom latin ou commun)..." autocomplete="off">
+        <div class="autocomplete-list" id="ac-list"></div>
+      </div>
+
       <!-- Strate -->
       <div class="filter-group">
         <label>Strate</label>
@@ -593,8 +589,8 @@ input[type="range"]::-moz-range-thumb {
           <span class="pill" data-value="arbuste">arbuste</span>
           <span class="pill" data-value="grimpante">grimpante</span>
           <span class="pill" data-value="vivace">vivace</span>
-          <span class="pill" data-value="graminée">graminee</span>
-          <span class="pill" data-value="fougère">fougere</span>
+          <span class="pill" data-value="graminée">graminée</span>
+          <span class="pill" data-value="fougère">fougère</span>
           <span class="pill" data-value="couvre-sol">couvre-sol</span>
           <span class="pill" data-value="bulbe">bulbe</span>
           <span class="pill" data-value="aquatique">aquatique</span>
@@ -629,7 +625,7 @@ input[type="range"]::-moz-range-thumb {
           <span class="pill" data-value="limoneux">Limoneux</span>
           <span class="pill" data-value="argileux">Argileux</span>
           <span class="pill" data-value="calcaire">Calcaire</span>
-          <span class="pill" data-value="humifère">Humifere</span>
+          <span class="pill" data-value="humifère">Humifère</span>
         </div>
       </div>
 
@@ -643,20 +639,20 @@ input[type="range"]::-moz-range-thumb {
         </div>
       </div>
 
-      <!-- Humidite sol -->
+      <!-- Humidité -->
       <div class="filter-group">
-        <label>Humidite du sol</label>
+        <label>Humidité du sol</label>
         <div class="pills" data-filter="humidite_sol">
           <span class="pill" data-value="sec">Sec</span>
           <span class="pill" data-value="frais">Frais</span>
           <span class="pill" data-value="humide">Humide</span>
-          <span class="pill" data-value="détrempe">Detrempe</span>
+          <span class="pill" data-value="détrempe">Détrempé</span>
         </div>
       </div>
 
-      <!-- Rusticite -->
+      <!-- Rusticité -->
       <div class="filter-group">
-        <label>Rusticite</label>
+        <label>Rusticité</label>
         <div class="slider-group">
           <span class="slider-value" id="rust-value">0 °C (pas de filtre)</span>
           <input type="range" id="rust-slider" min="-40" max="0" value="0" step="1">
@@ -687,54 +683,54 @@ input[type="range"]::-moz-range-thumb {
         </div>
       </div>
 
-      <!-- Mellifere -->
+      <!-- Mellifère -->
       <div class="filter-group">
-        <label>Mellifere</label>
+        <label>Mellifère</label>
         <div class="pills" data-filter="mellifere">
-          <span class="pill" data-value="true">Mellifere uniquement</span>
+          <span class="pill" data-value="true">Mellifère uniquement</span>
         </div>
       </div>
 
-      <!-- Indigenat -->
+      <!-- Indigénat -->
       <div class="filter-group">
-        <label>Indigenat</label>
+        <label>Indigénat</label>
         <div class="filter-row">
-          <span class="pill" data-filter-single="indigenat" data-value="true">Indigene en</span>
+          <span class="pill" data-filter-single="indigenat" data-value="true">Indigène en</span>
           <select class="filter-select" id="bioregion-select" disabled>
             <option value="atlantique">Atlantique</option>
             <option value="continental">Continental</option>
-            <option value="mediterraneen">Mediterraneen</option>
+            <option value="mediterraneen">Méditerranéen</option>
             <option value="alpin">Alpin</option>
           </select>
         </div>
       </div>
 
-      <!-- Floraison periode -->
+      <!-- Période de floraison -->
       <div class="filter-group">
-        <label>Periode de floraison</label>
+        <label>Période de floraison</label>
         <div class="filter-row">
           <select class="filter-select" id="flora-debut">
-            <option value="">Debut</option>
-            <option value="1">Janvier</option><option value="2">Fevrier</option>
+            <option value="">Début</option>
+            <option value="1">Janvier</option><option value="2">Février</option>
             <option value="3">Mars</option><option value="4">Avril</option>
             <option value="5">Mai</option><option value="6">Juin</option>
-            <option value="7">Juillet</option><option value="8">Aout</option>
+            <option value="7">Juillet</option><option value="8">Août</option>
             <option value="9">Septembre</option><option value="10">Octobre</option>
-            <option value="11">Novembre</option><option value="12">Decembre</option>
+            <option value="11">Novembre</option><option value="12">Décembre</option>
           </select>
           <select class="filter-select" id="flora-fin">
             <option value="">Fin</option>
-            <option value="1">Janvier</option><option value="2">Fevrier</option>
+            <option value="1">Janvier</option><option value="2">Février</option>
             <option value="3">Mars</option><option value="4">Avril</option>
             <option value="5">Mai</option><option value="6">Juin</option>
-            <option value="7">Juillet</option><option value="8">Aout</option>
+            <option value="7">Juillet</option><option value="8">Août</option>
             <option value="9">Septembre</option><option value="10">Octobre</option>
-            <option value="11">Novembre</option><option value="12">Decembre</option>
+            <option value="11">Novembre</option><option value="12">Décembre</option>
           </select>
         </div>
       </div>
 
-      <!-- Couleur floraison -->
+      <!-- Couleur de floraison -->
       <div class="filter-group">
         <label>Couleur de floraison</label>
         <div class="pills" data-filter="couleur_floraison">
@@ -758,69 +754,62 @@ input[type="range"]::-moz-range-thumb {
           <div class="family-dropdown" id="family-dropdown"></div>
         </div>
       </div>
-    </div>
 
-    <div class="filters-footer">
-      <span class="results-count" id="results-count">0 essences correspondent a vos criteres</span>
-      <button class="btn-reset" id="btn-reset">Reinitialiser les filtres</button>
-    </div>
-  </div>
-
-  <!-- ═══ ZONE 2 — RESULTATS ═══ -->
-  <div class="results-zone" id="results-zone">
-    <div class="results-header">
-      <span class="count" id="results-count2"></span>
-      <select class="sort-select" id="sort-select">
-        <option value="strate">Trier par : Strate</option>
-        <option value="alpha">Trier par : Alphabetique</option>
-        <option value="rusticite">Trier par : Rusticite</option>
-        <option value="floraison">Trier par : Floraison</option>
-      </select>
-    </div>
-    <div class="results-grid" id="results-grid"></div>
-    <div class="load-more" id="load-more" style="display:none;">Chargement...</div>
-    <div class="empty-state" id="empty-state" style="display:none;">
-      <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="#E2DED9" stroke-width="1.5">
-        <circle cx="20" cy="20" r="14"/><line x1="30" y1="30" x2="42" y2="42"/>
-      </svg>
-      <div class="empty-title">Aucune essence ne correspond a ces criteres</div>
-      <div class="empty-sub">Essayez d'elargir vos filtres</div>
-    </div>
-  </div>
-
-  <!-- ═══ ZONE 3 — COMPOSITION ═══ -->
-  <div class="composition-panel" id="composition-panel">
-    <div class="compo-header">
-      <div>
-        <span class="compo-title">Ma palette</span>
-        <span class="compo-count" id="compo-count"></span>
+      <div class="filters-footer">
+        <div class="results-count" id="results-count">0 essences correspondent à vos critères</div>
+        <button class="btn-reset" id="btn-reset">Réinitialiser les filtres</button>
       </div>
-      <button class="compo-back" id="btn-back">&#8592; Retour aux resultats</button>
     </div>
-    <input type="text" class="project-name-input" id="nom-projet" placeholder="ex : Residence Alma — Phase 2">
-    <div class="drag-hint" id="drag-hint">Glissez les essences dans vos melanges pour organiser votre palette.</div>
-    <div id="melanges-container"></div>
-    <div class="compo-actions">
-      <button class="btn-secondary" id="btn-add-melange">+ Ajouter un melange</button>
-      <button class="btn-secondary" id="btn-sort-strate">Trier par strate</button>
-      <button class="btn-secondary btn-danger-text" id="btn-clear-all" style="color:#C44040;">Vider la selection</button>
-      <button class="btn-primary" id="btn-export-compo">Exporter en PNG</button>
+
+    <!-- ─── RIGHT: RESULTS ─── -->
+    <div class="results-panel" id="results-panel">
+      <div class="results-header">
+        <span class="count" id="results-count2"></span>
+        <select class="sort-select" id="sort-select">
+          <option value="strate">Trier par : Strate</option>
+          <option value="alpha">Trier par : Alphabétique</option>
+          <option value="rusticite">Trier par : Rusticité</option>
+          <option value="floraison">Trier par : Floraison</option>
+        </select>
+      </div>
+      <div class="results-grid" id="results-grid"></div>
+      <div class="load-more" id="load-more" style="display:none;">Chargement...</div>
+      <div class="load-more-sentinel" id="load-more-sentinel"></div>
+      <div class="empty-state" id="empty-state" style="display:none;">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="#E2DED9" stroke-width="1.5">
+          <circle cx="20" cy="20" r="14"/><line x1="30" y1="30" x2="42" y2="42"/>
+        </svg>
+        <div class="empty-title">Aucune essence ne correspond à ces critères</div>
+        <div class="empty-sub">Essayez d'élargir vos filtres</div>
+      </div>
     </div>
   </div>
-</main>
 
-<!-- Selection bar -->
-<div class="selection-bar" id="selection-bar">
-  <span class="sel-count" id="sel-count">0 / 50 essences selectionnees</span>
-  <button class="btn-secondary" id="btn-open-compo">Ma selection &#8593;</button>
-  <button class="btn-primary" id="btn-export">Exporter en PNG</button>
+  <!-- ═══ PALETTE ZONE (bottom) ═══ -->
+  <div class="palette-zone" id="palette-zone">
+    <div class="palette-header">
+      <div>
+        <span class="palette-title">Ma palette</span>
+        <span class="palette-count" id="palette-count"></span>
+      </div>
+    </div>
+    <input type="text" class="project-name-input" id="nom-projet" placeholder="ex : Résidence Alma — Phase 2">
+    <div class="drag-hint" id="drag-hint">Glissez les essences dans vos mélanges pour organiser votre palette.</div>
+    <div class="palette-actions">
+      <button class="btn-secondary" id="btn-add-melange">+ Ajouter un mélange</button>
+      <button class="btn-secondary" id="btn-sort-strate">Trier par strate</button>
+      <button class="btn-secondary" id="btn-clear-all" style="color:#C44040;">Vider la sélection</button>
+      <button class="btn-primary" id="btn-export">Exporter en PNG</button>
+    </div>
+    <div id="melanges-container"></div>
+  </div>
 </div>
 
 <!-- Gate overlay -->
 <div class="gate-overlay" id="gate-overlay">
   <div class="gate-box" style="position:relative;">
     <button class="gate-close" id="gate-close">&times;</button>
-    <p>Connectez-vous pour exporter votre selection</p>
+    <p>Connectez-vous pour exporter votre sélection</p>
     <a href="/login?redirect=/projet/selecteur-essences">Se connecter</a>
   </div>
 </div>
@@ -841,7 +830,7 @@ input[type="range"]::-moz-range-thumb {
 
 <script>
 /* ═══════════════════════════════════════════════════
-   SYLVE — Selecteur d'essences
+   SYLVE — Sélecteur d'essences
    ═══════════════════════════════════════════════════ */
 
 // ─── Supabase ───
@@ -861,38 +850,21 @@ let displayCount = 0;
 const BATCH = 30;
 const MAX_SEL = 50;
 
-// Selection: Set of ids
 const selection = new Set();
-
-// Melanges: array of { id, name, essenceIds: [] }
 let melanges = [];
 let melangeCounter = 0;
 let firstDragDone = false;
 
-// Active filters state
 const filters = {
-  strate: [],
-  exposition: [],
-  besoins_hydriques: [],
-  type_sol: [],
-  ph_sol: [],
-  humidite_sol: [],
-  persistance: [],
-  mellifere: false,
-  indigenat: false,
-  bioregion: 'atlantique',
-  rusticite: 0,
-  heightMin: 0,
-  heightMax: 5000,
-  floraDebut: '',
-  floraFin: '',
-  couleur_floraison: [],
-  famille: ''
+  strate: [], exposition: [], besoins_hydriques: [], type_sol: [], ph_sol: [],
+  humidite_sol: [], persistance: [], mellifere: false, indigenat: false,
+  bioregion: 'atlantique', rusticite: 0, heightMin: 0, heightMax: 5000,
+  floraDebut: '', floraFin: '', couleur_floraison: [], famille: ''
 };
 
 // ─── Month names ───
-const MOIS = ['', 'janvier', 'fevrier', 'mars', 'avril', 'mai', 'juin',
-  'juillet', 'aout', 'septembre', 'octobre', 'novembre', 'decembre'];
+const MOIS = ['', 'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
+  'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
 
 // ─── Strate order ───
 const STRATE_ORDER = [
@@ -945,7 +917,6 @@ function parseCouleurFloraison(couleurTexte) {
   return modifier !== 0 ? adjustBrightness(foundColor, modifier) : foundColor;
 }
 
-// Color categories for filtering
 const CATEGORIES_COULEUR = {
   'blanc': ['blanc','crème','creme','ivoire','argenté','argent'],
   'jaune': ['jaune','citron','or','doré'],
@@ -973,22 +944,18 @@ function getCategoriesCouleur(couleurTexte) {
   return categories.length > 0 ? categories : ['autre'];
 }
 
-// Pre-computed color categories per essence (filled after load)
 let colorCatCache = {};
 
-// ─── Normalize for search ───
 function norm(s) {
   return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
-// ─── Format height ───
 function fmtHeight(cm) {
   if (cm == null) return '?';
   if (cm >= 100) return (cm / 100).toLocaleString('fr-FR', { maximumFractionDigits: 1 }) + ' m';
   return cm + ' cm';
 }
 
-// ─── Floraison overlap ───
 function floraisonChevauche(essDebut, essFin, filtreDebut, filtreFin) {
   if (!essDebut || !essFin) return false;
   function moisDansPlage(d, f) {
@@ -1005,21 +972,18 @@ fetch('plantes-v1.json')
   .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
   .then(data => {
     PLANTES = data;
-    document.getElementById('db-status').textContent = '\u2713 Base vegetale : ' + PLANTES.length + ' essences';
+    document.getElementById('db-status').textContent = '\u2713 Base végétale : ' + PLANTES.length + ' essences';
     document.getElementById('db-status').style.color = '#5E8B8F';
-    // Pre-compute color categories
     PLANTES.forEach(p => { colorCatCache[p.id] = getCategoriesCouleur(p.couleur_floraison); });
-    // Collect families
     buildFamilyList();
     applyFilters();
   })
   .catch(err => {
-    console.error('Erreur chargement base vegetale', err);
-    document.getElementById('db-status').textContent = '\u2717 Erreur de chargement de la base vegetale';
+    console.error('Erreur chargement base végétale', err);
+    document.getElementById('db-status').textContent = '\u2717 Erreur de chargement de la base végétale';
     document.getElementById('db-status').style.color = '#C44040';
   });
 
-// ─── Family list ───
 let allFamilies = [];
 function buildFamilyList() {
   const s = new Set();
@@ -1045,7 +1009,7 @@ document.querySelectorAll('.pills[data-filter]').forEach(container => {
   });
 });
 
-// Indigenat pill
+// Indigénat pill
 const indPill = document.querySelector('[data-filter-single="indigenat"]');
 const bioSelect = document.getElementById('bioregion-select');
 indPill.addEventListener('click', () => {
@@ -1059,7 +1023,7 @@ bioSelect.addEventListener('change', () => {
   if (filters.indigenat) applyFilters();
 });
 
-// Rusticite slider
+// Rusticité slider
 const rustSlider = document.getElementById('rust-slider');
 const rustValue = document.getElementById('rust-value');
 rustSlider.addEventListener('input', () => {
@@ -1090,7 +1054,7 @@ hMin.addEventListener('input', updateHeight);
 hMax.addEventListener('input', updateHeight);
 updateHeight();
 
-// Flora period
+// Floraison period
 const floraDebut = document.getElementById('flora-debut');
 const floraFin = document.getElementById('flora-fin');
 floraDebut.addEventListener('change', () => { filters.floraDebut = floraDebut.value; applyFilters(); });
@@ -1147,67 +1111,52 @@ function resetFilters() {
 // ═══ FILTERING ═══
 function applyFilters() {
   filtered = PLANTES.filter(p => {
-    // Strate
     if (filters.strate.length && !filters.strate.includes(p.strate)) return false;
-    // Exposition (array field, OR within filter)
     if (filters.exposition.length) {
       const pExp = (p.exposition || []).map(e => norm(e));
       if (!filters.exposition.some(f => pExp.includes(norm(f)))) return false;
     }
-    // Besoins hydriques (string)
     if (filters.besoins_hydriques.length) {
       if (!filters.besoins_hydriques.includes(norm(p.besoins_hydriques || ''))) return false;
     }
-    // Type sol (array)
     if (filters.type_sol.length) {
       const pSol = (p.type_sol || []).map(s => norm(s));
       if (!filters.type_sol.some(f => pSol.includes(norm(f)))) return false;
     }
-    // pH (array)
     if (filters.ph_sol.length) {
       const pPh = (p.ph_sol || []).map(s => norm(s));
       if (!filters.ph_sol.some(f => pPh.includes(norm(f)))) return false;
     }
-    // Humidite (array)
     if (filters.humidite_sol.length) {
       const pH = (p.humidite_sol || []).map(s => norm(s));
       if (!filters.humidite_sol.some(f => pH.includes(norm(f)))) return false;
     }
-    // Rusticite
     if (filters.rusticite < 0) {
       if ((p.rusticite_celsius == null) || p.rusticite_celsius > filters.rusticite) return false;
     }
-    // Hauteur overlap
     if (filters.heightMin > 0 || filters.heightMax < 5000) {
       if (p.hauteur_max_cm == null || p.hauteur_min_cm == null) return false;
       if (!(p.hauteur_max_cm >= filters.heightMin && p.hauteur_min_cm <= filters.heightMax)) return false;
     }
-    // Persistance
     if (filters.persistance.length) {
       if (!filters.persistance.includes(norm(p.persistance || ''))) return false;
     }
-    // Mellifere
     if (filters.mellifere && !p.mellifere) return false;
-    // Indigenat
     if (filters.indigenat) {
       if (!p.indigenat || !p.indigenat[filters.bioregion]) return false;
     }
-    // Floraison period
     if (filters.floraDebut && filters.floraFin) {
       if (!floraisonChevauche(p.floraison_debut, p.floraison_fin, parseInt(filters.floraDebut), parseInt(filters.floraFin))) return false;
     }
-    // Couleur floraison
     if (filters.couleur_floraison.length) {
       const cats = colorCatCache[p.id] || [];
       if (!filters.couleur_floraison.some(f => cats.includes(f))) return false;
     }
-    // Famille
     if (filters.famille) {
       if (!norm(p.famille || '').includes(norm(filters.famille))) return false;
     }
     return true;
   });
-
   sortFiltered();
   displayCount = 0;
   renderResults();
@@ -1231,38 +1180,36 @@ function sortFiltered() {
 }
 
 function updateCounts() {
-  const txt = filtered.length + ' essences correspondent a vos criteres';
+  const txt = filtered.length + ' essences correspondent à vos critères';
   document.getElementById('results-count').textContent = txt;
-  document.getElementById('results-count2').textContent = txt;
+  document.getElementById('results-count2').textContent = filtered.length + ' essences';
 }
 
 // ═══ RENDER RESULTS ═══
 const grid = document.getElementById('results-grid');
 const emptyState = document.getElementById('empty-state');
-const loadMore = document.getElementById('load-more');
+const loadMoreEl = document.getElementById('load-more');
 
 function renderResults() {
   grid.innerHTML = '';
   if (filtered.length === 0) {
     emptyState.style.display = 'block';
-    loadMore.style.display = 'none';
+    loadMoreEl.style.display = 'none';
     return;
   }
   emptyState.style.display = 'none';
   displayCount = Math.min(BATCH, filtered.length);
   for (let i = 0; i < displayCount; i++) appendCard(filtered[i]);
-  loadMore.style.display = displayCount < filtered.length ? 'block' : 'none';
+  loadMoreEl.style.display = displayCount < filtered.length ? 'block' : 'none';
 }
 
 function appendCard(p) {
   const card = document.createElement('div');
   card.className = 'essence-card' + (selection.has(p.id) ? ' selected' : '');
   card.dataset.id = p.id;
-
   const isSel = selection.has(p.id);
   const isDisabled = !isSel && selection.size >= MAX_SEL;
 
-  // Exposition icons
   const expo = (p.exposition || []).map(e => {
     const n = norm(e);
     if (n === 'soleil') return '\u2600';
@@ -1271,7 +1218,6 @@ function appendCard(p) {
     return '';
   }).join(' ');
 
-  // Floraison
   let floraHTML = '';
   if (p.floraison_debut && p.floraison_fin) {
     const color = parseCouleurFloraison(p.couleur_floraison);
@@ -1281,17 +1227,16 @@ function appendCard(p) {
     floraHTML = '<span style="color:var(--text-light)">Pas de floraison significative</span>';
   }
 
-  // Indigenat
   let indHTML = '';
   if (filters.indigenat) {
-    if (p.indigenat && p.indigenat[filters.bioregion]) indHTML = 'Indigene';
+    if (p.indigenat && p.indigenat[filters.bioregion]) indHTML = 'Indigène';
   } else if (p.indigenat) {
     const bios = [];
     if (p.indigenat.atlantique) bios.push('Atlantique');
     if (p.indigenat.continental) bios.push('Continental');
-    if (p.indigenat.mediterraneen) bios.push('Mediterraneen');
+    if (p.indigenat.mediterraneen) bios.push('Méditerranéen');
     if (p.indigenat.alpin) bios.push('Alpin');
-    if (bios.length) indHTML = 'Indigene (' + bios.join(', ') + ')';
+    if (bios.length) indHTML = 'Indigène (' + bios.join(', ') + ')';
   }
 
   card.innerHTML =
@@ -1305,13 +1250,12 @@ function appendCard(p) {
     '<div class="card-meta">' +
       '<div class="meta-row">' + (p.strate || '') + ' &middot; ' + (p.famille || '') + '</div>' +
       '<div class="meta-row">' + expo + '&nbsp;&nbsp;' + (p.besoins_hydriques || '') + '&nbsp;&nbsp;' + (p.persistance || '') + '</div>' +
-      '<div class="meta-row"><span class="card-height">' + fmtHeight(p.hauteur_min_cm) + ' — ' + fmtHeight(p.hauteur_max_cm) + '</span>&nbsp;&nbsp;<span class="card-rusticite">Rusticite : ' + (p.rusticite_celsius != null ? p.rusticite_celsius + ' °C' : '?') + '</span></div>' +
+      '<div class="meta-row"><span class="card-height">' + fmtHeight(p.hauteur_min_cm) + ' — ' + fmtHeight(p.hauteur_max_cm) + '</span>&nbsp;&nbsp;<span class="card-rusticite">Rusticité : ' + (p.rusticite_celsius != null ? p.rusticite_celsius + ' °C' : '?') + '</span></div>' +
       '<div class="meta-row">Floraison : ' + floraHTML + '</div>' +
       (indHTML ? '<div class="meta-row">' + indHTML + '</div>' : '') +
-      (p.mellifere ? '<div class="meta-row">Mellifere</div>' : '') +
+      (p.mellifere ? '<div class="meta-row">Mellifère</div>' : '') +
     '</div>';
 
-  // Click handler on checkbox
   card.querySelector('.card-cb').addEventListener('click', (e) => {
     e.stopPropagation();
     toggleSelection(p.id);
@@ -1320,22 +1264,25 @@ function appendCard(p) {
   grid.appendChild(card);
 }
 
-// ─── Infinite scroll ───
+// ─── Infinite scroll — targets the results panel ───
+const resultsPanel = document.getElementById('results-panel');
+const sentinel = document.getElementById('load-more-sentinel');
+
 const observer = new IntersectionObserver(entries => {
   if (entries[0].isIntersecting && displayCount < filtered.length) {
     const next = Math.min(displayCount + BATCH, filtered.length);
     for (let i = displayCount; i < next; i++) appendCard(filtered[i]);
     displayCount = next;
-    loadMore.style.display = displayCount < filtered.length ? 'block' : 'none';
+    loadMoreEl.style.display = displayCount < filtered.length ? 'block' : 'none';
   }
-}, { rootMargin: '200px' });
-observer.observe(loadMore);
+}, { root: resultsPanel, rootMargin: '200px' });
+
+observer.observe(sentinel);
 
 // ═══ SELECTION ═══
 function toggleSelection(id) {
   if (selection.has(id)) {
     selection.delete(id);
-    // Remove from melanges
     melanges.forEach(m => {
       const idx = m.essenceIds.indexOf(id);
       if (idx !== -1) m.essenceIds.splice(idx, 1);
@@ -1348,7 +1295,6 @@ function toggleSelection(id) {
 }
 
 function updateSelectionUI() {
-  // Update cards
   document.querySelectorAll('.essence-card').forEach(card => {
     const id = card.dataset.id;
     const isSel = selection.has(id);
@@ -1357,15 +1303,14 @@ function updateSelectionUI() {
     cb.classList.toggle('checked', isSel);
     const isDisabled = !isSel && selection.size >= MAX_SEL;
     cb.classList.toggle('disabled', isDisabled);
-    if (isDisabled) cb.title = 'Limite de 50 essences atteinte';
-    else cb.title = '';
+    cb.title = isDisabled ? 'Limite de 50 essences atteinte' : '';
   });
-  // Sticky bar
-  const bar = document.getElementById('selection-bar');
-  bar.classList.toggle('visible', selection.size > 0);
-  document.getElementById('sel-count').textContent = selection.size + ' / ' + MAX_SEL + ' essences selectionnees';
-  // Composition count
-  document.getElementById('compo-count').textContent = selection.size + ' essences';
+  // Palette zone visibility
+  const paletteZone = document.getElementById('palette-zone');
+  paletteZone.classList.toggle('has-selection', selection.size > 0);
+  document.getElementById('palette-count').textContent = selection.size + ' / ' + MAX_SEL + ' essences sélectionnées';
+  // Re-render melanges if palette is visible
+  if (selection.size > 0) renderMelanges();
 }
 
 // ═══ AUTOCOMPLETE SEARCH ═══
@@ -1419,26 +1364,7 @@ function selectAcItem(idx) {
   acResults = [];
 }
 
-// ═══ COMPOSITION PANEL ═══
-const compositionPanel = document.getElementById('composition-panel');
-const resultsZone = document.getElementById('results-zone');
-
-document.getElementById('btn-open-compo').addEventListener('click', openComposition);
-document.getElementById('btn-back').addEventListener('click', closeComposition);
-
-function openComposition() {
-  resultsZone.classList.add('hidden');
-  compositionPanel.classList.add('visible');
-  document.getElementById('compo-count').textContent = selection.size + ' essences';
-  renderMelanges();
-}
-
-function closeComposition() {
-  compositionPanel.classList.remove('visible');
-  resultsZone.classList.remove('hidden');
-}
-
-// ─── Melange management ───
+// ═══ MELANGE MANAGEMENT ═══
 document.getElementById('btn-add-melange').addEventListener('click', () => {
   melangeCounter++;
   melanges.push({ id: 'mel-' + melangeCounter, name: '', essenceIds: [] });
@@ -1459,12 +1385,11 @@ document.getElementById('btn-sort-strate').addEventListener('click', () => {
 });
 
 document.getElementById('btn-clear-all').addEventListener('click', () => {
-  showConfirm('Vider toute la selection ? Cette action est irreversible.', () => {
+  showConfirm('Vider toute la sélection ? Cette action est irréversible.', () => {
     selection.clear();
     melanges = [];
     melangeCounter = 0;
     updateSelectionUI();
-    closeComposition();
   });
 });
 
@@ -1478,39 +1403,30 @@ function renderMelanges() {
   const container = document.getElementById('melanges-container');
   container.innerHTML = '';
 
-  // User-created melanges
-  melanges.forEach(mel => {
-    container.appendChild(buildMelangeBlock(mel));
-  });
+  melanges.forEach(mel => container.appendChild(buildMelangeBlock(mel)));
 
-  // Non classees
+  // Non classées
   const unclassified = getUnclassifiedIds();
   const ncBlock = document.createElement('div');
   ncBlock.className = 'melange-block';
   ncBlock.innerHTML =
     '<div class="melange-header" style="opacity:0.7;">' +
-      '<span style="font-size:13px;color:var(--text-muted);">Non classees</span>' +
+      '<span style="font-size:13px;color:var(--text-muted);">Non classées</span>' +
       '<span class="melange-count">' + unclassified.length + ' essences</span>' +
     '</div>';
   const dz = document.createElement('div');
   dz.className = 'melange-dropzone';
   dz.dataset.melangeId = '__unclassified';
   if (unclassified.length === 0) {
-    dz.innerHTML = '<div class="melange-dropzone-empty">Aucune essence non classee</div>';
+    dz.innerHTML = '<div class="melange-dropzone-empty">Aucune essence non classée</div>';
   } else {
     unclassified.forEach(id => dz.appendChild(buildEssenceRow(id, '__unclassified')));
   }
   setupDropzone(dz, '__unclassified');
   ncBlock.appendChild(dz);
-
-  // Indicators for unclassified
-  if (unclassified.length > 0) {
-    ncBlock.appendChild(buildIndicators(unclassified));
-  }
-
+  if (unclassified.length > 0) ncBlock.appendChild(buildIndicators(unclassified));
   container.appendChild(ncBlock);
 
-  // Show/hide drag hint
   document.getElementById('drag-hint').style.display = firstDragDone ? 'none' : 'block';
 }
 
@@ -1524,7 +1440,7 @@ function buildMelangeBlock(mel) {
   nameInput.className = 'melange-name-input';
   nameInput.type = 'text';
   nameInput.value = mel.name;
-  nameInput.placeholder = 'Melange ' + (melanges.indexOf(mel) + 1);
+  nameInput.placeholder = 'Mélange ' + (melanges.indexOf(mel) + 1);
   nameInput.addEventListener('change', () => { mel.name = nameInput.value; });
 
   const count = document.createElement('span');
@@ -1535,7 +1451,7 @@ function buildMelangeBlock(mel) {
   del.className = 'melange-delete';
   del.innerHTML = '&times;';
   del.addEventListener('click', () => {
-    showConfirm('Supprimer ce melange ? Les essences retourneront dans Non classees.', () => {
+    showConfirm('Supprimer ce mélange ? Les essences retourneront dans Non classées.', () => {
       melanges = melanges.filter(m => m.id !== mel.id);
       renderMelanges();
     });
@@ -1557,11 +1473,7 @@ function buildMelangeBlock(mel) {
   setupDropzone(dz, mel.id);
   block.appendChild(dz);
 
-  // Indicators
-  if (mel.essenceIds.length > 0) {
-    block.appendChild(buildIndicators(mel.essenceIds));
-  }
-
+  if (mel.essenceIds.length > 0) block.appendChild(buildIndicators(mel.essenceIds));
   return block;
 }
 
@@ -1574,7 +1486,6 @@ function buildEssenceRow(id, currentMelangeId) {
   row.draggable = true;
   row.dataset.essenceId = id;
 
-  // Floraison
   let floraStr = '—';
   if (p.floraison_debut && p.floraison_fin) {
     const color = parseCouleurFloraison(p.couleur_floraison);
@@ -1588,7 +1499,7 @@ function buildEssenceRow(id, currentMelangeId) {
     '<span class="row-info">' + (p.persistance || '') + '</span>' +
     '<span class="row-mono">' + fmtHeight(p.hauteur_min_cm) + '–' + fmtHeight(p.hauteur_max_cm) + '</span>' +
     '<span class="row-info">' + floraStr + '</span>' +
-    '<span class="row-mono">' + (p.rusticite_celsius != null ? p.rusticite_celsius + '°C' : '') + '</span>' +
+    '<span class="row-mono">' + (p.rusticite_celsius != null ? p.rusticite_celsius + ' °C' : '') + '</span>' +
     '<span class="row-spacer"></span>' +
     '<button class="row-menu-btn" title="Menu">&#8942;<div class="row-menu"></div></button>';
 
@@ -1608,19 +1519,17 @@ function buildEssenceRow(id, currentMelangeId) {
   const menu = row.querySelector('.row-menu');
   menuBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    // Close all other menus
     document.querySelectorAll('.row-menu.open').forEach(m => m.classList.remove('open'));
-    // Build menu items
     let items = '';
     melanges.forEach(m => {
       if (m.id !== currentMelangeId) {
-        items += '<div class="row-menu-item" data-action="move" data-target="' + m.id + '">Deplacer vers ' + (m.name || 'Melange ' + (melanges.indexOf(m) + 1)) + '</div>';
+        items += '<div class="row-menu-item" data-action="move" data-target="' + m.id + '">Déplacer vers ' + (m.name || 'Mélange ' + (melanges.indexOf(m) + 1)) + '</div>';
       }
     });
     if (currentMelangeId !== '__unclassified') {
-      items += '<div class="row-menu-item" data-action="move" data-target="__unclassified">Deplacer vers Non classees</div>';
+      items += '<div class="row-menu-item" data-action="move" data-target="__unclassified">Déplacer vers Non classées</div>';
     }
-    items += '<div class="row-menu-item danger" data-action="remove">Retirer de la selection</div>';
+    items += '<div class="row-menu-item danger" data-action="remove">Retirer de la sélection</div>';
     menu.innerHTML = items;
     menu.classList.toggle('open');
 
@@ -1637,7 +1546,6 @@ function buildEssenceRow(id, currentMelangeId) {
             if (idx !== -1) m.essenceIds.splice(idx, 1);
           });
           updateSelectionUI();
-          renderMelanges();
         }
       });
     });
@@ -1646,19 +1554,13 @@ function buildEssenceRow(id, currentMelangeId) {
   return row;
 }
 
-// Close menus on outside click
 document.addEventListener('click', () => {
   document.querySelectorAll('.row-menu.open').forEach(m => m.classList.remove('open'));
 });
 
 function setupDropzone(dz, melangeId) {
-  dz.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    dz.classList.add('drop-hover');
-  });
-  dz.addEventListener('dragleave', () => {
-    dz.classList.remove('drop-hover');
-  });
+  dz.addEventListener('dragover', (e) => { e.preventDefault(); dz.classList.add('drop-hover'); });
+  dz.addEventListener('dragleave', () => { dz.classList.remove('drop-hover'); });
   dz.addEventListener('drop', (e) => {
     e.preventDefault();
     const essenceId = e.dataTransfer.getData('text/plain');
@@ -1673,17 +1575,13 @@ function setupDropzone(dz, melangeId) {
 }
 
 function moveEssenceToMelange(essenceId, targetMelangeId) {
-  // Remove from all melanges
   melanges.forEach(m => {
     const idx = m.essenceIds.indexOf(essenceId);
     if (idx !== -1) m.essenceIds.splice(idx, 1);
   });
-  // Add to target (unless unclassified)
   if (targetMelangeId !== '__unclassified') {
     const target = melanges.find(m => m.id === targetMelangeId);
-    if (target && !target.essenceIds.includes(essenceId)) {
-      target.essenceIds.push(essenceId);
-    }
+    if (target && !target.essenceIds.includes(essenceId)) target.essenceIds.push(essenceId);
   }
   renderMelanges();
 }
@@ -1691,7 +1589,6 @@ function moveEssenceToMelange(essenceId, targetMelangeId) {
 function buildIndicators(ids) {
   const plants = ids.map(id => PLANTES.find(p => p.id === id)).filter(Boolean);
   let persistant = 0, caduc = 0, semiP = 0;
-  let floraMinMonth = null, floraMaxMonth = null;
   const allFloraMonths = new Set();
 
   plants.forEach(p => {
@@ -1699,7 +1596,6 @@ function buildIndicators(ids) {
     if (pers === 'persistant') persistant++;
     else if (pers === 'caduc') caduc++;
     else if (pers.includes('semi')) semiP++;
-
     if (p.floraison_debut && p.floraison_fin) {
       let d = p.floraison_debut, f = p.floraison_fin;
       if (d <= f) { for (let m = d; m <= f; m++) allFloraMonths.add(m); }
@@ -1727,10 +1623,8 @@ function buildIndicators(ids) {
 
 // ═══ EXPORT PNG ═══
 document.getElementById('btn-export').addEventListener('click', doExport);
-document.getElementById('btn-export-compo').addEventListener('click', doExport);
 
 function doExport() {
-  // Gate check
   if (!currentUser) {
     document.getElementById('gate-overlay').classList.add('open');
     return;
@@ -1748,33 +1642,24 @@ document.getElementById('gate-overlay').addEventListener('click', (e) => {
 function buildExportAndDownload() {
   const container = document.getElementById('export-container');
   const projectName = document.getElementById('nom-projet').value || '';
+  let html = '<div class="export-title">SÉLECTION D\'ESSENCES' + (projectName ? ' — ' + projectName : '') + '</div>';
 
-  let html = '<div class="export-title">SELECTION D\'ESSENCES' + (projectName ? ' — ' + projectName : '') + '</div>';
-
-  // Build groups: melanges + unclassified
   const groups = [];
   melanges.forEach(m => {
     if (m.essenceIds.length > 0) {
-      groups.push({ name: m.name || 'Melange ' + (melanges.indexOf(m) + 1), ids: m.essenceIds });
+      groups.push({ name: m.name || 'Mélange ' + (melanges.indexOf(m) + 1), ids: m.essenceIds });
     }
   });
   const unclassified = getUnclassifiedIds();
-  if (unclassified.length > 0) {
-    groups.push({ name: 'Non classees', ids: unclassified });
-  }
-
-  // If no melanges at all, just export everything flat
-  if (groups.length === 0 && selection.size > 0) {
-    groups.push({ name: '', ids: [...selection] });
-  }
+  if (unclassified.length > 0) groups.push({ name: 'Non classées', ids: unclassified });
+  if (groups.length === 0 && selection.size > 0) groups.push({ name: '', ids: [...selection] });
 
   groups.forEach(g => {
     if (g.name) html += '<div class="export-melange-title">' + g.name + '</div>';
     html += '<table><thead><tr>' +
       '<th>Nom latin</th><th>Nom commun</th><th>Famille</th><th>Strate</th>' +
-      '<th>Persistance</th><th>Hauteur</th><th>Floraison</th><th>Rusticite</th><th>Indigenat</th>' +
+      '<th>Persistance</th><th>Hauteur</th><th>Floraison</th><th>Rusticité</th><th>Indigénat</th>' +
       '</tr></thead><tbody>';
-
     g.ids.forEach(id => {
       const p = PLANTES.find(pl => pl.id === id);
       if (!p) return;
@@ -1789,7 +1674,7 @@ function buildExportAndDownload() {
       if (p.indigenat) {
         if (p.indigenat.atlantique) bios.push('Atl.');
         if (p.indigenat.continental) bios.push('Cont.');
-        if (p.indigenat.mediterraneen) bios.push('Med.');
+        if (p.indigenat.mediterraneen) bios.push('Méd.');
         if (p.indigenat.alpin) bios.push('Alp.');
       }
       html += '<tr>' +
@@ -1804,12 +1689,10 @@ function buildExportAndDownload() {
         '<td>' + bios.join(', ') + '</td>' +
         '</tr>';
     });
-
     html += '</tbody></table>';
   });
 
-  html += '<div class="export-footer">sylve.eco — Selecteur d\'essences</div>';
-
+  html += '<div class="export-footer">sylve.eco — Sélecteur d\'essences</div>';
   container.innerHTML = html;
   container.style.left = '0';
   container.style.position = 'fixed';
@@ -1820,17 +1703,13 @@ function buildExportAndDownload() {
 
   setTimeout(() => {
     html2canvas(container, {
-      scale: 3,
-      backgroundColor: '#FFFFFF',
-      useCORS: true,
-      logging: false
+      scale: 3, backgroundColor: '#FFFFFF', useCORS: true, logging: false
     }).then(canvas => {
       const link = document.createElement('a');
       const nomProjet = document.getElementById('nom-projet').value || 'sylve';
       link.download = 'selection-essences-' + nomProjet.replace(/\s+/g, '-').toLowerCase() + '.png';
       link.href = canvas.toDataURL('image/png');
       link.click();
-      // Reset container
       container.style.left = '-9999px';
       container.style.position = 'absolute';
       container.style.zIndex = '';
@@ -1858,7 +1737,6 @@ document.getElementById('confirm-cancel').addEventListener('click', () => {
   document.getElementById('confirm-overlay').classList.remove('open');
   confirmCallback = null;
 });
-
 </script>
 </body>
 </html>
