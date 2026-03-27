@@ -1072,7 +1072,7 @@ function updateHeight() {
   const pct1 = (lo / 5000) * 100, pct2 = (hi / 5000) * 100;
   hFill.style.left = pct1 + '%';
   hFill.style.width = (pct2 - pct1) + '%';
-  applyFilters();
+  if (PLANTES.length) applyFilters();
 }
 hMin.addEventListener('input', updateHeight);
 hMax.addEventListener('input', updateHeight);
@@ -1187,7 +1187,8 @@ function applyFilters() {
 }
 
 function sortFiltered() {
-  const mode = sortSelect.value;
+  const sortEl = document.getElementById('sort-select');
+  const mode = sortEl ? sortEl.value : 'strate';
   filtered.sort((a, b) => {
     if (mode === 'strate') {
       const ia = STRATE_ORDER.findIndex(s => norm(s) === norm(a.strate)), ib = STRATE_ORDER.findIndex(s => norm(s) === norm(b.strate));
