@@ -248,7 +248,7 @@ input[type="range"]::-moz-range-thumb {
 
 .results-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 12px;
 }
 
@@ -257,7 +257,7 @@ input[type="range"]::-moz-range-thumb {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 16px;
+  padding: 12px 14px;
   transition: border-color 200ms;
   cursor: default;
 }
@@ -282,11 +282,11 @@ input[type="range"]::-moz-range-thumb {
   transform: rotate(45deg); margin-top: -1px;
 }
 .card-cb.disabled { opacity: 0.4; cursor: not-allowed; }
-.card-nom-latin { font-size: 14px; font-style: italic; color: var(--text); font-weight: 400; }
+.card-nom-latin { font-size: 13px; font-style: italic; color: var(--text); font-weight: 400; }
 .card-nom-commun { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; padding-left: 24px; }
-.card-sep { border: none; border-top: 1px solid var(--border); margin-bottom: 8px; }
+.card-sep { border: none; border-top: 1px solid var(--border); margin: 6px 0; }
 .card-meta { font-size: 11px; color: var(--text-muted); }
-.card-meta .meta-row { margin-bottom: 3px; display: flex; flex-wrap: wrap; gap: 4px; }
+.card-meta .meta-row { margin-bottom: 1px; display: flex; flex-wrap: wrap; gap: 4px; }
 .card-meta .meta-row:last-child { margin-bottom: 0; }
 .card-height, .card-rusticite { font-family: 'DM Mono', monospace; font-size: 12px; }
 .card-floraison-dot {
@@ -303,24 +303,62 @@ input[type="range"]::-moz-range-thumb {
 .load-more-sentinel { height: 1px; }
 .load-more { text-align: center; padding: 20px; color: var(--text-light); font-size: 13px; }
 
-/* ─── PALETTE ZONE (bottom) ─── */
-.palette-zone {
-  flex-shrink: 0;
-  border-top: 2px solid var(--border);
+/* ─── PALETTE BAR (réduit) ─── */
+.palette-bar {
+  position: sticky;
+  bottom: 0; left: 0; right: 0;
+  height: 48px;
   background: var(--surface);
-  padding: 24px;
-  display: none;
-  overflow-y: auto;
-  max-height: 40vh;
+  border-top: 2px solid var(--sylve);
+  display: flex;
+  align-items: center;
+  z-index: 100;
+  flex-shrink: 0;
 }
-.palette-zone.has-selection { display: block; }
+.palette-bar-summary {
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 24px; width: 100%; cursor: pointer;
+  font-size: 14px; color: var(--text);
+}
+.palette-dot { color: var(--sylve); font-size: 10px; }
+.palette-spacer { flex: 1; }
 
-.palette-header {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 12px; flex-wrap: wrap; gap: 8px;
+/* ─── PALETTE PANEL (déployé, overlay) ─── */
+.palette-panel {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  max-height: 60vh;
+  background: var(--surface);
+  border-top: 2px solid var(--sylve);
+  box-shadow: 0 -8px 32px rgba(0,0,0,0.12);
+  z-index: 200;
+  overflow-y: auto;
+  padding: 16px 24px 24px;
+  border-radius: 16px 16px 0 0;
 }
-.palette-title { font-size: 1rem; font-weight: 400; color: var(--text); }
-.palette-count { font-size: 13px; color: var(--text-muted); margin-left: 8px; }
+.palette-panel-header {
+  display: flex; align-items: center; gap: 12px;
+  padding-bottom: 12px; border-bottom: 1px solid var(--border);
+  margin-bottom: 16px; font-size: 14px;
+}
+.palette-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.15);
+  z-index: 199;
+}
+
+/* ─── Boutons compacts ─── */
+.btn-sm {
+  padding: 6px 14px; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface); font-size: 12px; cursor: pointer;
+  color: var(--text); white-space: nowrap;
+  font-family: 'DM Sans', sans-serif; transition: all 200ms;
+}
+.btn-sm:hover { background: var(--bg); }
+.btn-sm.btn-primary { background: var(--sylve); color: white; border-color: var(--sylve); }
+.btn-sm.btn-primary:hover { background: var(--sylve-dark); }
+.btn-sm.btn-danger { color: #C44040; border-color: #C44040; }
+.btn-sm.btn-danger:hover { background: #FFF5F5; }
 
 .project-name-input {
   width: 100%; max-width: 400px; padding: 8px 12px; font-size: 13px;
@@ -334,26 +372,6 @@ input[type="range"]::-moz-range-thumb {
   font-size: 12px; color: var(--text-muted); margin-bottom: 12px;
   font-style: italic;
 }
-
-.palette-actions {
-  display: flex; align-items: center; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;
-}
-
-.btn-secondary {
-  font-size: 12px; padding: 8px 16px;
-  border: 1px solid var(--border); border-radius: var(--radius);
-  background: var(--surface); color: var(--text); cursor: pointer;
-  font-family: 'DM Sans', sans-serif; transition: all 200ms;
-}
-.btn-secondary:hover { border-color: var(--sylve); color: var(--sylve); }
-
-.btn-primary {
-  font-size: 12px; padding: 8px 16px;
-  border: none; border-radius: var(--radius);
-  background: var(--sylve); color: white; cursor: pointer;
-  font-family: 'DM Sans', sans-serif; transition: all 200ms;
-}
-.btn-primary:hover { background: var(--sylve-dark); }
 
 /* Melange blocks */
 .melange-block {
@@ -545,14 +563,13 @@ input[type="range"]::-moz-range-thumb {
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   }
 
-  .palette-zone { max-height: none; }
 }
 
 @media (max-width: 768px) {
   .results-grid { grid-template-columns: 1fr; }
   .filters-panel { padding: 16px; }
   .results-panel { padding: 16px; }
-  .palette-zone { padding: 16px; }
+  .palette-panel { padding: 16px; }
   .essence-row { flex-wrap: wrap; }
   .essence-row .row-latin { min-width: auto; }
 }
@@ -787,25 +804,33 @@ input[type="range"]::-moz-range-thumb {
     </div>
   </div>
 
-  <!-- ═══ PALETTE ZONE (bottom) ═══ -->
-  <div class="palette-zone" id="palette-zone">
-    <div class="palette-header">
-      <div>
-        <span class="palette-title">Ma palette</span>
-        <span class="palette-count" id="palette-count"></span>
-      </div>
+  <!-- ═══ PALETTE BAR (réduit) ═══ -->
+  <div id="palette-bar" class="palette-bar" style="display:none;">
+    <div class="palette-bar-summary" id="palette-bar-toggle">
+      <span class="palette-dot">●</span>
+      <span>Ma palette · <strong id="palette-count">0 / 50</strong> essences</span>
+      <span class="palette-spacer"></span>
+      <button id="btn-toggle-palette" class="btn-sm">Organiser ▲</button>
+      <button id="btn-export" class="btn-sm btn-primary">Export PNG</button>
+      <button id="btn-clear-all" class="btn-sm btn-danger">Vider</button>
     </div>
-    <input type="text" class="project-name-input" id="nom-projet" placeholder="ex : Résidence Alma — Phase 2">
-    <div class="drag-hint" id="drag-hint">Glissez les essences dans vos mélanges pour organiser votre palette.</div>
-    <div class="palette-actions">
-      <button class="btn-secondary" id="btn-add-melange">+ Ajouter un mélange</button>
-      <button class="btn-secondary" id="btn-sort-strate">Trier par strate</button>
-      <button class="btn-secondary" id="btn-clear-all" style="color:#C44040;">Vider la sélection</button>
-      <button class="btn-primary" id="btn-export">Exporter en PNG</button>
-    </div>
-    <div id="melanges-container"></div>
   </div>
 </div>
+
+<!-- ═══ PALETTE PANEL (déployé, overlay) ═══ -->
+<div id="palette-panel" class="palette-panel" style="display:none;">
+  <div class="palette-panel-header">
+    <span>Ma palette · <strong id="palette-count-panel">0 / 50</strong> essences</span>
+    <span class="palette-spacer"></span>
+    <button id="btn-add-melange" class="btn-sm">+ Mélange</button>
+    <button id="btn-sort-strate" class="btn-sm">Trier strate</button>
+    <button id="btn-close-palette" class="btn-sm">Fermer ▼</button>
+  </div>
+  <input type="text" class="project-name-input" id="nom-projet" placeholder="ex : Résidence Alma — Phase 2">
+  <div id="drag-hint" class="drag-hint">Glissez les essences dans vos mélanges pour organiser votre palette.</div>
+  <div id="melanges-container"></div>
+</div>
+<div id="palette-backdrop" class="palette-backdrop" style="display:none;"></div>
 
 <!-- Gate overlay -->
 <div class="gate-overlay" id="gate-overlay">
@@ -821,8 +846,8 @@ input[type="range"]::-moz-range-thumb {
   <div class="confirm-box">
     <p id="confirm-msg"></p>
     <div class="confirm-btns">
-      <button class="btn-secondary" id="confirm-cancel">Annuler</button>
-      <button class="btn-primary" id="confirm-ok" style="background:#C44040;">Confirmer</button>
+      <button class="btn-sm" id="confirm-cancel">Annuler</button>
+      <button class="btn-sm btn-danger" id="confirm-ok">Confirmer</button>
     </div>
   </div>
 </div>
@@ -1323,13 +1348,34 @@ function updateSelectionUI() {
     cb.classList.toggle('disabled', isDisabled);
     cb.title = isDisabled ? 'Limite de 50 essences atteinte' : '';
   });
-  // Palette zone visibility
-  const paletteZone = document.getElementById('palette-zone');
-  paletteZone.classList.toggle('has-selection', selection.size > 0);
-  document.getElementById('palette-count').textContent = selection.size + ' / ' + MAX_SEL + ' essences sélectionnées';
-  // Re-render melanges if palette is visible
-  if (selection.size > 0) renderMelanges();
+  // Palette bar visibility
+  const paletteBar = document.getElementById('palette-bar');
+  paletteBar.style.display = selection.size > 0 ? 'flex' : 'none';
+  if (selection.size === 0) closePalette();
+  // Update counts
+  const countText = selection.size + ' / ' + MAX_SEL;
+  document.getElementById('palette-count').textContent = countText;
+  document.getElementById('palette-count-panel').textContent = countText;
+  // Re-render melanges if panel is open
+  const palettePanel = document.getElementById('palette-panel');
+  if (palettePanel.style.display === 'block') renderMelanges();
 }
+
+// ═══ PALETTE TOGGLE ═══
+function openPalette() {
+  document.getElementById('palette-panel').style.display = 'block';
+  document.getElementById('palette-backdrop').style.display = 'block';
+  renderMelanges();
+}
+
+function closePalette() {
+  document.getElementById('palette-panel').style.display = 'none';
+  document.getElementById('palette-backdrop').style.display = 'none';
+}
+
+document.getElementById('btn-toggle-palette').addEventListener('click', openPalette);
+document.getElementById('btn-close-palette').addEventListener('click', closePalette);
+document.getElementById('palette-backdrop').addEventListener('click', closePalette);
 
 // ═══ AUTOCOMPLETE SEARCH ═══
 const searchInput = document.getElementById('search-input');
@@ -1712,12 +1758,14 @@ function buildExportAndDownload() {
 
   html += '<div class="export-footer">sylve.eco — Sélecteur d\'essences</div>';
   container.innerHTML = html;
-  container.style.left = '0';
   container.style.position = 'fixed';
+  container.style.left = '0';
   container.style.top = '0';
-  container.style.zIndex = '-1';
   container.style.width = '1100px';
-  container.style.opacity = '0';
+  container.style.zIndex = '9999';
+  container.style.opacity = '1';
+  container.style.pointerEvents = 'none';
+  container.style.transform = 'translateY(-200vh)';
 
   setTimeout(() => {
     html2canvas(container, {
@@ -1728,11 +1776,13 @@ function buildExportAndDownload() {
       link.download = 'selection-essences-' + nomProjet.replace(/\s+/g, '-').toLowerCase() + '.png';
       link.href = canvas.toDataURL('image/png');
       link.click();
-      container.style.left = '-9999px';
       container.style.position = 'absolute';
+      container.style.left = '-9999px';
+      container.style.transform = '';
+      container.style.opacity = '';
+      container.style.pointerEvents = '';
       container.style.zIndex = '';
       container.style.width = '';
-      container.style.opacity = '';
     });
   }, 100);
 }
