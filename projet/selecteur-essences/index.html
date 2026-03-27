@@ -68,6 +68,7 @@ header {
   display: flex;
   flex: 1;
   overflow: hidden;
+  min-height: 0;
 }
 
 /* ─── LEFT PANEL — FILTERS ─── */
@@ -304,12 +305,13 @@ input[type="range"]::-moz-range-thumb {
 
 /* ─── PALETTE ZONE (bottom) ─── */
 .palette-zone {
-  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  border-top: 2px solid var(--border);
   background: var(--surface);
   padding: 24px;
   display: none;
   overflow-y: auto;
-  max-height: 45vh;
+  max-height: 40vh;
 }
 .palette-zone.has-selection { display: block; }
 
@@ -646,7 +648,7 @@ input[type="range"]::-moz-range-thumb {
           <span class="pill" data-value="sec">Sec</span>
           <span class="pill" data-value="frais">Frais</span>
           <span class="pill" data-value="humide">Humide</span>
-          <span class="pill" data-value="détrempe">Détrempé</span>
+          <span class="pill" data-value="détrempé">Détrempé</span>
         </div>
       </div>
 
@@ -855,6 +857,14 @@ let melanges = [];
 let melangeCounter = 0;
 let firstDragDone = false;
 
+// ─── DOM refs (declared early to avoid temporal dead zone) ───
+const sortSelect = document.getElementById('sort-select');
+const grid = document.getElementById('results-grid');
+const emptyState = document.getElementById('empty-state');
+const loadMoreEl = document.getElementById('load-more');
+const resultsPanel = document.getElementById('results-panel');
+const sentinel = document.getElementById('load-more-sentinel');
+
 const filters = {
   strate: [], exposition: [], besoins_hydriques: [], type_sol: [], ph_sol: [],
   humidite_sol: [], persistance: [], mellifere: false, indigenat: false,
@@ -948,6 +958,20 @@ let colorCatCache = {};
 
 function norm(s) {
   return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+function normExpo(e) {
+  const n = norm(e).replace(/_/g, ' ');
+  if (n === 'plein soleil') return 'soleil';
+  return n;
+}
+
+function normPersist(p) {
+  const n = norm(p);
+  if (n === 'caduque') return 'caduc';
+  if (n === 'persistante') return 'persistant';
+  if (n === 'semi-persistante') return 'semi-persistant';
+  return n;
 }
 
 function fmtHeight(cm) {
@@ -1084,7 +1108,6 @@ familyInput.addEventListener('input', () => {
 familyInput.addEventListener('blur', () => { setTimeout(() => familyDD.style.display = 'none', 200); });
 
 // Sort select
-const sortSelect = document.getElementById('sort-select');
 sortSelect.addEventListener('change', () => { sortFiltered(); renderResults(); });
 
 // Reset button
@@ -1111,9 +1134,9 @@ function resetFilters() {
 // ═══ FILTERING ═══
 function applyFilters() {
   filtered = PLANTES.filter(p => {
-    if (filters.strate.length && !filters.strate.includes(p.strate)) return false;
+    if (filters.strate.length && !filters.strate.some(f => norm(f) === norm(p.strate))) return false;
     if (filters.exposition.length) {
-      const pExp = (p.exposition || []).map(e => norm(e));
+      const pExp = (p.exposition || []).map(e => normExpo(e));
       if (!filters.exposition.some(f => pExp.includes(norm(f)))) return false;
     }
     if (filters.besoins_hydriques.length) {
@@ -1139,7 +1162,7 @@ function applyFilters() {
       if (!(p.hauteur_max_cm >= filters.heightMin && p.hauteur_min_cm <= filters.heightMax)) return false;
     }
     if (filters.persistance.length) {
-      if (!filters.persistance.includes(norm(p.persistance || ''))) return false;
+      if (!filters.persistance.includes(normPersist(p.persistance || ''))) return false;
     }
     if (filters.mellifere && !p.mellifere) return false;
     if (filters.indigenat) {
@@ -1167,7 +1190,7 @@ function sortFiltered() {
   const mode = sortSelect.value;
   filtered.sort((a, b) => {
     if (mode === 'strate') {
-      const ia = STRATE_ORDER.indexOf(a.strate), ib = STRATE_ORDER.indexOf(b.strate);
+      const ia = STRATE_ORDER.findIndex(s => norm(s) === norm(a.strate)), ib = STRATE_ORDER.findIndex(s => norm(s) === norm(b.strate));
       const sa = ia === -1 ? 999 : ia, sb2 = ib === -1 ? 999 : ib;
       if (sa !== sb2) return sa - sb2;
       return (a.nom_latin || '').localeCompare(b.nom_latin || '');
@@ -1186,9 +1209,6 @@ function updateCounts() {
 }
 
 // ═══ RENDER RESULTS ═══
-const grid = document.getElementById('results-grid');
-const emptyState = document.getElementById('empty-state');
-const loadMoreEl = document.getElementById('load-more');
 
 function renderResults() {
   grid.innerHTML = '';
@@ -1265,9 +1285,6 @@ function appendCard(p) {
 }
 
 // ─── Infinite scroll — targets the results panel ───
-const resultsPanel = document.getElementById('results-panel');
-const sentinel = document.getElementById('load-more-sentinel');
-
 const observer = new IntersectionObserver(entries => {
   if (entries[0].isIntersecting && displayCount < filtered.length) {
     const next = Math.min(displayCount + BATCH, filtered.length);
