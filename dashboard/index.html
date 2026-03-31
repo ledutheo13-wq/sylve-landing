@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/auth.js"></script>
   <style>
     :root {
       --sylve:       #5E8B8F;
@@ -319,74 +320,79 @@
       <div class="spinner"></div>
       <div class="loading-text">Connexion en cours…</div>
     </div>
+
+    <!-- WELCOME SCREEN (première connexion uniquement) -->
+    <div id="welcome-screen" style="display:none;">
+      <div style="max-width: 520px; text-align: center; padding: 2rem;">
+        <div style="font-family: Helvetica, 'Helvetica Neue', Arial, sans-serif; font-size: 20px; font-weight: 300; color: #5E8B8F; letter-spacing: 8px; margin-bottom: 2rem;">sylve</div>
+        <h2 style="font-family: 'DM Sans', sans-serif; font-size: 22px; font-weight: 300; color: #2A2826; margin-bottom: 1rem; line-height: 1.4;">
+          Vous rejoignez la beta de SYLVE
+        </h2>
+        <p style="font-size: 14px; font-weight: 300; color: #7A7672; line-height: 1.7; margin-bottom: 2rem;">
+          Tous les outils sont en accès libre.<br>
+          Vos retours nous aident à construire les outils dont vous avez besoin.
+        </p>
+        <button onclick="dismissWelcome()" style="
+          display: inline-flex; align-items: center; gap: 10px;
+          padding: 15px 36px; background: #5E8B8F; color: white;
+          border-radius: 8px; font-family: 'DM Sans', sans-serif;
+          font-size: 14px; font-weight: 400; letter-spacing: 0.3px;
+          border: none; cursor: pointer; transition: background 0.2s;
+        " onmouseover="this.style.background='#4E7B7F'" onmouseout="this.style.background='#5E8B8F'">
+          Accéder au dashboard
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M2 7H12M12 7L7.5 2.5M12 7L7.5 11.5" stroke="white" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+    </div>
   </main>
 
   <footer>sylve.eco — outils numeriques pour les professionnels du paysage</footer>
 
   <script>
-  const SUPABASE_URL  = 'https://jbqgyfbjyulezaclvmwc.supabase.co';
-  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpicWd5ZmJqeXVsZXphY2x2bXdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzQyMDIsImV4cCI6MjA4ODcxMDIwMn0.dNibq1JOBz3UnqdLwENmS113TGKpw_UGWKR0cE8LgMI';
-
-  const { createClient } = supabase;
-  const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
-
-  let dashboardLoaded = false;
-
   async function init() {
-    // 1. Vérifier immédiatement si une session existe déjà
-    const { data: { session } } = await sb.auth.getSession();
+    const session = await SYLVE_AUTH.requireSession();
+    if (!session) return;
 
-    if (session) {
-      // Session trouvée → afficher le dashboard sans spinner
-      dashboardLoaded = true;
-      await loadDashboard(session);
-    } else {
-      // Pas de session → afficher le spinner et écouter onAuthStateChange
-      document.getElementById('loading').style.display = '';
-
-      sb.auth.onAuthStateChange(async (event, s) => {
-        if (event === 'SIGNED_IN' && s && !dashboardLoaded) {
-          dashboardLoaded = true;
-          await loadDashboard(s);
-        }
-        if (event === 'SIGNED_OUT') {
-          window.location.href = '/login';
-        }
-      });
-
-      // Timeout 6s : si toujours rien, rediriger vers login
-      setTimeout(() => {
-        if (!dashboardLoaded) window.location.href = '/login';
-      }, 6000);
+    const firstLogin = !localStorage.getItem('sylve_welcome_seen');
+    if (firstLogin) {
+      showWelcomeScreen(session);
+      return;
     }
 
-    // Écouter les déconnexions dans tous les cas
-    sb.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_OUT') {
-        window.location.href = '/login';
-      }
-    });
+    await loadDashboard(session);
   }
 
   async function loadDashboard(session) {
-    const { data: profile } = await sb.from('profiles')
-      .select('prenom')
-      .eq('id', session.user.id)
-      .single();
-
+    const profile = await SYLVE_AUTH.getProfile(session.user.id);
     const prenom = profile?.prenom || '';
-    document.getElementById('user-name').textContent = prenom;
+    document.getElementById('user-name').textContent = prenom || session.user.email;
     document.getElementById('dashboard-title').textContent = prenom
       ? 'Bonjour, ' + prenom
       : 'Vos outils';
-
     document.getElementById('loading').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
   }
 
   async function logout() {
-    await sb.auth.signOut();
-    window.location.href = '/login';
+    await SYLVE_AUTH.logout();
+  }
+
+  function showWelcomeScreen(session) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'none';
+    const ws = document.getElementById('welcome-screen');
+    ws.style.display = 'flex';
+    ws.style.alignItems = 'center';
+    ws.style.justifyContent = 'center';
+    window._pendingSession = session;
+  }
+
+  function dismissWelcome() {
+    localStorage.setItem('sylve_welcome_seen', 'true');
+    document.getElementById('welcome-screen').style.display = 'none';
+    loadDashboard(window._pendingSession);
   }
 
   init();

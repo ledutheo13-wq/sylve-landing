@@ -168,6 +168,8 @@
       .page-title { padding: 1.5rem 1rem 1rem; }
     }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/auth.js"></script>
 </head>
 <body>
   <header>
@@ -1078,16 +1080,21 @@ function endDrag() {
   document.removeEventListener('touchend', endDrag);
 }
 
-// Scroll propagation: ensure wheel events on layer cards propagate to the container
-document.getElementById('layers-container').addEventListener('wheel', function(e) {
-  const layerBody = e.target.closest('.layer-body');
-  if (layerBody) {
-    e.preventDefault();
-    this.scrollTop += e.deltaY;
-  }
-}, { passive: false });
+(async () => {
+  const session = await SYLVE_AUTH.requireSession();
+  if (!session) return;
 
-initDefaultLayers();
+  // Scroll propagation: ensure wheel events on layer cards propagate to the container
+  document.getElementById('layers-container').addEventListener('wheel', function(e) {
+    const layerBody = e.target.closest('.layer-body');
+    if (layerBody) {
+      e.preventDefault();
+      this.scrollTop += e.deltaY;
+    }
+  }, { passive: false });
+
+  initDefaultLayers();
+})();
 </script>
 </body>
 </html>

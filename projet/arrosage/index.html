@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/auth.js"></script>
   <style>
     :root {
       --sylve: #5E8B8F;
@@ -196,27 +197,6 @@
     .recap-table td.mono { font-family: 'DM Mono', monospace; font-weight: 400; }
     .recap-dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
 
-    /* ── GATE OVERLAY ── */
-    .gate-overlay {
-      position: fixed; inset: 0; background: rgba(247,246,244,0.92);
-      display: flex; align-items: center; justify-content: center; z-index: 100;
-    }
-    .gate-box {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 2.5rem; text-align: center; max-width: 400px;
-    }
-    .gate-box h2 {
-      font-family: Helvetica, 'Helvetica Neue', Arial, sans-serif;
-      font-size: 1.1rem; font-weight: 300; color: var(--text); margin-bottom: 0.6rem;
-    }
-    .gate-box p { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1.2rem; line-height: 1.5; }
-    .gate-box a {
-      display: inline-block; font-family: 'DM Sans', sans-serif; font-size: 0.85rem;
-      color: #fff; background: var(--sylve); border-radius: var(--radius);
-      padding: 10px 24px; text-decoration: none; transition: background 0.15s;
-    }
-    .gate-box a:hover { background: var(--sylve-dark); }
-
     /* ── RESPONSIVE ── */
     @media (max-width: 640px) {
       .zone-fields, .zone-fields.four-cols { grid-template-columns: 1fr 1fr; }
@@ -309,29 +289,10 @@
     </div>
   </div>
 
-  <!-- GATE OVERLAY -->
-  <div class="gate-overlay" id="gate" style="display:none;">
-    <div class="gate-box">
-      <h2>Connectez-vous pour acceder aux resultats</h2>
-      <p>Creez un compte gratuit ou connectez-vous pour utiliser le calculateur d'arrosage.</p>
-      <a href="/login?redirect=/projet/arrosage">Se connecter</a>
-    </div>
-  </div>
-
 <script>
-// ═══════════════════════════════════════════════════════════
-//  SUPABASE
-// ═══════════════════════════════════════════════════════════
-const SUPABASE_URL  = 'https://jbqgyfbjyulezaclvmwc.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpicWd5ZmJqeXVsZXphY2x2bXdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzQyMDIsImV4cCI6MjA4ODcxMDIwMn0.dNibq1JOBz3UnqdLwENmS113TGKpw_UGWKR0cE8LgMI';
-const { createClient } = supabase;
-const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
-
-let hasSession = false;
 (async () => {
-  const { data: { session } } = await sb.auth.getSession();
-  hasSession = !!session;
-})();
+const session = await SYLVE_AUTH.requireSession();
+if (!session) return;
 
 // ═══════════════════════════════════════════════════════════
 //  BASE ETP PAR DEPARTEMENT
@@ -557,6 +518,7 @@ function addZone() {
 
 function removeZone(id) {
   zones = zones.filter(z => z.id !== id);
+  window.zones = zones;
   renderZones();
   renderIrrigation();
 }
@@ -677,10 +639,6 @@ function renderIrrigation() {
 //  CALCULATE
 // ═══════════════════════════════════════════════════════════
 function calculate() {
-  if (!hasSession) {
-    document.getElementById('gate').style.display = 'flex';
-    return;
-  }
   if (zones.length === 0) { alert('Ajoutez au moins une zone.'); return; }
   if (!document.getElementById('dept-select').value) { alert('Choisissez un departement.'); return; }
 
@@ -847,9 +805,21 @@ function drawChart(results) {
 }
 
 // ═══════════════════════════════════════════════════════════
+//  EXPOSE TO GLOBAL (needed by inline onclick handlers)
+// ═══════════════════════════════════════════════════════════
+window.zones = zones;
+window.VEG_TYPES = VEG_TYPES;
+window.addZone = addZone;
+window.removeZone = removeZone;
+window.setMode = setMode;
+window.calculate = calculate;
+window.renderIrrigation = renderIrrigation;
+
+// ═══════════════════════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════════════════════
 addZone();
+})();
 </script>
 </body>
 </html>

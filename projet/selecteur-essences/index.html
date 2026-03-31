@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/auth.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -504,29 +505,6 @@ input[type="range"]::-moz-range-thumb {
   vertical-align: middle; margin-right: 3px;
 }
 
-/* ─── OVERLAYS ─── */
-.gate-overlay {
-  position: fixed; inset: 0; z-index: 200;
-  background: rgba(42,40,38,0.5);
-  display: none; align-items: center; justify-content: center;
-}
-.gate-overlay.open { display: flex; }
-.gate-box {
-  background: var(--surface); border-radius: 8px;
-  padding: 32px; max-width: 380px; width: 90%; text-align: center;
-}
-.gate-box p { font-size: 14px; color: var(--text); margin-bottom: 16px; }
-.gate-box a {
-  display: inline-block; padding: 10px 24px;
-  background: var(--sylve); color: white; border-radius: var(--radius);
-  text-decoration: none; font-size: 13px; transition: background 200ms;
-}
-.gate-box a:hover { background: var(--sylve-dark); }
-.gate-close {
-  position: absolute; top: 12px; right: 16px;
-  background: none; border: none; font-size: 20px; color: var(--text-muted); cursor: pointer;
-}
-
 .confirm-overlay {
   position: fixed; inset: 0; z-index: 210;
   background: rgba(42,40,38,0.4);
@@ -832,15 +810,6 @@ input[type="range"]::-moz-range-thumb {
 </div>
 <div id="palette-backdrop" class="palette-backdrop" style="display:none;"></div>
 
-<!-- Gate overlay -->
-<div class="gate-overlay" id="gate-overlay">
-  <div class="gate-box" style="position:relative;">
-    <button class="gate-close" id="gate-close">&times;</button>
-    <p>Connectez-vous pour exporter votre sélection</p>
-    <a href="/login?redirect=/projet/selecteur-essences">Se connecter</a>
-  </div>
-</div>
-
 <!-- Confirm overlay -->
 <div class="confirm-overlay" id="confirm-overlay">
   <div class="confirm-box">
@@ -860,15 +829,9 @@ input[type="range"]::-moz-range-thumb {
    SYLVE — Sélecteur d'essences
    ═══════════════════════════════════════════════════ */
 
-// ─── Supabase ───
-const SUPABASE_URL  = 'https://jbqgyfbjyulezaclvmwc.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpicWd5ZmJqeXVsZXphY2x2bXdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzQyMDIsImV4cCI6MjA4ODcxMDIwMn0.dNibq1JOBz3UnqdLwENmS113TGKpw_UGWKR0cE8LgMI';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-let currentUser = null;
-
-sb.auth.getSession().then(({ data }) => {
-  currentUser = data?.session?.user || null;
-});
+(async () => {
+const session = await SYLVE_AUTH.requireSession();
+if (!session) return;
 
 // ─── Data ───
 let PLANTES = [];
@@ -1689,19 +1652,8 @@ function buildIndicators(ids) {
 document.getElementById('btn-export').addEventListener('click', doExport);
 
 function doExport() {
-  if (!currentUser) {
-    document.getElementById('gate-overlay').classList.add('open');
-    return;
-  }
   buildExportAndDownload();
 }
-
-document.getElementById('gate-close').addEventListener('click', () => {
-  document.getElementById('gate-overlay').classList.remove('open');
-});
-document.getElementById('gate-overlay').addEventListener('click', (e) => {
-  if (e.target === e.currentTarget) e.currentTarget.classList.remove('open');
-});
 
 function buildExportAndDownload() {
   const container = document.getElementById('export-container');
@@ -1805,6 +1757,8 @@ document.getElementById('confirm-cancel').addEventListener('click', () => {
   document.getElementById('confirm-overlay').classList.remove('open');
   confirmCallback = null;
 });
+
+})(); // end SYLVE_AUTH wrapper
 </script>
 </body>
 </html>

@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>sylve — Connexion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --primary: #5E8B8F;
+    --primary-hover: #4E7B7F;
+    --fond: #F7F6F4;
+    --white: #FFFFFF;
+    --text: #2A2826;
+    --text-muted: #7A7672;
+    --text-light: #A09C98;
+    --border: #E2DED9;
+    --error: #C0705A;
+    --success: #5E8B8F;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', Helvetica, Arial, sans-serif;
+    background: var(--fond);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .page {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+  }
+
+  .login-card {
+    width: 100%;
+    max-width: 400px;
+  }
+
+  .logo {
+    display: block;
+    font-family: Helvetica, 'Helvetica Neue', Arial, sans-serif;
+    font-weight: 300;
+    font-size: 20px;
+    letter-spacing: 9px;
+    color: var(--primary);
+    text-decoration: none;
+    margin-bottom: 48px;
+    text-align: center;
+  }
+
+  .card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 40px 36px;
+  }
+
+  .card-title {
+    font-family: 'DM Sans', Helvetica, Arial, sans-serif;
+    font-size: 22px;
+    font-weight: 300;
+    color: var(--text);
+    letter-spacing: -0.2px;
+    margin-bottom: 8px;
+    line-height: 1.3;
+  }
+
+  .card-subtitle {
+    font-size: 14px;
+    color: var(--text-muted);
+    font-weight: 300;
+    line-height: 1.6;
+    margin-bottom: 32px;
+  }
+
+  .form-group {
+    margin-bottom: 16px;
+  }
+
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+
+  input[type="email"],
+  input[type="password"] {
+    width: 100%;
+    padding: 13px 16px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 300;
+    color: var(--text);
+    background: var(--fond);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  input[type="email"]:focus,
+  input[type="password"]:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(94,139,143,0.08);
+    background: var(--white);
+  }
+
+  input[type="email"]::placeholder,
+  input[type="password"]::placeholder {
+    color: var(--text-light);
+  }
+
+  .btn-submit {
+    width: 100%;
+    padding: 14px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    margin-top: 8px;
+    letter-spacing: 0.2px;
+  }
+
+  .btn-submit:hover:not(:disabled) {
+    background: var(--primary-hover);
+  }
+
+  .btn-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .message {
+    display: none;
+    margin-top: 20px;
+    padding: 14px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 300;
+    line-height: 1.5;
+  }
+
+  .message.success {
+    display: block;
+    background: rgba(94,139,143,0.08);
+    border: 1px solid rgba(94,139,143,0.2);
+    color: var(--success);
+  }
+
+  .message.error {
+    display: block;
+    background: rgba(192,112,90,0.07);
+    border: 1px solid rgba(192,112,90,0.2);
+    color: var(--error);
+  }
+
+  .success-view {
+    display: none;
+    text-align: center;
+    padding: 8px 0;
+  }
+
+  .success-view.active {
+    display: block;
+  }
+
+  .success-icon {
+    width: 48px;
+    height: 48px;
+    background: rgba(94,139,143,0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+  }
+
+  .success-title {
+    font-size: 18px;
+    font-weight: 300;
+    color: var(--text);
+    margin-bottom: 10px;
+    letter-spacing: -0.1px;
+  }
+
+  .success-text {
+    font-size: 14px;
+    color: var(--text-muted);
+    font-weight: 300;
+    line-height: 1.65;
+    margin-bottom: 20px;
+  }
+
+  .success-email {
+    font-weight: 400;
+    color: var(--primary);
+  }
+
+  .success-note {
+    font-size: 12px;
+    color: var(--text-light);
+    margin-top: 16px;
+  }
+
+  .view-link {
+    display: inline-block;
+    margin-top: 24px;
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 300;
+    cursor: pointer;
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .view-link:hover {
+    color: var(--primary);
+  }
+
+  .view-link span {
+    color: var(--primary);
+    font-weight: 400;
+  }
+
+  .view-links {
+    margin-top: 24px;
+    text-align: center;
+  }
+
+  .view-links .view-link {
+    margin-top: 0;
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  .view-links .view-link:last-child {
+    margin-bottom: 0;
+  }
+
+  footer {
+    padding: 24px 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid var(--border);
+  }
+
+  .footer-back {
+    font-size: 12px;
+    color: var(--text-light);
+    text-decoration: none;
+    font-weight: 300;
+    transition: color 0.2s;
+  }
+
+  .footer-back:hover {
+    color: var(--primary);
+  }
+
+  .footer-copy {
+    font-size: 12px;
+    color: var(--text-light);
+    font-weight: 300;
+  }
+
+  @media (max-width: 480px) {
+    .card { padding: 32px 24px; }
+    footer { padding: 20px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="login-card">
+
+    <a href="/" class="logo">sylve</a>
+
+    <div class="card">
+
+      <!-- VUE 1 — Inscription (par defaut) -->
+      <div id="view-signup">
+        <h1 class="card-title">Cr&eacute;er un compte</h1>
+        <p class="card-subtitle">Aucun engagement. Acc&eacute;dez &agrave; tous les outils SYLVE.</p>
+
+        <div class="form-group">
+          <label for="signup-email">Adresse email</label>
+          <input type="email" id="signup-email" placeholder="votre@email.com" autocomplete="email" autofocus>
+        </div>
+        <div class="form-group">
+          <label for="signup-password">Mot de passe</label>
+          <input type="password" id="signup-password" placeholder="Minimum 8 caract&egrave;res" minlength="8" autocomplete="new-password">
+        </div>
+        <div class="form-group">
+          <label for="signup-password-confirm">Confirmer le mot de passe</label>
+          <input type="password" id="signup-password-confirm" placeholder="Confirmer le mot de passe" autocomplete="new-password">
+        </div>
+
+        <button class="btn-submit" id="signup-btn">Cr&eacute;er mon compte</button>
+        <div class="message" id="signup-msg"></div>
+
+        <div class="view-links">
+          <a class="view-link" data-view="login">D&eacute;j&agrave; un compte ? <span>Se connecter</span></a>
+        </div>
+      </div>
+
+      <!-- VUE 1bis — Succes inscription -->
+      <div class="success-view" id="signup-success">
+        <div class="success-icon">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+            <path d="M4 11L9 16L18 6" stroke="#5E8B8F" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <p class="success-title">V&eacute;rifiez votre bo&icirc;te mail</p>
+        <p class="success-text">
+          Un email de v&eacute;rification a &eacute;t&eacute; envoy&eacute; &agrave;<br>
+          <span class="success-email" id="signup-sent-email"></span>
+        </p>
+        <p class="success-text">Cliquez sur le lien pour activer votre compte.</p>
+        <p class="success-note">V&eacute;rifiez vos courriers ind&eacute;sirables si vous ne le trouvez pas.</p>
+      </div>
+
+      <!-- VUE 2 — Connexion -->
+      <div id="view-login" style="display:none">
+        <h1 class="card-title">Se connecter</h1>
+        <p class="card-subtitle">Acc&eacute;dez &agrave; vos outils.</p>
+
+        <div class="form-group">
+          <label for="login-email">Adresse email</label>
+          <input type="email" id="login-email" placeholder="votre@email.com" autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label for="login-password">Mot de passe</label>
+          <input type="password" id="login-password" placeholder="Mot de passe" autocomplete="current-password">
+        </div>
+
+        <button class="btn-submit" id="login-btn">Se connecter</button>
+        <div class="message" id="login-msg"></div>
+
+        <div class="view-links">
+          <a class="view-link" data-view="forgot">Mot de passe oubli&eacute; ?</a>
+          <a class="view-link" data-view="signup">Pas encore de compte ? <span>Cr&eacute;er un compte</span></a>
+        </div>
+      </div>
+
+      <!-- VUE 3 — Mot de passe oublie -->
+      <div id="view-forgot" style="display:none">
+        <h1 class="card-title">R&eacute;initialiser le mot de passe</h1>
+        <p class="card-subtitle">Entrez votre email. Vous recevrez un lien de r&eacute;initialisation.</p>
+
+        <div class="form-group">
+          <label for="forgot-email">Adresse email</label>
+          <input type="email" id="forgot-email" placeholder="votre@email.com" autocomplete="email">
+        </div>
+
+        <button class="btn-submit" id="forgot-btn">Envoyer le lien</button>
+        <div class="message" id="forgot-msg"></div>
+
+        <div class="view-links">
+          <a class="view-link" data-view="login">Retour &agrave; la connexion</a>
+        </div>
+      </div>
+
+      <!-- VUE RECOVERY — Nouveau mot de passe -->
+      <div id="view-recovery" style="display:none">
+        <h1 class="card-title">Nouveau mot de passe</h1>
+        <p class="card-subtitle">Choisissez un nouveau mot de passe pour votre compte.</p>
+
+        <div class="form-group">
+          <label for="recovery-password">Nouveau mot de passe</label>
+          <input type="password" id="recovery-password" placeholder="Minimum 8 caract&egrave;res" minlength="8" autocomplete="new-password">
+        </div>
+        <div class="form-group">
+          <label for="recovery-password-confirm">Confirmer le mot de passe</label>
+          <input type="password" id="recovery-password-confirm" placeholder="Confirmer le mot de passe" autocomplete="new-password">
+        </div>
+
+        <button class="btn-submit" id="recovery-btn">Mettre &agrave; jour le mot de passe</button>
+        <div class="message" id="recovery-msg"></div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  <a href="/" class="footer-back">&larr; Retour &agrave; sylve.eco</a>
+  <span class="footer-copy">&copy; 2026 sylve.eco</span>
+</footer>
+
+<script>
+  const SUPABASE_URL = 'https://jbqgyfbjyulezaclvmwc.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpicWd5ZmJqeXVsZXphY2x2bXdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzQyMDIsImV4cCI6MjA4ODcxMDIwMn0.dNibq1JOBz3UnqdLwENmS113TGKpw_UGWKR0cE8LgMI';
+
+  const { createClient } = supabase;
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+  // --- Elements ---
+  const views = {
+    signup: document.getElementById('view-signup'),
+    login: document.getElementById('view-login'),
+    forgot: document.getElementById('view-forgot'),
+    recovery: document.getElementById('view-recovery')
+  };
+  const signupSuccess = document.getElementById('signup-success');
+
+  function showView(name) {
+    Object.values(views).forEach(v => v.style.display = 'none');
+    signupSuccess.classList.remove('active');
+    if (views[name]) views[name].style.display = 'block';
+    // Clear messages
+    document.querySelectorAll('.message').forEach(m => { m.className = 'message'; m.textContent = ''; });
+  }
+
+  // --- Navigation links ---
+  document.querySelectorAll('[data-view]').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      showView(link.dataset.view);
+    });
+  });
+
+  // --- Helpers ---
+  function showMsg(id, text, type) {
+    const el = document.getElementById(id);
+    el.className = 'message ' + type;
+    el.textContent = text;
+  }
+
+  // --- Inscription ---
+  async function handleSignup() {
+    const email = document.getElementById('signup-email').value.trim();
+    const password = document.getElementById('signup-password').value;
+    const confirm = document.getElementById('signup-password-confirm').value;
+    const btn = document.getElementById('signup-btn');
+
+    if (!email || !email.includes('@')) {
+      showMsg('signup-msg', 'Veuillez saisir une adresse email valide.', 'error');
+      return;
+    }
+    if (password.length < 8) {
+      showMsg('signup-msg', 'Le mot de passe doit contenir au moins 8 caract\u00e8res.', 'error');
+      return;
+    }
+    if (password !== confirm) {
+      showMsg('signup-msg', 'Les mots de passe ne correspondent pas.', 'error');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Cr\u00e9ation en cours\u2026';
+
+    try {
+      const { data, error } = await sb.auth.signUp({ email, password });
+      if (error) throw error;
+
+      document.getElementById('view-signup').style.display = 'none';
+      document.getElementById('signup-sent-email').textContent = email;
+      signupSuccess.classList.add('active');
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = 'Cr\u00e9er mon compte';
+      showMsg('signup-msg', err.message || 'Une erreur est survenue. R\u00e9essayez dans un instant.', 'error');
+    }
+  }
+
+  // --- Connexion ---
+  async function handleLogin() {
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    const btn = document.getElementById('login-btn');
+
+    if (!email || !email.includes('@')) {
+      showMsg('login-msg', 'Veuillez saisir une adresse email valide.', 'error');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Connexion en cours\u2026';
+
+    try {
+      const { data, error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      window.location.href = '/dashboard';
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = 'Se connecter';
+
+      const msg = err.message || '';
+      if (msg.includes('Invalid login credentials')) {
+        showMsg('login-msg', 'Email ou mot de passe incorrect.', 'error');
+      } else if (msg.includes('Email not confirmed')) {
+        showMsg('login-msg', 'Veuillez d\u2019abord confirmer votre email. V\u00e9rifiez votre bo\u00eete mail.', 'error');
+      } else {
+        showMsg('login-msg', 'Une erreur est survenue. R\u00e9essayez dans un instant.', 'error');
+      }
+    }
+  }
+
+  // --- Mot de passe oublie ---
+  async function handleForgot() {
+    const email = document.getElementById('forgot-email').value.trim();
+    const btn = document.getElementById('forgot-btn');
+
+    if (!email || !email.includes('@')) {
+      showMsg('forgot-msg', 'Veuillez saisir une adresse email valide.', 'error');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Envoi en cours\u2026';
+
+    try {
+      const { error } = await sb.auth.resetPasswordForEmail(email, {
+        redirectTo: 'https://sylve.eco/connexion?type=recovery'
+      });
+      if (error) throw error;
+      showMsg('forgot-msg', 'Si un compte existe avec cet email, un lien de r\u00e9initialisation a \u00e9t\u00e9 envoy\u00e9.', 'success');
+    } catch (err) {
+      showMsg('forgot-msg', err.message || 'Une erreur est survenue. R\u00e9essayez dans un instant.', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Envoyer le lien';
+    }
+  }
+
+  // --- Recovery (nouveau mot de passe) ---
+  async function handleRecovery() {
+    const password = document.getElementById('recovery-password').value;
+    const confirm = document.getElementById('recovery-password-confirm').value;
+    const btn = document.getElementById('recovery-btn');
+
+    if (password.length < 8) {
+      showMsg('recovery-msg', 'Le mot de passe doit contenir au moins 8 caract\u00e8res.', 'error');
+      return;
+    }
+    if (password !== confirm) {
+      showMsg('recovery-msg', 'Les mots de passe ne correspondent pas.', 'error');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Mise \u00e0 jour en cours\u2026';
+
+    try {
+      const { error } = await sb.auth.updateUser({ password });
+      if (error) throw error;
+      showMsg('recovery-msg', 'Mot de passe mis \u00e0 jour. Vous pouvez vous connecter.', 'success');
+      setTimeout(() => showView('login'), 2000);
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = 'Mettre \u00e0 jour le mot de passe';
+      showMsg('recovery-msg', err.message || 'Une erreur est survenue. R\u00e9essayez dans un instant.', 'error');
+    }
+  }
+
+  // --- Boutons ---
+  document.getElementById('signup-btn').addEventListener('click', handleSignup);
+  document.getElementById('login-btn').addEventListener('click', handleLogin);
+  document.getElementById('forgot-btn').addEventListener('click', handleForgot);
+  document.getElementById('recovery-btn').addEventListener('click', handleRecovery);
+
+  // --- Soumission au clavier (Entree) ---
+  document.querySelectorAll('#view-signup input').forEach(el => {
+    el.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleSignup(); });
+  });
+  document.querySelectorAll('#view-login input').forEach(el => {
+    el.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleLogin(); });
+  });
+  document.querySelectorAll('#view-forgot input').forEach(el => {
+    el.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleForgot(); });
+  });
+  document.querySelectorAll('#view-recovery input').forEach(el => {
+    el.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleRecovery(); });
+  });
+
+  // --- Gestion des parametres URL au chargement ---
+  function showResetPasswordForm() {
+    showView('recovery');
+  }
+
+  (async function init() {
+    const params = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+
+    // Si session deja active, rediriger (sauf en mode recovery)
+    const isRecovery = params.get('type') === 'recovery' || hashParams.get('type') === 'recovery';
+
+    const { data: { session } } = await sb.auth.getSession();
+    if (session && !isRecovery) {
+      window.location.href = '/dashboard';
+      return;
+    }
+
+    // Email confirme
+    if (params.get('confirmed') === 'true' || (window.location.hash.includes('access_token') && !isRecovery)) {
+      showView('login');
+      showMsg('login-msg', 'Email confirm\u00e9. Vous pouvez vous connecter.', 'success');
+      return;
+    }
+
+    // Mode recovery
+    if (isRecovery) {
+      showResetPasswordForm();
+      return;
+    }
+  })();
+
+  // --- Ecouter les changements d'etat auth ---
+  sb.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_IN' && session) {
+      const params = new URLSearchParams(window.location.search);
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      if (hashParams.get('type') === 'recovery' || params.get('type') === 'recovery') {
+        showResetPasswordForm();
+        return;
+      }
+      window.location.href = '/dashboard';
+    }
+  });
+</script>
+
+</body>
+</html>

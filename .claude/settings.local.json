@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(python3 -c \"import json; data=json.load\\(open\\(''projet/compatibilite-vegetale/plantes-v1.json'', encoding=''utf-8''\\)\\); print\\(f''{len\\(data\\)} essences''\\)\")",
+      "Bash(python -c \"import json; data=json.load\\(open\\(''projet/compatibilite-vegetale/plantes-v1.json'', encoding=''utf-8''\\)\\); print\\(f''{len\\(data\\)} essences''\\)\")",
+      "Bash(python:*)",
+      "Bash(mkdir -p \"C:/Users/Tledu/OneDrive/sylve-landing/projet/calendrier-phenologique\")",
+      "Bash(cp \"C:/Users/Tledu/OneDrive/sylve-landing/projet/compatibilite-vegetale/plantes-v1.json\" \"C:/Users/Tledu/OneDrive/sylve-landing/projet/calendrier-phenologique/plantes-v1.json\")",
+      "Bash(python3 -c \"import json; data=json.load\\(open\\(''projet/calendrier-phenologique/plantes-v1.json''\\)\\); carex=[p for p in data if ''carex pendula'' in p.get\\(''nom_latin'',''''\\).lower\\(\\)]; print\\(json.dumps\\(carex[0] if carex else ''NOT FOUND'', indent=2, ensure_ascii=False\\)\\)\")",
+      "Bash(node -e \"const d=require\\(''./projet/calendrier-phenologique/plantes-v1.json''\\); const c=d.find\\(p=>p.nom_latin.toLowerCase\\(\\).includes\\(''carex pendula''\\)\\); console.log\\(JSON.stringify\\({persistance:c.persistance,floraison_debut:c.floraison_debut,floraison_fin:c.floraison_fin,couleur:c.couleur_floraison},null,2\\)\\)\")",
+      "Bash(node -e \"const d=require\\(''./projet/calendrier-phenologique/plantes-v1.json''\\); const vals=new Set\\(d.map\\(p=>p.persistance\\)\\); console.log\\([...vals].sort\\(\\)\\)\")",
+      "Bash(node -e \"const d=require\\(''./projet/calendrier-phenologique/plantes-v1.json''\\); const wrap=d.filter\\(p=>p.floraison_debut&&p.floraison_fin&&p.floraison_debut>p.floraison_fin\\); wrap.slice\\(0,5\\).forEach\\(p=>console.log\\(p.nom_latin,p.floraison_debut,''→'',p.floraison_fin\\)\\); console.log\\(''Total:'',wrap.length\\)\")",
+      "Bash(mkdir -p \"C:/Users/Tledu/OneDrive/sylve-landing/projet/selecteur-essences\")",
+      "Bash(cp \"C:/Users/Tledu/OneDrive/sylve-landing/projet/compatibilite-vegetale/plantes-v1.json\" \"C:/Users/Tledu/OneDrive/sylve-landing/projet/selecteur-essences/plantes-v1.json\")",
+      "Bash(node -e \"const d = require\\(''./projet/selecteur-essences/plantes-v1.json''\\); console.log\\(d.length + '' essences''\\)\")",
+      "Bash(node:*)",
+      "Bash(grep:*)"
+    ]
+  }
+}

@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/auth.js"></script>
   <style>
     :root {
       --sylve: #5E8B8F;
@@ -740,56 +741,6 @@
       color: var(--text-light);
     }
 
-    /* ── AUTH GATE ── */
-    .auth-gate {
-      position: absolute;
-      inset: 0;
-      background: rgba(247, 246, 244, 0.92);
-      backdrop-filter: blur(4px);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 20;
-      border-radius: 8px;
-      text-align: center;
-      padding: 2rem;
-    }
-
-    .auth-gate .gate-title {
-      font-family: Helvetica, 'Helvetica Neue', Arial, sans-serif;
-      font-size: 1rem;
-      font-weight: 300;
-      color: var(--text);
-      margin-bottom: 0.5rem;
-    }
-
-    .auth-gate .gate-sub {
-      font-size: 0.78rem;
-      color: var(--text-muted);
-      margin-bottom: 1.2rem;
-    }
-
-    .btn-gate {
-      font-family: 'DM Sans', sans-serif;
-      font-size: 0.82rem;
-      font-weight: 400;
-      color: white;
-      background: var(--sylve);
-      border: none;
-      border-radius: var(--radius);
-      padding: 10px 24px;
-      cursor: pointer;
-      text-decoration: none;
-      transition: background 0.15s;
-    }
-
-    .btn-gate:hover { background: var(--sylve-dark); }
-
-    .panel-right-wrap {
-      position: relative;
-    }
-
     /* ── RESPONSIVE ── */
     @media (max-width: 1024px) {
       .app {
@@ -896,14 +847,7 @@
     </div>
 
     <!-- ════ PANNEAU DROIT ════ -->
-    <div class="panel-right panel-right-wrap">
-
-      <!-- Auth gate (hidden if logged in) -->
-      <div class="auth-gate" id="auth-gate" style="display:none">
-        <div class="gate-title">Connectez-vous pour accéder aux résultats</div>
-        <div class="gate-sub">Saisissez vos essences librement, les résultats s'affichent après connexion.</div>
-        <a href="/login?redirect=/projet/compatibilite-vegetale" class="btn-gate">Se connecter</a>
-      </div>
+    <div class="panel-right">
 
       <!-- État vide -->
       <div class="result-card" id="empty-state">
@@ -1012,25 +956,6 @@
   </div>
 
 <script>
-// ═══════════════════════════════════════════════════════════
-//  CONFIG SUPABASE
-// ═══════════════════════════════════════════════════════════
-const SUPABASE_URL  = 'https://jbqgyfbjyulezaclvmwc.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpicWd5ZmJqeXVsZXphY2x2bXdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzQyMDIsImV4cCI6MjA4ODcxMDIwMn0.dNibq1JOBz3UnqdLwENmS113TGKpw_UGWKR0cE8LgMI';
-
-const { createClient } = supabase;
-const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
-
-let isAuthenticated = false;
-
-async function checkAuth() {
-  const { data: { session } } = await sb.auth.getSession();
-  isAuthenticated = !!session;
-  document.getElementById('auth-gate').style.display = isAuthenticated ? 'none' : 'flex';
-}
-
-checkAuth();
-
 // ═══════════════════════════════════════════════════════════
 //  BASE VÉGÉTALE
 // ═══════════════════════════════════════════════════════════
@@ -1816,10 +1741,6 @@ function recalc() {
   dashboard.style.flexDirection = 'column';
   dashboard.style.gap = '24px';
 
-  if (!isAuthenticated) {
-    document.getElementById('auth-gate').style.display = 'flex';
-  }
-
   // En-tête
   const mixName = document.getElementById('mix-name').value.trim();
   document.getElementById('dash-title').textContent = mixName || 'Mélange sans nom';
@@ -2133,10 +2054,59 @@ function renderAdvancedResults(plants) {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  INIT — Ajouter 2 lignes vides par défaut
+//  VITRINE MODE — restrictions pour visiteurs non connectés
+// ═══════════════════════════════════════════════════════════
+function applyVitrineRestrictions() {
+  // A. Hide "Ajouter une essence" button
+  const btnAdd = document.getElementById('btn-add');
+  if (btnAdd) btnAdd.style.display = 'none';
+
+  // B. Grey out "Mode avancé" section
+  const advancedCard = document.querySelector('.advanced-toggle')?.closest('.section-card');
+  if (advancedCard) {
+    advancedCard.style.opacity = '0.4';
+    advancedCard.style.pointerEvents = 'none';
+    advancedCard.title = 'Créez un compte pour accéder au mode avancé';
+  }
+
+  // C. Add CTA banner
+  const ctaBanner = document.createElement('div');
+  ctaBanner.innerHTML = `
+    <div style="
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: white; border-top: 1px solid #E2DED9;
+      padding: 16px 24px; display: flex; align-items: center;
+      justify-content: center; gap: 16px; z-index: 1000;
+      font-family: 'DM Sans', sans-serif;
+    ">
+      <span style="font-size: 13px; color: #7A7672; font-weight: 300;">
+        Mode découverte — Créez un compte pour accéder à tous les outils et fonctionnalités
+      </span>
+      <a href="/connexion" style="
+        padding: 8px 20px; background: #5E8B8F; color: white;
+        border-radius: 6px; font-size: 13px; font-weight: 400;
+        text-decoration: none; white-space: nowrap;
+      ">Créer un compte</a>
+    </div>
+  `;
+  document.body.appendChild(ctaBanner);
+  document.body.style.paddingBottom = '70px';
+}
+
+// ═══════════════════════════════════════════════════════════
+//  INIT — Ajouter 2 lignes vides par défaut + auth vitrine
 // ═══════════════════════════════════════════════════════════
 addEssenceRow();
 addEssenceRow();
+
+(async () => {
+  const session = await SYLVE_AUTH.getSession();
+  const isLoggedIn = !!session;
+
+  if (!isLoggedIn) {
+    applyVitrineRestrictions();
+  }
+})();
 </script>
 
 </body>

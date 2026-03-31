@@ -1,5 +1,9 @@
 {
   "buildCommand": null,
   "outputDirectory": ".",
-  "framework": null
+  "framework": null,
+  "redirects": [
+    { "source": "/login", "destination": "/connexion", "permanent": true },
+    { "source": "/login/", "destination": "/connexion", "permanent": true }
+  ]
 }

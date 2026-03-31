@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/auth.js"></script>
   <style>
     :root {
       --sylve:        #5E8B8F;
@@ -394,34 +395,12 @@
   </div>
 
   <script>
-  // ═══════════════════════════════════════════════════════════
-  //  CONFIG SUPABASE — mêmes valeurs que login.html
-  // ═══════════════════════════════════════════════════════════
-  const SUPABASE_URL  = 'https://jbqgyfbjyulezaclvmwc.supabase.co';
-  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpicWd5ZmJqeXVsZXphY2x2bXdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzQyMDIsImV4cCI6MjA4ODcxMDIwMn0.dNibq1JOBz3UnqdLwENmS113TGKpw_UGWKR0cE8LgMI';
-
-  const { createClient } = supabase;
-  const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
-
-  // ═══════════════════════════════════════════════════════════
-  //  PROTECTION : rediriger si non connecté
-  // ═══════════════════════════════════════════════════════════
-
   async function init() {
-    const { data: { session } } = await sb.auth.getSession();
+    const session = await SYLVE_AUTH.requireSession();
+    if (!session) return;
 
-    if (!session) {
-      window.location.href = '/login';
-      return;
-    }
+    const profile = await SYLVE_AUTH.getProfile(session.user.id);
 
-    // Charger le profil
-    const { data: profile } = await sb.from('profiles')
-      .select('prenom, metier')
-      .eq('id', session.user.id)
-      .single();
-
-    // Afficher
     const prenom = profile?.prenom;
     if (prenom) {
       document.getElementById('user-greeting').innerHTML = `Bonjour, <strong>${prenom}</strong>`;
@@ -435,8 +414,7 @@
   }
 
   async function logout() {
-    await sb.auth.signOut();
-    window.location.href = '/login';
+    await SYLVE_AUTH.logout();
   }
 
   init();

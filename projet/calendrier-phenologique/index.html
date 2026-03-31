@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/auth.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     :root {
@@ -609,39 +610,6 @@
       line-height: 1.5;
     }
 
-    /* ── AUTH GATE ── */
-    .auth-gate {
-      position: absolute;
-      inset: 0;
-      background: rgba(247,246,244,0.92);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      border-radius: 8px;
-      z-index: 30;
-      text-align: center;
-      padding: 2rem;
-    }
-
-    .auth-gate .gate-title {
-      font-size: 0.92rem;
-      color: var(--text);
-      margin-bottom: 0.6rem;
-    }
-
-    .auth-gate .gate-link {
-      font-size: 0.82rem;
-      color: var(--sylve);
-      text-decoration: none;
-      border: 1px solid var(--sylve);
-      padding: 8px 20px;
-      border-radius: var(--radius);
-      transition: all 0.15s;
-    }
-
-    .auth-gate .gate-link:hover { background: var(--sylve-light); }
-
     /* ── RESPONSIVE ── */
     @media (max-width: 1024px) {
       .input-zone, .title-bar { max-width: 100%; }
@@ -718,22 +686,9 @@
   </div>
 
   <script>
-  // ═══════════════════════════════════════════════════════════
-  //  CONFIG SUPABASE
-  // ═══════════════════════════════════════════════════════════
-  const SUPABASE_URL  = 'https://jbqgyfbjyulezaclvmwc.supabase.co';
-  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpicWd5ZmJqeXVsZXphY2x2bXdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzQyMDIsImV4cCI6MjA4ODcxMDIwMn0.dNibq1JOBz3UnqdLwENmS113TGKpw_UGWKR0cE8LgMI';
-
-  const { createClient } = supabase;
-  const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
-
-  let isAuthenticated = false;
-
-  async function checkAuth() {
-    const { data: { session } } = await sb.auth.getSession();
-    isAuthenticated = !!session;
-  }
-  checkAuth();
+  (async () => {
+  const session = await SYLVE_AUTH.requireSession();
+  if (!session) return;
 
   // ═══════════════════════════════════════════════════════════
   //  BASE VEGETALE
@@ -1197,31 +1152,6 @@
 
     if (allEssences.length === 0) return;
 
-    // Auth gate
-    if (!isAuthenticated) {
-      const container = document.getElementById('calendar-container');
-      document.getElementById('calendar-empty').style.display = 'none';
-      const content = document.getElementById('calendar-content');
-      content.style.display = 'block';
-      content.innerHTML = '';
-      container.classList.add('visible');
-
-      const gate = document.createElement('div');
-      gate.className = 'auth-gate';
-      gate.innerHTML = `
-        <div class="gate-title">Connectez-vous pour acceder au calendrier</div>
-        <a class="gate-link" href="/login?redirect=/projet/calendrier-phenologique">Se connecter</a>
-      `;
-      container.style.position = 'relative';
-      container.style.minHeight = '300px';
-      container.appendChild(gate);
-      return;
-    }
-
-    // Remove any existing auth gate
-    const existingGate = document.querySelector('.auth-gate');
-    if (existingGate) existingGate.remove();
-
     // Build calendar
     const container = document.getElementById('calendar-container');
     const content = document.getElementById('calendar-content');
@@ -1400,6 +1330,7 @@
 
   addMelange();
 
+  })();
   </script>
 </body>
 </html>

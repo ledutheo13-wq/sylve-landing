@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/auth.js"></script>
   <style>
     :root {
       --sylve: #5E8B8F;
@@ -184,27 +185,6 @@
       background: rgba(239,68,68,0.08); border-radius: var(--radius);
     }
 
-    /* ── GATE ── */
-    .gate-overlay {
-      position: fixed; inset: 0; background: rgba(247,246,244,0.92);
-      display: flex; align-items: center; justify-content: center; z-index: 100;
-    }
-    .gate-box {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 2.5rem; text-align: center; max-width: 400px;
-    }
-    .gate-box h2 {
-      font-family: Helvetica, 'Helvetica Neue', Arial, sans-serif;
-      font-size: 1.1rem; font-weight: 300; color: var(--text); margin-bottom: 0.6rem;
-    }
-    .gate-box p { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1.2rem; line-height: 1.5; }
-    .gate-box a {
-      display: inline-block; font-family: 'DM Sans', sans-serif; font-size: 0.85rem;
-      color: #fff; background: var(--sylve); border-radius: var(--radius);
-      padding: 10px 24px; text-decoration: none; transition: background 0.15s;
-    }
-    .gate-box a:hover { background: var(--sylve-dark); }
-
     /* ── RESPONSIVE ── */
     @media (max-width: 860px) {
       .app { grid-template-columns: 1fr; }
@@ -370,31 +350,7 @@
     </div>
   </div>
 
-  <!-- GATE -->
-  <div class="gate-overlay" id="gate" style="display:none;">
-    <div class="gate-box">
-      <h2>Connectez-vous pour acceder aux resultats</h2>
-      <p>Creez un compte gratuit ou connectez-vous pour utiliser le calculateur de platelages bois.</p>
-      <a href="/login?redirect=/projet/platelages">Se connecter</a>
-    </div>
-  </div>
-
 <script>
-// ═══════════════════════════════════════════════════════════
-//  SUPABASE
-// ═══════════════════════════════════════════════════════════
-const SUPABASE_URL  = 'https://jbqgyfbjyulezaclvmwc.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpicWd5ZmJqeXVsZXphY2x2bXdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzQyMDIsImV4cCI6MjA4ODcxMDIwMn0.dNibq1JOBz3UnqdLwENmS113TGKpw_UGWKR0cE8LgMI';
-const { createClient } = supabase;
-const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
-
-let hasSession = false;
-(async () => {
-  const { data: { session } } = await sb.auth.getSession();
-  hasSession = !!session;
-  if (!hasSession) document.getElementById('gate').style.display = 'flex';
-})();
-
 // ═══════════════════════════════════════════════════════════
 //  DONNÉES
 // ═══════════════════════════════════════════════════════════
@@ -934,9 +890,13 @@ function calcRow(label, formula, value) {
 // ═══════════════════════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════════════════════
-initDropdowns();
-onEssenceLamesChange();
-onParamChange();
+(async () => {
+  const session = await SYLVE_AUTH.requireSession();
+  if (!session) return;
+  initDropdowns();
+  onEssenceLamesChange();
+  onParamChange();
+})();
 </script>
 </body>
 </html>

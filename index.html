@@ -533,7 +533,7 @@
 <!-- ===== NAV ===== -->
 <nav id="nav">
   <a href="/" class="nav-logo">sylve</a>
-  <a href="/dashboard" class="nav-cta" id="nav-cta-btn">Accéder aux outils</a>
+  <a href="/connexion" class="nav-cta" id="nav-cta-btn">Accéder aux outils</a>
 </nav>
 
 <!-- ===== HERO ===== -->
@@ -545,13 +545,13 @@
     <p class="hero-tagline">L'intelligence numérique<br>au service du paysage</p>
 
     <div class="hero-cta-group">
-      <a href="/dashboard" class="btn-primary" id="hero-cta-btn">
+      <a href="/connexion" class="btn-primary" id="hero-cta-btn">
         Accéder aux outils
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
           <path d="M2 7H12M12 7L7.5 2.5M12 7L7.5 11.5" stroke="white" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </a>
-      <span class="hero-note">Connexion par lien magique — sans mot de passe</span>
+      <span class="hero-note">Beta ouverte — Paysagistes professionnels</span>
     </div>
   </div>
 
@@ -590,6 +590,14 @@
           <li>Conformité PLU</li>
         </ul>
         <span class="marque-badge badge-actif">Accès beta</span>
+        <a href="/projet/compatibilite-vegetale/" style="
+          display: inline-block; margin-top: 12px;
+          font-size: 12px; color: #5E8B8F; text-decoration: none;
+          font-weight: 400; letter-spacing: 0.2px;
+          transition: opacity 0.2s;
+        " onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
+          Essayer la compatibilité végétale →
+        </a>
       </div>
 
       <!-- PILOTE -->
@@ -644,14 +652,14 @@
   <div class="section-inner">
     <div class="section-label">Accès</div>
     <h2 class="section-title">Commencer à utiliser sylve</h2>
-    <p class="section-text">Accès par lien magique. Pas de mot de passe. Une fois connecté, votre session est active 7 jours.</p>
-    <a href="/dashboard" class="btn-primary" style="display: inline-flex;">
+    <p class="section-text">Créez un compte en quelques secondes. Email et mot de passe.</p>
+    <a href="/connexion" class="btn-primary" style="display: inline-flex;">
       Accéder aux outils
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
         <path d="M2 7H12M12 7L7.5 2.5M12 7L7.5 11.5" stroke="white" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </a>
-    <p class="cta-note">Accès gratuit en phase beta — Paysagistes professionnels uniquement</p>
+    <p class="cta-note">Beta ouverte — Paysagistes professionnels</p>
   </div>
 </section>
 
@@ -668,38 +676,16 @@
     nav.classList.toggle('scrolled', window.scrollY > 20);
   });
 
-  // Supabase session check — si session active → /dashboard direct, sinon → /login
-  const SUPABASE_URL = 'https://jbqgyfbjyulezaclvmwc.supabase.co';
-  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImplicWd5ZmJqeXVsZXphY2x2bXdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDk2NTQ0MDAsImV4cCI6MjAyNTIzMDQwMH0.placeholder';
-
-  async function handleCTA(e) {
+  // CTA → page de connexion
+  function handleCTA(e) {
     e.preventDefault();
-
-    // Check localStorage for active Supabase session
-    const sessionKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
-    if (sessionKey) {
-      try {
-        const session = JSON.parse(localStorage.getItem(sessionKey));
-        if (session && session.expires_at) {
-          const expiresAt = session.expires_at * 1000;
-          if (Date.now() < expiresAt) {
-            window.location.href = '/dashboard';
-            return;
-          }
-        }
-      } catch(err) {
-        // session invalide, on passe au login
-      }
-    }
-    window.location.href = '/login';
+    window.location.href = '/connexion';
   }
 
   document.getElementById('hero-cta-btn').addEventListener('click', handleCTA);
   document.getElementById('nav-cta-btn').addEventListener('click', handleCTA);
   document.querySelectorAll('.btn-primary').forEach(btn => {
-    if (btn !== document.getElementById('hero-cta-btn')) {
-      btn.addEventListener('click', handleCTA);
-    }
+    if (!btn.id) btn.addEventListener('click', handleCTA);
   });
 </script>
 
